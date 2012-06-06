@@ -2,12 +2,11 @@
  * Module dependencies.
  */
 var express = require('express')
-	, routes = require('./routes');
-
-var app = module.exports = express.createServer()
+	, routes = require('./routes')
+	, app = module.exports = express.createServer()
 	, io = require('socket.io').listen(app)
 	, RedisStore = require('connect-redis')(express)
-	, sessionStore = new RedisStore;
+	, redisStore = new RedisStore;
 // Configuration
 
 app.configure(function(){
@@ -16,7 +15,7 @@ app.configure(function(){
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(express.cookieParser());
-	app.use(express.session({ secret: 'keyboard cat', cookie: { secure: true }, store: sessionStore, reapInterval: 60000 * 10 }));
+	app.use(express.session({ secret: 'keyboard cat', cookie: { secure: true }, store: redisStore, key: 'express.sid' }));
 	app.use(express.static(__dirname + '/public'));
 	app.use(app.router);
 });
