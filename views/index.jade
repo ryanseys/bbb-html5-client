@@ -4,21 +4,3 @@ p Please type a username below and click Sign in to start chatting.
 form(action='chat', method='post')
 	input(type="text", name="user[name]", placeholder='Enter a username')
 	input(type="submit", value='Sign in')
-script(src="/socket.io/socket.io.js")
-script(src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js")
-script
-	console.log("hello");
-	var username = "Ryan";
-	var PORT = 3000;
-	var SERVER_IP = 'localhost';
-	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
-	$('form').submit(function(e) {
-		e.preventDefault();
-		socket.emit('signin', username);
-	});
-	socket.on('connect', function () {
-		//when you get a new message
-		socket.on('signin', function(name) {
-			console.log('hi');
-		});
-	});
