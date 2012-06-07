@@ -1,8 +1,6 @@
-
-/*
- * GET home page.
- */
+// Routes
 exports.get_index = function(req, res) {
+	console.log(req.cookies);
 	res.render('index', { title: 'BigBlueButton HTML5 Client' });
 };
 
