@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 
-users = {}; //global variable for (temporary) datastore
+users = { }; //global variable for (temporary) datastore
 
 var express = require('express')
 	, routes = require('./routes')
@@ -70,22 +70,22 @@ io.sockets.on('connection', function(socket) {
 	socket.on('user connect', function(id) {
 		socket.sessid = id;
 		socket.username = users[id]['username']; //save the username into the socket data
+		users[sessid]['sockets'][socket.id] = true; //add socket to list of sockets.
 		io.sockets.emit('user connect', socket.username);
 	});
 	
 	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
-		//check if still in datastore (maybe they logged out)
-		if(users[socket.sessid]) {
-			console.log("didn't log out");
-			//sleep(1000);
-			//the user either quit the browser or refreshed, so wait for a second...
-		}
-		else {
-			//the user logged out, therefore check
-			io.sockets.emit('user disconnected', socket.username);
-			//delete users[socket.sessid]; //delete the disconnected user from the datastore
-		}
-	   
-	  });
+		delete users[socket.sessid]['sockets'][socket.id]; //socket has been disconnected
+		var user = users[socket.sessid];
+		
+		//wait one second, then check if there are 0 sockets...
+		setTimeout(function() {
+			if(Object.keys(users[socket.sessid]['sockets']).length == 0) {
+				console.log(users[socket.sessid]['username'] + " has been disconnected!");
+				delete users[socket.sessid]; //delete the user from the datastore
+				io.sockets.emit('user disconnected', socket.username); //tell everyone they disconnected
+			}
+		}, 5000);
+	});
 });

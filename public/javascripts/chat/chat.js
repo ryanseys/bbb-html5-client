@@ -19,8 +19,8 @@ $(function() {
 	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
 	
-	id = getCookie('id'); //get the session 
-	
+	id = getCookie('id'); //get the session
+	console.log(document.cookie);
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
 		e.preventDefault();
