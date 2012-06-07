@@ -1,6 +1,7 @@
 /**
  * Module dependencies.
  */
+
 users = {}; //global variable for (temporary) datastore
 
 var express = require('express')
@@ -31,7 +32,9 @@ app.configure('production', function(){
 	app.use(express.errorHandler());
 });
 
+// If a page requires authentication to view...
 function requiresLogin(req, res, next) {
+	//check that they have a cookie with valid session id
 	if(users[req.cookies['id']]) {
 		next();
 	} else {
@@ -39,11 +42,11 @@ function requiresLogin(req, res, next) {
 	}
 }
 
-// Routes
+// Routes (see /routes/index.js)
 app.get('/', routes.get_index);
 app.post('/chat', routes.post_chat);
 app.post('/logout', routes.logout);
-//app.get('/logout', routes.logout);
+app.get('/logout', routes.logout);
 app.get('/chat', requiresLogin, routes.get_chat);
 
 // Start the web server listening
@@ -51,18 +54,26 @@ app.listen(3000, function() {
 	console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
 });
 
+// Socket.IO
+
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
-	console.log('A socket: ' + socket.id + ' connected!');
 	
+	//When a user sends a message...
 	socket.on('msg', function(msg) {
 		io.sockets.emit('msg', socket.username, msg);
 	});
+	
+	// When a user connects to the socket...
 	socket.on('user connect', function(id) {
+		socket.sessid = id;
 		socket.username = users[id]; //save the username into the socket data
 		io.sockets.emit('user connect', socket.username);
 	});
+	
+	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
 	    io.sockets.emit('user disconnected', socket.username);
+		delete users[socket.sessid];
 	  });
 });

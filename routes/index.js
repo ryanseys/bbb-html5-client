@@ -23,7 +23,7 @@ exports.logout = function(req, res) {
 };
 
 exports.get_chat = function(req, res) {
-	//requiresLogin before this
+	//requiresLogin before this verifies that a user is logged in...
 	console.log(Object.keys(users).length); //get the number of connected users
 	res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: users[req.cookies['id']] });
 };
