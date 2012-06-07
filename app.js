@@ -74,6 +74,6 @@ io.sockets.on('connection', function(socket) {
 	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
 	    io.sockets.emit('user disconnected', socket.username);
-		delete users[socket.sessid];
+		//delete users[socket.sessid]; //delete the disconnected user from the datastore
 	  });
 });
