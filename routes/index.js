@@ -27,3 +27,7 @@ exports.get_chat = function(req, res) {
 	console.log(Object.keys(users).length); //get the number of connected users
 	res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: users[req.cookies['id']] });
 };
+
+exports.error404 = function(req, res) {
+  res.send('Page not found', 404);
+};

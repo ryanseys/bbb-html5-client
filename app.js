@@ -45,9 +45,11 @@ function requiresLogin(req, res, next) {
 // Routes (see /routes/index.js)
 app.get('/', routes.get_index);
 app.post('/chat', routes.post_chat);
-app.post('/logout', routes.logout);
-app.get('/logout', routes.logout);
+app.post('/logout', requiresLogin, routes.logout);
 app.get('/chat', requiresLogin, routes.get_chat);
+
+// --- 404 (keep as last route) --- //
+app.get('*', routes.error404);
 
 // Start the web server listening
 app.listen(3000, function() {
@@ -73,7 +75,16 @@ io.sockets.on('connection', function(socket) {
 	
 	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
-	    io.sockets.emit('user disconnected', socket.username);
-		//delete users[socket.sessid]; //delete the disconnected user from the datastore
+		//check if still in datastore (maybe they logged out)
+		if(users[socket.sessid]) {
+			console.log("didn't log out");
+			//the user either quit the browser or refreshed, so wait for a second...
+		}
+		else {
+			//the user logged out, therefore check
+			io.sockets.emit('user disconnected', socket.username);
+			//delete users[socket.sessid]; //delete the disconnected user from the datastore
+		}
+	   
 	  });
 });
