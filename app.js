@@ -1,6 +1,8 @@
 /**
  * Module dependencies.
  */
+users = {}; //global variable for (temporary) datastore
+
 var express = require('express')
 	, routes = require('./routes')
 	, app = module.exports = express.createServer()
