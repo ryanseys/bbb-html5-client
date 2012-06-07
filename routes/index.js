@@ -9,10 +9,9 @@ exports.get_index = function(req, res) {
 };
 
 exports.post_chat = function(req, res) {
-	users[req.sessionID] = req.body.user.name; //sets a relationship between session id and name
-	console.log(users[req.sessionID]); //prints out the name
+	var username = users[req.sessionID] = req.body.user.name; //sets a relationship between session id and name
 	res.cookie('id', req.sessionID); //save the id so socketio can get the username
-	res.render('chat', {title: 'BigBlueButton HTML5 Chat', user: users[req.sessionID] });
+	res.render('chat', {title: 'BigBlueButton HTML5 Chat', user: username });
 };
 
 exports.logout = function(req, res) {
