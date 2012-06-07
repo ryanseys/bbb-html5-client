@@ -1,6 +1,9 @@
 
 h1= title
 p Please type a username below and click Sign in to start chatting.
-form(action='chat', method='post')
+
+script(src='/javascripts/index/index.js') //all index javascript
+
+form(action='chat', method='post', onsubmit='return validateForm("login","user[name]")', name='login')
 	input(type="text", name="user[name]", placeholder='Enter a username')
 	input(type="submit", value='Sign in')

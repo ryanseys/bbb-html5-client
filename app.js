@@ -58,4 +58,11 @@ io.sockets.on('connection', function(socket) {
 		var name = users[id];
 		io.sockets.emit('msg', name + ': ' + msg);
 	});
+	socket.on('user connect', function(id) {
+		var name = socket.username = users[id]; //save the username into the socket data
+		io.sockets.emit('user connect', name + ' connected!');
+	});
+	socket.on('disconnect', function () {
+	    io.sockets.emit('user disconnected', socket.username + ' disconnected!');
+	  });
 });
