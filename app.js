@@ -32,7 +32,7 @@ app.configure('production', function(){
 });
 
 function requiresLogin(req, res, next) {
-	if(req.session.user) {
+	if(users[req.cookies['id']]) {
 		next();
 	} else {
 		res.redirect('/');
@@ -43,7 +43,7 @@ function requiresLogin(req, res, next) {
 app.get('/', routes.get_index);
 app.post('/chat', routes.post_chat);
 app.post('/logout', routes.logout);
-app.get('/logout', routes.logout);
+//app.get('/logout', routes.logout);
 app.get('/chat', requiresLogin, routes.get_chat);
 
 // Start the web server listening
