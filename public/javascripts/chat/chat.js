@@ -15,9 +15,11 @@ $(function() {
 
 	var PORT = 3000;
 	var SERVER_IP = 'localhost';
+	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
-	id = getCookie('id');
-	console.log(document.cookie);
+	
+	id = getCookie('id'); //get the session 
+	
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
 		e.preventDefault();
@@ -28,22 +30,25 @@ $(function() {
 		}
 		$('#chat_input_box').focus();
 	});
+	
 	//when you connect
 	socket.on('connect', function () {
 		//immediately send a message saying we are connected.
 		socket.emit('user connect', id);
 
 		//when you get a new message
-		socket.on('msg', function(msg) {
-			$('#chat_messages').append('<div>' + msg + '</div>');
+		socket.on('msg', function(name, msg) {
+			$('#chat_messages').append('<div>' + name + ': ' + msg + '</div>');
 		});
-		//
-		socket.on('user connect', function(msg) {
-			$('#chat_messages').append('<div><b>' + msg + '</b></div>');
+		
+		//when a user connects
+		socket.on('user connect', function(name) {
+			$('#chat_messages').append('<div><b>' + name + ' connected! </b></div>');
 		});
-
-		socket.on('user disconnected', function(msg) {
-			$('#chat_messages').append('<div><b> ' + msg + '</b></div>');
+		
+		//when a user disconnects
+		socket.on('user disconnected', function(name) {
+			$('#chat_messages').append('<div><b> ' + name + ' disconnected! </b></div>');
 		});
 	});
 });

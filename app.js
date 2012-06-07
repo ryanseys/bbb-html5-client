@@ -54,15 +54,15 @@ app.listen(3000, function() {
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
 	console.log('A socket: ' + socket.id + ' connected!');
-	socket.on('msg', function(msg, id) {
-		var name = users[id];
-		io.sockets.emit('msg', name + ': ' + msg);
+	
+	socket.on('msg', function(msg) {
+		io.sockets.emit('msg', socket.username, msg);
 	});
 	socket.on('user connect', function(id) {
-		var name = socket.username = users[id]; //save the username into the socket data
-		io.sockets.emit('user connect', name + ' connected!');
+		socket.username = users[id]; //save the username into the socket data
+		io.sockets.emit('user connect', socket.username);
 	});
 	socket.on('disconnect', function () {
-	    io.sockets.emit('user disconnected', socket.username + ' disconnected!');
+	    io.sockets.emit('user disconnected', socket.username);
 	  });
 });
