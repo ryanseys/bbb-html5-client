@@ -9,10 +9,10 @@ exports.get_index = function(req, res) {
 };
 
 exports.post_chat = function(req, res) {
-	var username = users[req.sessionID] = req.body.user.name; //sets a relationship between session id and name
+	users[req.sessionID] = {username: req.body.user.name, sockets: {}}; //sets a relationship between session id and name
 	console.log(Object.keys(users).length); //get the number of connected users
 	res.cookie('id', req.sessionID); //save the id so socketio can get the username
-	res.render('chat', {title: 'BigBlueButton HTML5 Chat', user: username });
+	res.render('chat', {title: 'BigBlueButton HTML5 Chat', user: users[req.sessionID]['username'] });
 };
 
 exports.logout = function(req, res) {
@@ -25,7 +25,7 @@ exports.logout = function(req, res) {
 exports.get_chat = function(req, res) {
 	//requiresLogin before this verifies that a user is logged in...
 	console.log(Object.keys(users).length); //get the number of connected users
-	res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: users[req.cookies['id']] });
+	res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: users[req.cookies['id']]['username'] });
 };
 
 exports.error404 = function(req, res) {

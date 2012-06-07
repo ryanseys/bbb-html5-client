@@ -49,7 +49,7 @@ app.post('/logout', requiresLogin, routes.logout);
 app.get('/chat', requiresLogin, routes.get_chat);
 
 // --- 404 (keep as last route) --- //
-app.get('*', routes.error404);
+//app.get('*', routes.error404);
 
 // Start the web server listening
 app.listen(3000, function() {
@@ -69,7 +69,7 @@ io.sockets.on('connection', function(socket) {
 	// When a user connects to the socket...
 	socket.on('user connect', function(id) {
 		socket.sessid = id;
-		socket.username = users[id]; //save the username into the socket data
+		socket.username = users[id]['username']; //save the username into the socket data
 		io.sockets.emit('user connect', socket.username);
 	});
 	
@@ -78,6 +78,7 @@ io.sockets.on('connection', function(socket) {
 		//check if still in datastore (maybe they logged out)
 		if(users[socket.sessid]) {
 			console.log("didn't log out");
+			//sleep(1000);
 			//the user either quit the browser or refreshed, so wait for a second...
 		}
 		else {
