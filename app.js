@@ -7,6 +7,7 @@ var express = require('express')
 	, io = require('socket.io').listen(app)
 	, RedisStore = require('connect-redis')(express)
 	, redisStore = new RedisStore;
+	
 // Configuration
 
 app.configure(function(){
@@ -16,7 +17,7 @@ app.configure(function(){
 	app.use(express.methodOverride());
 	app.use(express.cookieParser());
 	app.use(express.session({ secret: 'keyboard cat', cookie: { secure: true }, store: redisStore, key: 'express.sid' }));
-	app.use(express.static(__dirname + '/public'));
+	app.use(express['static'](__dirname + '/public'));
 	app.use(app.router);
 });
 
