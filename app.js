@@ -40,12 +40,11 @@ function requiresLogin(req, res, next) {
 }
 
 // Routes
-app.get('/', routes.index);
-app.post('/chat', routes.chat);
+app.get('/', routes.get_index);
+app.post('/chat', routes.post_chat);
 app.post('/logout', routes.logout);
-app.get('/chat', requiresLogin, function(req, res) {
-	res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: req.session.user });
-});
+app.get('/logout', routes.logout);
+app.get('/chat', requiresLogin, routes.get_chat);
 
 // Start the web server listening
 app.listen(3000, function() {
@@ -55,7 +54,8 @@ app.listen(3000, function() {
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
 	console.log('A socket: ' + socket.id + ' connected!');
-	socket.on('msg', function(msg, name) {
+	socket.on('msg', function(msg, id) {
+		var name = users[id];
 		io.sockets.emit('msg', name + ': ' + msg);
 	});
 });

@@ -38,9 +38,9 @@ script
 		$('#chat_input').submit(function(e) {
 			e.preventDefault();
 			var msg = $('#chat_input_box').val();
-			var name = getCookie('username');
-			if ((msg != '') && (name != '')) {
-				socket.emit('msg', msg, name);
+			var id = getCookie('id');
+			if ((msg != '') && (id != '')) {
+				socket.emit('msg', msg, id);
 				$('#chat_input_box').val('');
 			}
 			$('#chat_input_box').focus();
