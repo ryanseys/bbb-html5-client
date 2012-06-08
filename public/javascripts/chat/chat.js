@@ -32,6 +32,12 @@ $(function() {
 		$('#chat_input_box').focus();
 	});
 	
+	//when you hit enter
+	$('#logout').submit(function(e) {
+		e.preventDefault();
+		socket.emit('logout');
+	});
+	
 	//when you connect
 	socket.on('connect', function () {
 		//immediately send a message saying we are connected.
@@ -39,6 +45,12 @@ $(function() {
 		//when you get a new message
 		socket.on('msg', function(name, msg) {
 			$('#chat_messages').append('<div>' + name + ': ' + msg + '</div>');
+		});
+		
+		socket.on('logout', function() {
+			$.post('logout', null, function(data) {
+				document.write(data);
+			});
 		});
 		
 		//when a user connects

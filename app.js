@@ -53,7 +53,7 @@ function requiresLogin(req, res, next) {
 
 // Routes (see /routes/index.js)
 app.get('/', routes.get_index);
-app.post('/chat', routes.post_chat);
+app.post('/chat',  routes.post_chat);
 app.post('/logout', requiresLogin, routes.logout);
 app.get('/chat', requiresLogin, routes.get_chat);
 
@@ -117,5 +117,16 @@ io.sockets.on('connection', function(socket) {
 				}
 			}, 1000);
 		}
+	});
+	
+	socket.on('logout', function() {
+		var current_id = socket.sessid;
+		var sockets = users[current_id]['sockets'];
+		for (socket_id in sockets) {
+			if (sockets.hasOwnProperty(socket_id)) {
+				io.sockets.socket(socket_id).emit('logout');
+			}
+		}
+		
 	});
 });
