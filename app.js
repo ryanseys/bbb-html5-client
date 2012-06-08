@@ -15,15 +15,10 @@ var express = require('express')
 app.configure(function(){
 	app.set('views', __dirname + '/views');
 	app.set('view engine', 'jade');
+	app.use(express['static'](__dirname + '/public'));
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(express.cookieParser());
-	app.use(express['static'](__dirname + '/public'));
-	app.use(app.router);
-});
-
-app.configure('development', function(){
-	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 	app.use(express.session({ 
 		secret: "password",
 		cookie: { secure: true },
@@ -34,6 +29,12 @@ app.configure('development', function(){
 		}),
 		key: 'express.sid'
 	}));
+	app.use(app.router);
+});
+
+app.configure('development', function(){
+	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+	
 });
 
 app.configure('production', function(){
@@ -69,44 +70,52 @@ app.listen(3000, function() {
 
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
-		//redisStore.destroy('555444', function(err) { ... });
-		//When a user sends a message...
-		socket.on('msg', function(msg) {
-			io.sockets.emit('msg', socket.username, msg);
-		});
+	//When a user sends a message...
+	socket.on('msg', function(msg) {
+		io.sockets.emit('msg', socket.username, msg);
+	});
 
-		// When a user connects to the socket...
-		
-		socket.on('user connect', function(id) {
-			if(!users[id]) {
-				console.log("Invalid user.");
-				socket.disconnect();
-			}
-			else {
-				socket.sessid = id;
-				socket.username = users[id]['username']; //save the username into the socket data
-				users[id]['sockets'][socket.id] = true; //add socket to list of sockets.
-				if(users[id]['refreshing'] == false) {
-					io.sockets.emit('user connect', socket.username);
-				}
-				else users[id]['refreshing'] = false;
-			}
-		});
-
-		// When a user disconnects from the socket...
-		socket.on('disconnect', function () {
-			delete users[socket.sessid]['sockets'][socket.id]; //socket has been disconnected
-			var user = users[socket.sessid];
-			users[socket.sessid]['refreshing'] = true; //assume they are refreshing...
-			//if they aren't, they will be deleted anyway.
+	// When a user connects to the socket...
 	
+	socket.on('user connect', function(id) {
+		if(!users[id]) {
+			console.log("Invalid user");
+			socket.disconnect();
+		}
+		else {
+			socket.sessid = id;
+			socket.username = users[id]['username']; //save the username into the socket data
+			users[id]['sockets'][socket.id] = true; //add socket to list of sockets.
+			if((users[id]['refreshing'] == false) && (users[id]['duplicateSession'] == false)) {
+				users[id]['duplicateSession'] = true; //all of the next sessions created with this id are duplicates
+				socket.broadcast.emit('user connect', socket.username);
+			}
+			else users[id]['refreshing'] = false;
+		}
+	});
+	
+	// When a user disconnects from the socket...
+	socket.on('disconnect', function () {
+		var current_id = socket.sessid;
+		var current_socket_id = socket.id;
+		var current_username = socket.username;
+		if(users[current_id]) {
+			var user = users[current_id];
+			users[current_id]['refreshing'] = true; //assume they are refreshing...
+			
 			//wait one second, then check if there are 0 sockets...
 			setTimeout(function() {
-				if(Object.keys(users[socket.sessid]['sockets']).length == 0) {
-					console.log(users[socket.sessid]['username'] + " has been disconnected!");
-					delete users[socket.sessid]; //delete the user from the datastore
-					io.sockets.emit('user disconnected', socket.username); //tell everyone they disconnected
+				if(users[current_id]) {
+					delete users[current_id]['sockets'][current_socket_id]; //socket has been disconnected
+					if(Object.keys(users[current_id]['sockets']).length == 0) {
+						delete users[current_id]; //delete the user from the datastore
+						io.sockets.emit('user disconnected', current_username); //tell everyone they disconnected
+					}
+				} 
+				else {
+					io.sockets.emit('user disconnected', current_username); //tell everyone they disconnected
 				}
 			}, 1000);
-		});
+		}
+	});
 });

@@ -20,7 +20,7 @@ $(function() {
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
 	
 	id = getCookie('id'); //get the session
-	console.log(document.cookie);
+	
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
 		e.preventDefault();
@@ -36,7 +36,6 @@ $(function() {
 	socket.on('connect', function () {
 		//immediately send a message saying we are connected.
 		socket.emit('user connect', id);
-
 		//when you get a new message
 		socket.on('msg', function(name, msg) {
 			$('#chat_messages').append('<div>' + name + ': ' + msg + '</div>');
@@ -63,12 +62,9 @@ $(function() {
 		socket.on('reconnect_failed', function () {
 			$('#chat_messages').append('<div><b> Reconnect FAILED! </b></div>');
 		});
-		socket.on('disconnect', function() {
-			$('#chat_messages').append('<div><b> Disconnected1! </b></div>');
-		});
 	});
+	
 	socket.on('disconnect', function() {
-		$('#chat_messages').append('<div><b> Disconnected2! </b></div>');
 		window.location = "./";
 	});
 });
