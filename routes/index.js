@@ -18,7 +18,6 @@ exports.logout = function(req, res) {
 	req.session.destroy(); //end the session
 	res.cookie('id', null); //clear the cookie from the machine
 	delete users[req.cookies['id']]; //remove the user from the datastore
-	res.redirect('/'); //go back to the homepage
 };
 
 exports.get_chat = function(req, res) {

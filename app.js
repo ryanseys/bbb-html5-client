@@ -70,9 +70,16 @@ app.listen(3000, function() {
 
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
+	
 	//When a user sends a message...
 	socket.on('msg', function(msg) {
-		io.sockets.emit('msg', socket.username, msg);
+		var current_id = socket.sessid;
+		var current_username = socket.username;
+		if(!users[current_id]) {
+			console.log("Invalid user");
+			socket.disconnect();
+		}
+		else io.sockets.emit('msg', socket.username, msg);
 	});
 
 	// When a user connects to the socket...
@@ -121,12 +128,20 @@ io.sockets.on('connection', function(socket) {
 	
 	socket.on('logout', function() {
 		var current_id = socket.sessid;
-		var sockets = users[current_id]['sockets'];
-		for (socket_id in sockets) {
-			if (sockets.hasOwnProperty(socket_id)) {
-				io.sockets.socket(socket_id).emit('logout');
-			}
+		var current_username = socket.username;
+		if(!users[current_id]) {
+			console.log("Invalid user");
+			socket.disconnect();
 		}
-		
+		else {
+			var sockets = users[current_id]['sockets'];
+			for (socket_id in sockets) {
+				if (sockets.hasOwnProperty(socket_id)) {
+					io.sockets.socket(socket_id).emit('logout');
+				}
+			}
+			io.sockets.emit('user disconnected', current_username);
+		}
 	});
+	
 });

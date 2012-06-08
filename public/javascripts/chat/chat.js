@@ -48,9 +48,8 @@ $(function() {
 		});
 		
 		socket.on('logout', function() {
-			$.post('logout', null, function(data) {
-				document.write(data);
-			});
+			$.post('logout');
+			window.location.replace("./");
 		});
 		
 		//when a user connects
@@ -74,9 +73,9 @@ $(function() {
 		socket.on('reconnect_failed', function () {
 			$('#chat_messages').append('<div><b> Reconnect FAILED! </b></div>');
 		});
-	});
-	
-	socket.on('disconnect', function() {
-		window.location = "./";
+		
+		socket.on('disconnect', function() {
+			window.location.replace("./");
+		});
 	});
 });
