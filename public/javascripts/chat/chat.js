@@ -51,5 +51,24 @@ $(function() {
 		socket.on('user disconnected', function(name) {
 			$('#chat_messages').append('<div><b> ' + name + ' disconnected! </b></div>');
 		});
+		
+		socket.on('reconnect', function () {
+			$('#chat_messages').append('<div><b> RECONNECTED! </b></div>');
+		});
+		
+		socket.on('reconnecting', function () {
+			$('#chat_messages').append('<div><b> Reconnecting... </b></div>');
+		});
+		
+		socket.on('reconnect_failed', function () {
+			$('#chat_messages').append('<div><b> Reconnect FAILED! </b></div>');
+		});
+		socket.on('disconnect', function() {
+			$('#chat_messages').append('<div><b> Disconnected1! </b></div>');
+		});
+	});
+	socket.on('disconnect', function() {
+		$('#chat_messages').append('<div><b> Disconnected2! </b></div>');
+		window.location = "./";
 	});
 });
