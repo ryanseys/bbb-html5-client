@@ -42,12 +42,14 @@ $(function() {
 	socket.on('connect', function () {
 		//immediately send a message saying we are connected.
 		socket.emit('user connect', id);
+		console.log(document.cookie);
 		//when you get a new message
 		socket.on('msg', function(name, msg) {
 			$('#chat_messages').append('<div>' + name + ': ' + msg + '</div>');
 		});
 		
 		socket.on('logout', function() {
+			console.log("logging out.");
 			$.post('logout');
 			window.location.replace("./");
 		});

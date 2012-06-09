@@ -135,13 +135,15 @@ io.sockets.on('connection', function(socket) {
 		}
 		else {
 			var sockets = users[current_id]['sockets'];
+			delete users[current_id];
 			for (socket_id in sockets) {
 				if (sockets.hasOwnProperty(socket_id)) {
 					io.sockets.socket(socket_id).emit('logout');
 				}
 			}
-			io.sockets.emit('user disconnected', current_username);
 		}
+		io.sockets.emit('user disconnected', current_username);
+		socket.disconnect();
 	});
 	
 });
