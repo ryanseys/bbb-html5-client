@@ -1,5 +1,5 @@
 $(function() {
-	
+
 	//used to parse the cookie data.
 	function getCookie(c_name) {
 		var i,x,y,ARRcookies=document.cookie.split(";");
@@ -18,9 +18,9 @@ $(function() {
 	var SERVER_IP = '192.168.0.233';
 	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
-	
+
 	id = getCookie('id'); //get the session
-	
+
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
 		e.preventDefault();
@@ -31,51 +31,49 @@ $(function() {
 		}
 		$('#chat_input_box').focus();
 	});
-	
+
 	//when you hit enter
 	$('#logout').submit(function(e) {
 		e.preventDefault();
 		socket.emit('logout');
 	});
-	
+
 	//when you connect
 	socket.on('connect', function () {
 		//immediately send a message saying we are connected.
 		socket.emit('user connect', id);
-		console.log(document.cookie);
 		//when you get a new message
 		socket.on('msg', function(name, msg) {
 			$('#chat_messages').append('<div>' + name + ': ' + msg + '</div>');
 		});
-		
+
 		socket.on('logout', function() {
-			console.log("logging out.");
 			$.post('logout');
 			window.location.replace("./");
 		});
-		
+
 		//when a user connects
 		socket.on('user connect', function(name) {
 			$('#chat_messages').append('<div><b>' + name + ' connected! </b></div>');
 		});
-		
+
 		//when a user disconnects
 		socket.on('user disconnected', function(name) {
 			$('#chat_messages').append('<div><b> ' + name + ' disconnected! </b></div>');
 		});
-		
+
 		socket.on('reconnect', function () {
 			$('#chat_messages').append('<div><b> RECONNECTED! </b></div>');
 		});
-		
+
 		socket.on('reconnecting', function () {
 			$('#chat_messages').append('<div><b> Reconnecting... </b></div>');
 		});
-		
+
 		socket.on('reconnect_failed', function () {
 			$('#chat_messages').append('<div><b> Reconnect FAILED! </b></div>');
 		});
-		
+
 		socket.on('disconnect', function() {
 			window.location.replace("./");
 		});

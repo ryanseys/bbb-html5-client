@@ -19,7 +19,7 @@ app.configure(function(){
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(express.cookieParser());
-	app.use(express.session({ 
+	app.use(express.session({
 		secret: "password",
 		cookie: { secure: true },
 		store: new RedisStore({
@@ -65,12 +65,11 @@ app.listen(3000, function() {
 	console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
 });
 
-
 // Socket.IO
 
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
-	
+
 	//When a user sends a message...
 	socket.on('msg', function(msg) {
 		var current_id = socket.sessid;
@@ -83,7 +82,7 @@ io.sockets.on('connection', function(socket) {
 	});
 
 	// When a user connects to the socket...
-	
+
 	socket.on('user connect', function(id) {
 		if(!users[id]) {
 			console.log("Invalid user");
@@ -100,7 +99,7 @@ io.sockets.on('connection', function(socket) {
 			else users[id]['refreshing'] = false;
 		}
 	});
-	
+
 	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
 		var current_id = socket.sessid;
@@ -109,7 +108,7 @@ io.sockets.on('connection', function(socket) {
 		if(users[current_id]) {
 			var user = users[current_id];
 			users[current_id]['refreshing'] = true; //assume they are refreshing...
-			
+
 			//wait one second, then check if there are 0 sockets...
 			setTimeout(function() {
 				if(users[current_id]) {
@@ -118,24 +117,24 @@ io.sockets.on('connection', function(socket) {
 						delete users[current_id]; //delete the user from the datastore
 						io.sockets.emit('user disconnected', current_username); //tell everyone they disconnected
 					}
-				} 
+				}
 				else {
 					io.sockets.emit('user disconnected', current_username); //tell everyone they disconnected
 				}
 			}, 1000);
 		}
 	});
-	
+
 	socket.on('logout', function() {
 		var current_id = socket.sessid;
 		var current_username = socket.username;
-		if(!users[current_id]) {
+		if(!users[current_id]) { //user not in datastore
 			console.log("Invalid user");
 			socket.disconnect();
 		}
 		else {
-			var sockets = users[current_id]['sockets'];
-			delete users[current_id];
+			var sockets = users[current_id]['sockets']; //get all connected sockets
+			delete users[current_id]; //delete user from datastore
 			for (socket_id in sockets) {
 				if (sockets.hasOwnProperty(socket_id)) {
 					io.sockets.socket(socket_id).emit('logout');
@@ -145,5 +144,4 @@ io.sockets.on('connection', function(socket) {
 		io.sockets.emit('user disconnected', current_username);
 		socket.disconnect();
 	});
-	
 });
