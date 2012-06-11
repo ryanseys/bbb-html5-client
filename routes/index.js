@@ -9,7 +9,7 @@ exports.get_index = function(req, res) {
 };
 
 exports.post_chat = function(req, res) {
-	users[req.sessionID] = { username: req.body.user.name, sockets: { }, refreshing: false, duplicateSession: false }; //sets a relationship between session id & name/sockets
+	users[req.sessionID] = { username: req.body.user.name, meetingID: req.body.meeting.id, sockets: { }, refreshing: false, duplicateSession: false }; //sets a relationship between session id & name/sockets
 	res.cookie('id', req.sessionID); //save the id so socketio can get the username
 	res.redirect('/chat');
 };
