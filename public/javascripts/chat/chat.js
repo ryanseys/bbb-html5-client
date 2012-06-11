@@ -35,7 +35,7 @@ $(function() {
 	//when you hit enter
 	$('#logout').submit(function(e) {
 		e.preventDefault();
-		socket.emit('logout');
+    socket.emit('logout');
 	});
 
 	//when you connect

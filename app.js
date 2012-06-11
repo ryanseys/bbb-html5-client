@@ -9,6 +9,8 @@ var express = require('express')
 	, app = module.exports = express.createServer()
 	, io = require('socket.io').listen(app)
 	, RedisStore = require('connect-redis')(express);
+	//, redis = require("redis")
+	//, client = redis.createClient();
 	
 // Configuration
 
@@ -67,25 +69,37 @@ app.listen(3000, function() {
 
 // Socket.IO
 
+/* 
+  This verifies with the database that the sessionID
+  contained within the connected socket is indeed valid.
+  If the sessionID is not valid, the socket is disconnected
+  and the function returns false.
+  
+  This test is to be used whenever a connected socket requests
+  to make actions against the server i.e. sends a message to the server.
+*/
+function is_valid_connected(socket) {
+	if(!users[socket.sessid]) {
+		socket.disconnect();
+		return false;
+	}
+	else return true;
+};
+
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
 
 	//When a user sends a message...
 	socket.on('msg', function(msg) {
-		var current_id = socket.sessid;
-		var current_username = socket.username;
-		if(!users[current_id]) {
-			console.log("Invalid user");
-			socket.disconnect();
-		}
-		else io.sockets.emit('msg', socket.username, msg);
+	  if(is_valid_connected(socket)) {
+		  io.sockets.emit('msg', socket.username, msg);
+	  }
 	});
 
 	// When a user connects to the socket...
 
 	socket.on('user connect', function(id) {
 		if(!users[id]) {
-			console.log("Invalid user");
 			socket.disconnect();
 		}
 		else {
@@ -105,46 +119,41 @@ io.sockets.on('connection', function(socket) {
 
 	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
-		var current_id = socket.sessid;
-		var current_socket_id = socket.id;
-		var current_username = socket.username;
-		if(users[current_id]) {
-			var user = users[current_id];
-			users[current_id]['refreshing'] = true; //assume they are refreshing...
+		var session_id = socket.sessid;
+		if(users[session_id]) {
+		  var socket_id = socket.id;
+  		var username = socket.username;
+			users[session_id]['refreshing'] = true; //assume they are refreshing...
 
 			//wait one second, then check if there are 0 sockets...
 			setTimeout(function() {
-				if(users[current_id]) {
-					delete users[current_id]['sockets'][current_socket_id]; //socket has been disconnected
-					if(Object.keys(users[current_id]['sockets']).length == 0) {
-						delete users[current_id]; //delete the user from the datastore
-						io.sockets.emit('user disconnected', current_username); //tell everyone they disconnected
+				if(users[session_id]) {
+					delete users[session_id]['sockets'][socket_id]; //socket has been disconnected
+					if(Object.keys(users[session_id]['sockets']).length == 0) {
+						delete users[session_id]; //delete the user from the datastore
+						io.sockets.emit('user disconnected', username); //tell everyone they disconnected
 					}
 				}
 				else {
-					io.sockets.emit('user disconnected', current_username); //tell everyone they disconnected
+					io.sockets.emit('user disconnected', username); //tell everyone they disconnected
 				}
 			}, 1000);
 		}
 	});
 
 	socket.on('logout', function() {
-		var current_id = socket.sessid;
-		var current_username = socket.username;
-		if(!users[current_id]) { //user not in datastore
-			console.log("Invalid user");
-			socket.disconnect();
-		}
-		else {
-			var sockets = users[current_id]['sockets']; //get all connected sockets
-			delete users[current_id]; //delete user from datastore
+	  var username = socket.username;
+		if(is_valid_connected(socket)) {
+		  var session_id = socket.sessid;
+      var sockets = users[session_id]['sockets']; //get all connected sockets
+      delete users[session_id]; //delete user from datastore
 			for (socket_id in sockets) {
-				if (sockets.hasOwnProperty(socket_id)) {
-					io.sockets.socket(socket_id).emit('logout');
+        if (sockets.hasOwnProperty(socket_id)) {
+          io.sockets.socket(socket_id).emit('logout');
 				}
 			}
+			socket.disconnect();
 		}
-		io.sockets.emit('user disconnected', current_username);
-        socket.disconnect();
+		io.sockets.emit('user disconnected', username);
 	});
 });
