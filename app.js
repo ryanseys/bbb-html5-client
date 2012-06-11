@@ -90,10 +90,13 @@ io.sockets.on('connection', function(socket) {
 		}
 		else {
 			socket.sessid = id;
-			socket.username = users[id]['username']; //save the username into the socket data
-			users[id]['sockets'][socket.id] = true; //add socket to list of sockets.
+			//save the username into the socket data
+			socket.username = users[id]['username'];
+			//add socket to list of sockets.
+			users[id]['sockets'][socket.id] = true;
 			if((users[id]['refreshing'] == false) && (users[id]['duplicateSession'] == false)) {
-				users[id]['duplicateSession'] = true; //all of the next sessions created with this id are duplicates
+			   //all of the next sessions created with this id are duplicates
+				users[id]['duplicateSession'] = true; 
 				socket.broadcast.emit('user connect', socket.username);
 			}
 			else users[id]['refreshing'] = false;
@@ -142,6 +145,6 @@ io.sockets.on('connection', function(socket) {
 			}
 		}
 		io.sockets.emit('user disconnected', current_username);
-		socket.disconnect();
+        socket.disconnect();
 	});
 });

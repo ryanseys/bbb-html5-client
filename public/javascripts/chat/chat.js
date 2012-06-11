@@ -14,8 +14,8 @@ $(function() {
 	}
 
 	var PORT = 3000;
-	//var SERVER_IP = 'localhost';
-	var SERVER_IP = '192.168.0.233';
+	var SERVER_IP = 'localhost';
+	//var SERVER_IP = '192.168.0.102';
 	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
 
