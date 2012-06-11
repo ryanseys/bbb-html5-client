@@ -10,7 +10,10 @@ var express = require('express')
 	, io = require('socket.io').listen(app)
 	, RedisStore = require('connect-redis')(express)
 	, redis = require("redis")
-	, client = redis.createClient();
+	, pub = redis.createClient()
+	, sub = redis.createClient();
+	
+	sub.psubscribe('*');
 
 // Configuration
 
@@ -88,12 +91,11 @@ function is_valid_connected(socket) {
 
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
-  var socket_redis = redis.createClient();
   var meetingRoom = "";
 	//When a user sends a message...
 	socket.on('msg', function(msg) {
 	  if(is_valid_connected(socket)) {
-      client.publish(socket.meetingID, JSON.stringify(['msg', socket.username, msg]));
+      pub.publish(meetingRoom, JSON.stringify(['msg', socket.username, msg]));
 	  }
 	});
 
@@ -110,8 +112,7 @@ io.sockets.on('connection', function(socket) {
 			//save the meetingID into the socket data
 			socket.meetingID = meetingRoom = users[id]['meetingID'];
 			socket.join(meetingRoom); //join the socket Room with name of the meetingID
-			socket_redis.subscribe('bbb.html.*'); //redis instance subscribe to all html messages
-			socket_redis.subscribe(socket.meetingID); //redis instance subscribe to meetingID as well
+			console.log("socket.meetingID: " + socket.meetingID);
 			
 			//add socket to list of sockets.
 			users[id]['sockets'][socket.id] = true;
@@ -163,18 +164,11 @@ io.sockets.on('connection', function(socket) {
 		}
 		io.sockets.emit('user disconnected', username);
 	});
-	
-	// Redis Routes
-  socket_redis.on("message", function(channel, message) {
-    var params = JSON.parse(message);
-    socket.emit.apply(socket, params);
-  });
+});
 
-  client.on('message', function(msg) {
-    //do nothing here
-  });
-
-  client.on('disconnect', function() {
-    socket_redis.quit();
-  });
+// Redis Routes
+sub.on("pmessage", function(pattern, channel, message) {
+  var channel_viewers = io.sockets.in(channel);
+  var params = JSON.parse(message);
+  channel_viewers.emit.apply(channel_viewers, params);
 });
