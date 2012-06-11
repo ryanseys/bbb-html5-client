@@ -77,7 +77,7 @@ app.listen(3000, function() {
   contained within the connected socket is indeed valid.
   If the sessionID is not valid, the socket is disconnected
   and the function returns false.
-  
+
   This test is to be used whenever a connected socket requests
   to make actions against the server i.e. sends a message to the server.
 */
@@ -100,7 +100,6 @@ io.sockets.on('connection', function(socket) {
 	});
 
 	// When a user connects to the socket...
-
 	socket.on('user connect', function(id) {
 		if(!users[id]) {
 			socket.disconnect();
@@ -111,15 +110,14 @@ io.sockets.on('connection', function(socket) {
 			socket.username = users[id]['username'];
 			//save the meetingID into the socket data
 			socket.meetingID = meetingRoom = users[id]['meetingID'];
-			socket.join(meetingRoom); //join the socket Room with name of the meetingID
-			console.log("socket.meetingID: " + socket.meetingID);
+			socket.join(socket.meetingID); //join the socket Room with name of the meetingID
 			
 			//add socket to list of sockets.
 			users[id]['sockets'][socket.id] = true;
 			if((users[id]['refreshing'] == false) && (users[id]['duplicateSession'] == false)) {
 			   //all of the next sessions created with this id are duplicates
 				users[id]['duplicateSession'] = true; 
-				socket.broadcast.emit('user connect', socket.username);
+				pub.publish(meetingRoom, JSON.stringify(['user connect', socket.username]));
 			}
 			else users[id]['refreshing'] = false;
 		}
@@ -139,36 +137,42 @@ io.sockets.on('connection', function(socket) {
 					delete users[session_id]['sockets'][socket_id]; //socket has been disconnected
 					if(Object.keys(users[session_id]['sockets']).length == 0) {
 						delete users[session_id]; //delete the user from the datastore
-						io.sockets.emit('user disconnected', username); //tell everyone they disconnected
+						pub.publish(meetingRoom, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
 					}
 				}
 				else {
-					io.sockets.emit('user disconnected', username); //tell everyone they disconnected
+					pub.publish(meetingRoom, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
 				}
 			}, 1000);
 		}
 	});
-
+  
+  // When the user logs out
 	socket.on('logout', function() {
 	  var username = socket.username;
 		if(is_valid_connected(socket)) {
 		  var session_id = socket.sessid;
       var sockets = users[session_id]['sockets']; //get all connected sockets
       delete users[session_id]; //delete user from datastore
+      //send logout message to all associated sockets
 			for (socket_id in sockets) {
         if (sockets.hasOwnProperty(socket_id)) {
           io.sockets.socket(socket_id).emit('logout');
 				}
 			}
+			//disconnect own socket
 			socket.disconnect();
 		}
-		io.sockets.emit('user disconnected', username);
+		//tell everyone you have disconnected
+		pub.publish(meetingRoom, JSON.stringify(['user disconnected', username]));
 	});
 });
 
 // Redis Routes
+
+//When you get a pub sub message
 sub.on("pmessage", function(pattern, channel, message) {
-  var channel_viewers = io.sockets.in(channel);
+  var channel_viewers = io.sockets['in'](channel);
   var params = JSON.parse(message);
   channel_viewers.emit.apply(channel_viewers, params);
 });
