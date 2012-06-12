@@ -16,7 +16,20 @@ $(function() {
 			}
 		}
 	}
-
+	
+  var current_slide = 1;
+  var max_slide = 3;
+  
+  function getNextSlide(curr, max) {
+    if(curr == max) return 1;
+    else return curr+1;
+  }
+  
+  function getPrevSlide(curr, max) {
+    if(curr == 1) return max;
+    else return curr-1;
+  }
+  
 	var PORT = 3000;
 	var SERVER_IP = 'localhost';
 	//var SERVER_IP = '192.168.0.102';
@@ -24,10 +37,11 @@ $(function() {
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
 
 	id = getCookie('id'); //get the session
-
+  
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
 		e.preventDefault();
+		console.log("hi");
 		var msg = $('#chat_input_box').val();
 		if ((msg != '') && (id != '')) {
 			socket.emit('msg', msg, id);
@@ -35,20 +49,33 @@ $(function() {
 		}
 		$('#chat_input_box').focus();
 	});
+	
+	$('#forward_image').submit(function(e) {
+		e.preventDefault();
+		socket.emit('nextslide', current_slide);
+	});
+	
+	$('#backward_image').submit(function(e) {
+		e.preventDefault();
+		socket.emit('prevslide', current_slide);
+	});
 
 	//when you hit enter
 	$('#logout').submit(function(e) {
 		e.preventDefault();
     socket.emit('logout');
 	});
-
+  
 	//when you connect
 	socket.on('connect', function () {
+	  
 		//immediately send a message saying we are connected.
-		socket.emit('user connect', id);
+		socket.emit('user connect');
+		
 		//when you get a new message
 		socket.on('msg', function(name, msg) {
 			$('#chat_messages').append('<div>' + name + ': ' + msg + '</div>');
+		  $('#chat_messages').scrollTop($('#chat_messages').get(0).scrollHeight); //scroll to bottom
 		});
 
 		socket.on('logout', function() {
@@ -80,6 +107,11 @@ $(function() {
 
 		socket.on('disconnect', function() {
 			window.location.replace("./");
+		});
+		
+		socket.on('changeslide', function(slidenum, url) {
+		  current_slide = slidenum;
+		  $('#slide').css('background-image', 'url('+ url +')');
 		});
 	});
 	

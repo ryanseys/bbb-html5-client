@@ -1,18 +1,28 @@
 h1= title
 p Welcome to chat, #{user}!
 
+form(id="logout")
+  input(type="submit", value="Logout")
+br
+br
+
 // External scripts here
 script(src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js")
 script(src="/socket.io/socket.io.js")
 script(src='/javascripts/chat/chat.js') //all socket interactions javascript
 
-form(id="logout")
-  input(type="submit", value="Logout")
-br
-
 div(id="chat_messages")
-
 form(id='chat_input')
   label(id="charcount")= max_chat_length
   input(id="chat_input_box", maxlength="#{max_chat_length}", onKeyUp="countchars(#{max_chat_length})", placeholder="Type and press enter")
   input(id="send_chat", type="submit", value="Send")
+
+div(id="slide")
+div(id='imagecontrols')
+  form(id='backward_image')
+    input(type="submit", value="<<<")
+  form(id='forward_image')
+    input(type="submit", value=">>>")
+
+
+
