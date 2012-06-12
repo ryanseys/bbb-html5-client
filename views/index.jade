@@ -4,7 +4,7 @@ p Please type a username below and click Sign in to start chatting.
 
 script(src='/javascripts/index/index.js') //all index javascript
 
-form(action='chat', method='post', onsubmit='return validateForm("login","user[name]")', name='login')
+form(action='chat', method='post', name='login')
   input(type="text", name="user[name]", placeholder='Enter a username')
-  input(type="text", name="meeting[id]", placeholder="Enter a meeting ID")
+  input(type="text", name="meeting[id]", placeholder="Enter a meesting ID")
   input(type="submit", value='Sign in')

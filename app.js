@@ -82,66 +82,92 @@ app.listen(3000, function() {
   to make actions against the server i.e. sends a message to the server.
 */
 function is_valid_connected(socket) {
-	if(!users[socket.sessid]) {
+	if(!users[socket.handshake.sessionID]) {
 		socket.disconnect();
 		return false;
 	}
 	else return true;
 };
 
+// Used to parse the cookie data.
+function getCookie(cookie_string, c_var) {
+	var i,x,y,ARRcookies=cookie_string.split(";");
+	for (i=0;i<ARRcookies.length;i++) {
+		x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+		y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+		x=x.replace(/^\s+|\s+$/g,"");
+		if (x==c_var) {
+			return unescape(y);
+		}
+	}
+}
+
+io.configure(function () {
+  io.set('authorization', function (handshakeData, callback) {
+    console.log(handshakeData);
+    var id = handshakeData.sessionID = getCookie(handshakeData.headers.cookie, "id");
+    handshakeData.username = users[id]['username'];
+    handshakeData.meetingID = users[id]['meetingID'];
+    callback(null, true); // error first callback style
+  });
+});
+
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
-  var meetingRoom = "";
+
 	//When a user sends a message...
 	socket.on('msg', function(msg) {
 	  if(is_valid_connected(socket)) {
-      pub.publish(meetingRoom, JSON.stringify(['msg', socket.username, msg]));
+	    var username = socket.handshake.username;
+	    var meetingID = socket.handshake.meetingID;
+      pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
 	  }
 	});
 
 	// When a user connects to the socket...
 	socket.on('user connect', function(id) {
-		if(!users[id]) {
-			socket.disconnect();
-		}
-		else {
-			socket.sessid = id;
-			//save the username into the socket data
-			socket.username = users[id]['username'];
-			//save the meetingID into the socket data
-			socket.meetingID = meetingRoom = users[id]['meetingID'];
-			socket.join(socket.meetingID); //join the socket Room with name of the meetingID
-			
-			//add socket to list of sockets.
-			users[id]['sockets'][socket.id] = true;
-			if((users[id]['refreshing'] == false) && (users[id]['duplicateSession'] == false)) {
-			   //all of the next sessions created with this id are duplicates
-				users[id]['duplicateSession'] = true; 
-				pub.publish(meetingRoom, JSON.stringify(['user connect', socket.username]));
+		var sessionID = socket.handshake.sessionID;
+		if(!users[sessionID]) {
+      socket.disconnect();
+    }
+    else {
+  		var meetingID = socket.handshake.meetingID;
+  		var socketID = socket.id;
+    	var username = socket.handshake.username;
+    	
+      socket.join(meetingID); //join the socket Room with value of the meetingID
+      socket.join(sessionID); //join the socket Room with value of the sessionID
+      //add socket to list of sockets.
+      users[sessionID]['sockets'][socketID] = true;
+      if((users[sessionID]['refreshing'] == false) && (users[sessionID]['duplicateSession'] == false)) {
+        //all of the next sessions created with this id are duplicates
+        users[sessionID]['duplicateSession'] = true; 
+        pub.publish(meetingID, JSON.stringify(['user connect', username]));
 			}
-			else users[id]['refreshing'] = false;
+			else users[sessionID]['refreshing'] = false;
 		}
 	});
 
 	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
-		var session_id = socket.sessid;
-		if(users[session_id]) {
-		  var socket_id = socket.id;
-  		var username = socket.username;
-			users[session_id]['refreshing'] = true; //assume they are refreshing...
-
+		var sessionID = socket.handshake.sessionID;
+		if(users[sessionID]) {
+		  var meetingID = socket.handshake.meetingID;
+  		var socketID = socket.id;
+  		var username = socket.handshake.username;
+  		
+			users[sessionID]['refreshing'] = true; //assume they are refreshing...
 			//wait one second, then check if there are 0 sockets...
 			setTimeout(function() {
-				if(users[session_id]) {
-					delete users[session_id]['sockets'][socket_id]; //socket has been disconnected
-					if(Object.keys(users[session_id]['sockets']).length == 0) {
-						delete users[session_id]; //delete the user from the datastore
-						pub.publish(meetingRoom, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
+				if(users[sessionID]) {
+					delete users[sessionID]['sockets'][sessionID]; //socket has been disconnected
+					if(Object.keys(users[sessionID]['sockets']).length == 0) {
+						delete users[sessionID]; //delete the user from the datastore
+						pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
 					}
 				}
 				else {
-					pub.publish(meetingRoom, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
+					pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
 				}
 			}, 1000);
 		}
@@ -149,22 +175,18 @@ io.sockets.on('connection', function(socket) {
   
   // When the user logs out
 	socket.on('logout', function() {
-	  var username = socket.username;
 		if(is_valid_connected(socket)) {
-		  var session_id = socket.sessid;
-      var sockets = users[session_id]['sockets']; //get all connected sockets
-      delete users[session_id]; //delete user from datastore
-      //send logout message to all associated sockets
-			for (socket_id in sockets) {
-        if (sockets.hasOwnProperty(socket_id)) {
-          io.sockets.socket(socket_id).emit('logout');
-				}
-			}
-			//disconnect own socket
-			socket.disconnect();
+		  //initialize local variables
+		  var sessionID = socket.handshake.sessionID;
+		  var meetingID = socket.handshake.meetingID;
+		  var username = socket.handshake.username;		  
+      var sockets = users[sessionID]['sockets']; //get all connected sockets
+      
+      delete users[sessionID]; //delete user from datastore
+			pub.publish(sessionID, JSON.stringify(['logout'])); //send to all users on same session (all tabs)
+  		socket.disconnect(); //disconnect own socket
 		}
-		//tell everyone you have disconnected
-		pub.publish(meetingRoom, JSON.stringify(['user disconnected', username]));
+		pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone you have disconnected
 	});
 });
 
