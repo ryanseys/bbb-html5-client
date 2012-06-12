@@ -1,3 +1,7 @@
+function countchars(max) {
+  $('#charcount').text(max - $('#chat_input_box').val().length);
+}
+
 $(function() {
 
 	//used to parse the cookie data.
@@ -78,4 +82,8 @@ $(function() {
 			window.location.replace("./");
 		});
 	});
+	
+	socket.on('error', function (reason) {
+    console.error('Unable to connect Socket.IO', reason);
+  });
 });

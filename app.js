@@ -1,8 +1,12 @@
 /**
  * Module dependencies.
  */
-
+//default global variables
 users = { }; //global variable for (temporary) datastore
+max_chat_length = 140;
+max_username_length = 30;
+max_meetingid_length = 10;
+
 
 var express = require('express')
 	, routes = require('./routes')
@@ -104,44 +108,53 @@ function getCookie(cookie_string, c_var) {
 
 io.configure(function () {
   io.set('authorization', function (handshakeData, callback) {
-    console.log(handshakeData);
+    //console.log(handshakeData);
     var id = handshakeData.sessionID = getCookie(handshakeData.headers.cookie, "id");
-    handshakeData.username = users[id]['username'];
-    handshakeData.meetingID = users[id]['meetingID'];
-    callback(null, true); // error first callback style
+    if(!users[id]) {
+      console.log("Invalid sessionID");
+      callback(null, false); //failed authorization
+    }
+    else {
+      handshakeData.username = users[id]['username'];
+      handshakeData.meetingID = users[id]['meetingID'];
+      callback(null, true); // error first callback style
+    }
   });
 });
 
 // When someone connects to the websocket.
 io.sockets.on('connection', function(socket) {
-
 	//When a user sends a message...
 	socket.on('msg', function(msg) {
 	  if(is_valid_connected(socket)) {
-	    var username = socket.handshake.username;
-	    var meetingID = socket.handshake.meetingID;
-      pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
+	    if(msg.length > max_chat_length) {
+  	    pub.publish(socket.handshake.sessionID, JSON.stringify(['msg', "System", "Message too long."]));
+  	  }
+  	  else {
+	      var username = socket.handshake.username;
+  	    var meetingID = socket.handshake.meetingID;
+        pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
+      }
 	  }
 	});
 
 	// When a user connects to the socket...
-	socket.on('user connect', function(id) {
-		var sessionID = socket.handshake.sessionID;
-		if(!users[sessionID]) {
-      socket.disconnect();
-    }
-    else {
-  		var meetingID = socket.handshake.meetingID;
-  		var socketID = socket.id;
-    	var username = socket.handshake.username;
+	socket.on('user connect', function() {
+		if(is_valid_connected(socket)) {
+		  var handshake = socket.handshake;
+  		var sessionID = handshake.sessionID;
+  		var meetingID = handshake.meetingID;
+    	var username = handshake.username;
+    	var socketID = socket.id;
     	
       socket.join(meetingID); //join the socket Room with value of the meetingID
       socket.join(sessionID); //join the socket Room with value of the sessionID
+      
       //add socket to list of sockets.
       users[sessionID]['sockets'][socketID] = true;
       if((users[sessionID]['refreshing'] == false) && (users[sessionID]['duplicateSession'] == false)) {
-        //all of the next sessions created with this id are duplicates
-        users[sessionID]['duplicateSession'] = true; 
+        //all of the next sessions created with this sessionID are duplicates
+        users[sessionID]['duplicateSession'] = true;
         pub.publish(meetingID, JSON.stringify(['user connect', username]));
 			}
 			else users[sessionID]['refreshing'] = false;
@@ -150,11 +163,12 @@ io.sockets.on('connection', function(socket) {
 
 	// When a user disconnects from the socket...
 	socket.on('disconnect', function () {
-		var sessionID = socket.handshake.sessionID;
-		if(users[sessionID]) {
-		  var meetingID = socket.handshake.meetingID;
+	  var handshake = socket.handshake;
+		var sessionID = handshake.sessionID;
+		if(users[sessionID]) { //socket is gone, so check database
+		  var meetingID = handshake.meetingID;
+		  var username = handshake.username;
   		var socketID = socket.id;
-  		var username = socket.handshake.username;
   		
 			users[sessionID]['refreshing'] = true; //assume they are refreshing...
 			//wait one second, then check if there are 0 sockets...
@@ -177,10 +191,10 @@ io.sockets.on('connection', function(socket) {
 	socket.on('logout', function() {
 		if(is_valid_connected(socket)) {
 		  //initialize local variables
-		  var sessionID = socket.handshake.sessionID;
-		  var meetingID = socket.handshake.meetingID;
-		  var username = socket.handshake.username;		  
-      var sockets = users[sessionID]['sockets']; //get all connected sockets
+		  var handshake = socket.handshake;
+		  var sessionID = handshake.sessionID;
+		  var meetingID = handshake.meetingID;
+		  var username = handshake.username;
       
       delete users[sessionID]; //delete user from datastore
 			pub.publish(sessionID, JSON.stringify(['logout'])); //send to all users on same session (all tabs)
@@ -192,7 +206,7 @@ io.sockets.on('connection', function(socket) {
 
 // Redis Routes
 
-//When you get a pub sub message
+//When sub gets a message from pub
 sub.on("pmessage", function(pattern, channel, message) {
   var channel_viewers = io.sockets['in'](channel);
   var params = JSON.parse(message);

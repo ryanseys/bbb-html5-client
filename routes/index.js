@@ -1,7 +1,7 @@
 // Routes
 exports.get_index = function(req, res) {
 	if(!users[req.cookies['id']]) {
-		res.render('index', { title: 'BigBlueButton HTML5 Client' });
+		res.render('index', { title: 'BigBlueButton HTML5 Client', max_u: max_username_length, max_mid: max_meetingid_length });
 	}
 	else {
 		res.redirect('/chat');
@@ -9,8 +9,10 @@ exports.get_index = function(req, res) {
 };
 
 exports.post_chat = function(req, res) {
-  if(req.body.user.name && req.body.meeting.id) {
-	  users[req.sessionID] = { username: req.body.user.name, meetingID: req.body.meeting.id, sockets: { }, refreshing: false, duplicateSession: false }; //sets a relationship between session id & name/sockets
+  var username = req.body.user.name;
+  var meetingid = req.body.meeting.id;
+  if((username) && (meetingid) && (username.length < max_username_length) && (meetingid < max_meetingid_length)) {
+	  users[req.sessionID] = { username: username, meetingID: meetingid, sockets: { }, refreshing: false, duplicateSession: false }; //sets a relationship between session id & name/sockets
 	  res.cookie('id', req.sessionID); //save the id so socketio can get the username
 	  res.redirect('/chat');
   }
@@ -24,7 +26,7 @@ exports.logout = function(req, res) {
 
 exports.get_chat = function(req, res) {
 	//requiresLogin before this verifies that a user is logged in...
-	res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: users[req.cookies['id']]['username'] });
+	res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: users[req.cookies['id']]['username'], max_chat_length: max_chat_length });
 };
 
 exports.error404 = function(req, res) {

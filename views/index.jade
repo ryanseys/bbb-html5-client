@@ -1,10 +1,9 @@
-
 h1= title
 p Please type a username below and click Sign in to start chatting.
 
 script(src='/javascripts/index/index.js') //all index javascript
 
 form(action='chat', method='post', name='login')
-  input(type="text", name="user[name]", placeholder='Enter a username')
-  input(type="text", name="meeting[id]", placeholder="Enter a meesting ID")
+  input(type="text", maxlength="#{max_u}", name="user[name]", placeholder='Enter a username')
+  input(type="text", maxlength="#{max_mid}", name="meeting[id]", placeholder="Enter a meesting ID")
   input(type="submit", value='Sign in')

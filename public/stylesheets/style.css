@@ -13,15 +13,21 @@ a {
     width: 300px;
     height: 400px;
     border: 1px solid red;
-	overflow:scroll;
-}
-
-#chat_input {
-	clear:both;
-	display: block;
-	float: right;
+	  overflow:scroll;
+	  word-wrap: break-word;
 }
 
 #chat_input_box {
-	width: 200px;
+  width: 250px;
 }
+
+#chat_input {
+  clear: both;
+  display: block;
+  float: right;
+}
+
+#send_chat {
+  float:right;
+}
+
