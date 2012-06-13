@@ -14,18 +14,41 @@ var express = require('express')
 	, socketroutes = require('./routes/socketio')
 	, app = module.exports = express.createServer()
 	, io = require('socket.io').listen(app)
-	, RedisStore = require('connect-redis')(express)
-	, redis = require('redis');
+	, RedisStore = require('connect-redis')(express);
+	
+	
+	redis = require('redis');
+	
+	gfunc = {
+      isValidSession: function(sessionID, callback) {
+        store.sismember("users", "user:" + sessionID, function(err, reply) {
+          callback(reply);
+        });
+      },
+
+      getUserProperties: function(sessionID, callback) {
+        store.hgetall("user:" + sessionID, function(err, reply) {
+          callback(reply);
+        });
+      },
+      
+      getUserProperty: function(sessionID, property, callback) {
+        store.hget("user:" + sessionID, property, function(err, reply) { 
+          callback(reply);
+        });
+      }
+  };
 	
 	//global variables
 	sanitizer = require('sanitizer');
+	store = redis.createClient();
+	store.flushdb();
 	pub = redis.createClient();
 	sub = redis.createClient();
 	
   sub.psubscribe.apply(sub, subscriptions);
   
   maxImage = 3;
-  
 
 // Configuration
 
@@ -61,11 +84,14 @@ app.configure('production', function(){
 // If a page requires authentication to view...
 function requiresLogin(req, res, next) {
 	//check that they have a cookie with valid session id
-	if(users[req.cookies['id']]) {
-		next();
-	} else {
-		res.redirect('/');
-	}
+	gfunc.isValidSession(req.cookies['id'], function(reply) {
+	  if(reply) {
+  		next();
+  	} else {
+  		res.redirect('/');
+  	}
+	});
+	
 }
 
 // Routes (see /routes/index.js)
@@ -111,15 +137,21 @@ io.configure(function () {
   io.set('authorization', function (handshakeData, callback) {
     //console.log(handshakeData);
     var id = handshakeData.sessionID = getCookie(handshakeData.headers.cookie, "id");
-    if(!users[id]) {
-      console.log("Invalid sessionID");
-      callback(null, false); //failed authorization
-    }
-    else {
-      handshakeData.username = users[id]['username'];
-      handshakeData.meetingID = users[id]['meetingID'];
-      callback(null, true); // error first callback style
-    }
+    gfunc.isValidSession(id, function(reply) {
+      console.log(reply);
+      if(!reply) {
+        console.log("Invalid sessionID");
+        callback(null, false); //failed authorization
+      }
+      else {
+        gfunc.getUserProperties(id, function (reply) {
+          console.log(reply);
+          handshakeData.username = reply.username;
+          handshakeData.meetingID = reply.meetingID;
+          callback(null, true); // error first callback style
+        });
+      }
+    });
   });
 });
 
