@@ -3,19 +3,6 @@ function countchars(max) {
 }
 
 $(function() {
-
-	//used to parse the cookie data.
-	function getCookie(c_name) {
-		var i,x,y,ARRcookies=document.cookie.split(";");
-		for (i=0;i<ARRcookies.length;i++) {
-			x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
-			y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
-			x=x.replace(/^\s+|\s+$/g,"");
-			if (x==c_name) {
-				return unescape(y);
-			}
-		}
-	}
 	
   var current_slide = 1;
   var max_slide = 3;
@@ -32,19 +19,16 @@ $(function() {
   
 	var PORT = 3000;
 	var SERVER_IP = 'localhost';
-	//var SERVER_IP = '192.168.0.102';
+	//var SERVER_IP = '192.168.0.199';
 	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
-
-	id = getCookie('id'); //get the session
   
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
 		e.preventDefault();
-		console.log("hi");
 		var msg = $('#chat_input_box').val();
-		if ((msg != '') && (id != '')) {
-			socket.emit('msg', msg, id);
+		if (msg != '') {
+			socket.emit('msg', msg);
 			$('#chat_input_box').val('');
 		}
 		$('#chat_input_box').focus();
@@ -86,6 +70,14 @@ $(function() {
 		//when a user connects
 		socket.on('user connect', function(name) {
 			$('#chat_messages').append('<div><b>' + name + ' connected! </b></div>');
+		});
+		
+		// When the user list needs an update
+		socket.on('user list change', function (names) {
+		  $('#current_users').html(''); //clear it first
+		  for (var i = names.length - 1; i >= 0; i--){
+		    $('#current_users').append('<div><b>' + names[i] + '</b></div>');
+		  };
 		});
 
 		//when a user disconnects

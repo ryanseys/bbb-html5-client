@@ -1,40 +1,59 @@
-/**
- * Module dependencies.
- */
+
 //default global variables
-users = { }; //global variable for (temporary) datastore
 max_chat_length = 140;
 max_username_length = 30;
 max_meetingid_length = 10;
+maxImage = 3;
+subscriptions = ['*'];
 
-subscriptions = ['bbb.meetingid.chat.*', 'bbb.meetingid.slide.*', '*'];
-
+// Module dependencies
 var express = require('express')
 	, routes = require('./routes')
 	, socketroutes = require('./routes/socketio')
 	, app = module.exports = express.createServer()
 	, io = require('socket.io').listen(app)
-	, RedisStore = require('connect-redis')(express);
-	
-	
-	redis = require('redis');
+	, RedisStore = require('connect-redis')(express)
+	, redis = require('redis');
 	
 	gfunc = {
+	    // Checks the Redis datastore whether the session is valid
       isValidSession: function(sessionID, callback) {
-        store.sismember("users", "user:" + sessionID, function(err, reply) {
-          callback(reply);
-        });
-      },
-
-      getUserProperties: function(sessionID, callback) {
-        store.hgetall("user:" + sessionID, function(err, reply) {
-          callback(reply);
+        store.sismember("users", sessionID, function(err, isValid) {
+          callback(isValid);
         });
       },
       
+      // Gets all the properties associated with a specific user (sessionID)
+      getUserProperties: function(sessionID, callback) {
+        store.hgetall(sessionID, function(err, properties) {
+          callback(properties);
+        });
+      },
+      
+      // Gets a single property from a specific user
       getUserProperty: function(sessionID, property, callback) {
-        store.hget("user:" + sessionID, property, function(err, reply) { 
-          callback(reply);
+        store.hget(sessionID, property, function(err, prop) { 
+          callback(prop);
+        });
+      },
+      
+      // Get all users and their data in an array
+      getUsers: function (meetingid, callback) {
+        users = [];
+        usercount = 0;
+        usersdone = 0;
+
+        store.smembers("users", function (err, userids) {
+          usercount = userids.length;
+          for (var i = usercount - 1; i >= 0; i--){
+            store.hgetall(userids[i], function (err, props) {
+              users.push(props);
+              usersdone++;
+              if (usercount == usersdone) {
+                callback(users);
+              }
+            });
+          };
         });
       }
   };
@@ -47,8 +66,6 @@ var express = require('express')
 	sub = redis.createClient();
 	
   sub.psubscribe.apply(sub, subscriptions);
-  
-  maxImage = 3;
 
 // Configuration
 
@@ -74,7 +91,6 @@ app.configure(function(){
 
 app.configure('development', function(){
 	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-	
 });
 
 app.configure('production', function(){
@@ -84,14 +100,13 @@ app.configure('production', function(){
 // If a page requires authentication to view...
 function requiresLogin(req, res, next) {
 	//check that they have a cookie with valid session id
-	gfunc.isValidSession(req.cookies['id'], function(reply) {
-	  if(reply) {
+	gfunc.isValidSession(req.cookies['id'], function(isValid) {
+	  if(isValid) {
   		next();
   	} else {
   		res.redirect('/');
   	}
 	});
-	
 }
 
 // Routes (see /routes/index.js)
@@ -133,22 +148,21 @@ function getCookie(cookie_string, c_var) {
 	}
 }
 
+// Authorize a session before it given access to connect to SocketIO
 io.configure(function () {
   io.set('authorization', function (handshakeData, callback) {
-    //console.log(handshakeData);
-    var id = handshakeData.sessionID = getCookie(handshakeData.headers.cookie, "id");
-    gfunc.isValidSession(id, function(reply) {
-      console.log(reply);
-      if(!reply) {
+    var id = getCookie(handshakeData.headers.cookie, "id");
+    gfunc.isValidSession(id, function(isValid) {
+      if(!isValid) {
         console.log("Invalid sessionID");
         callback(null, false); //failed authorization
       }
       else {
-        gfunc.getUserProperties(id, function (reply) {
-          console.log(reply);
-          handshakeData.username = reply.username;
-          handshakeData.meetingID = reply.meetingID;
-          callback(null, true); // error first callback style
+        gfunc.getUserProperties(id, function (properties) {
+          handshakeData.sessionID = id;
+          handshakeData.username = properties.username;
+          handshakeData.meetingID = properties.meetingID;
+          callback(null, true); // good authorization
         });
       }
     });
@@ -156,13 +170,12 @@ io.configure(function () {
 });
 
 // When someone connects to the websocket.
-io.sockets.on('connection', socketroutes.onconnection);
+io.sockets.on('connection', socketroutes.SocketOnConnection);
 
 // Redis Routes
 
 //When sub gets a message from pub
 sub.on("pmessage", function(pattern, channel, message) {
-  console.log(pattern);
   var channel_viewers = io.sockets['in'](channel);
   var params = JSON.parse(message);
   channel_viewers.emit.apply(channel_viewers, params);

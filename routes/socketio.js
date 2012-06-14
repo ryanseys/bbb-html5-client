@@ -1,27 +1,30 @@
-function is_valid_connected(socket, callback) {
-	gfunc.isValidSession(socket.handshake.sessionID, function (isValid) {
-	  if (isValid) {
-	    callback(true);
-  	}
-  	else {
-  	  socket.disconnect();
-  		callback(false);
-  	}
-	});
-};
+// Publish usernames to all the sockets
+function publishUsernames(meetingID) {
+  var usernames = [];
+  gfunc.getUsers(meetingID, function (users) {
+      for (var i = users.length - 1; i >= 0; i--){
+        usernames.push(users[i].username);
+      };
+      pub.publish(meetingID, JSON.stringify(['user list change', usernames]));
+  });
+}
 
-exports.onconnection = function(socket) {
+// All socket IO events that can be emitted by the client
+exports.SocketOnConnection = function(socket) {
+	
 	//When a user sends a message...
 	socket.on('msg', function(msg) {
 	  msg = sanitizer.escape(msg);
-	  is_valid_connected(socket, function (reply) {
+	  var handshake = socket.handshake;
+	  var sessionID = handshake.sessionID;
+	  gfunc.isValidSession(sessionID, function (reply) {
 	    if(reply) {
 	      if(msg.length > max_chat_length) {
-    	    pub.publish(socket.handshake.sessionID, JSON.stringify(['msg', "System", "Message too long."]));
+    	    pub.publish(sessionID, JSON.stringify(['msg', "System", "Message too long."]));
     	  }
     	  else {
-          var username = socket.handshake.username;
-    	    var meetingID = socket.handshake.meetingID;
+          var username = handshake.username;
+    	    var meetingID = handshake.meetingID;
           pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
         }
 	    }
@@ -30,10 +33,10 @@ exports.onconnection = function(socket) {
 
 	// When a user connects to the socket...
 	socket.on('user connect', function() {
-	  is_valid_connected(socket, function (reply) {
+	  var handshake = socket.handshake;
+	  var sessionID = handshake.sessionID;
+	  gfunc.isValidSession(sessionID, function (reply) {
 		  if(reply) {
-  		  var handshake = socket.handshake;
-    		var sessionID = handshake.sessionID;
     		var meetingID = handshake.meetingID;
       	var username = handshake.username;
       	var socketID = socket.id;
@@ -45,13 +48,14 @@ exports.onconnection = function(socket) {
         gfunc.getUserProperties(sessionID, function(properties) {
           var numOfSockets = parseInt(properties.sockets, 10);
           numOfSockets+=1;
-          store.hset('user:' + sessionID, 'sockets', numOfSockets);
+          store.hset(sessionID, 'sockets', numOfSockets);
           if ((properties.refreshing == 'false') && (properties.dupSess == 'false')) {
             //all of the next sessions created with this sessionID are duplicates
-            store.hset("user:" + sessionID, "dupSess", true);
+            store.hset(sessionID, "dupSess", true);
             pub.publish(meetingID, JSON.stringify(['user connect', username]));
+            publishUsernames(meetingID);
     			}
-    			else store.hset("user:" + sessionID, "refreshing", false);
+    			else store.hset(sessionID, "refreshing", false);
     		});
   		}
   	});
@@ -61,67 +65,73 @@ exports.onconnection = function(socket) {
 	socket.on('disconnect', function () {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
+		//check if user is still in database
 		gfunc.isValidSession(sessionID, function (isValid) {
-		  if(isValid) { //socket is gone, so check database
+		  if(isValid) { 
   		  var meetingID = handshake.meetingID;
   		  var username = handshake.username;
     		var socketID = socket.id;
 
-  			store.hset("user:" + sessionID, "refreshing", true, function(reply) {
+  			store.hset(sessionID, "refreshing", true, function(reply) {
   			  setTimeout(function() {
+  			    //in one second, check again...
     			  gfunc.isValidSession(sessionID, function (isValid) {
     				  if(isValid) {
     				    gfunc.getUserProperties(sessionID, function(properties) {
                   var numOfSockets = parseInt(properties.sockets, 10);
                   numOfSockets-=1;
       					  if(numOfSockets == 0) {
-      					    store.srem('users', 'user:' + sessionID, function(num_deleted) {
-      					      store.del('user:' + sessionID, function(reply) {
+      					    store.srem('users', sessionID, function(num_deleted) {
+      					      store.del(sessionID, function(reply) {
           						  pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
+          						  publishUsernames(meetingID);
       					      });
       					    });
         					}
-        					else store.hset("user:" + sessionID, "sockets", numOfSockets);
+        					else store.hset(sessionID, "sockets", numOfSockets);
       				  });
     				  }
       				else {
       					pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
+      					publishUsernames(meetingID);
       				}
     				});
     			}, 1000);
-  			}); //assume they are refreshing...
-  			//wait one second, then check if there are 0 sockets...
+  			}); 
   		}
 		});
 	});
   
   // When the user logs out
 	socket.on('logout', function() {
-	  is_valid_connected(socket, function (reply) {
-	    if(reply) {
+	  var handshake = socket.handshake;
+		var sessionID = handshake.sessionID;
+	  gfunc.isValidSession(sessionID, function (isValid) {
+	    if(isValid) {
   		  //initialize local variables
-  		  var handshake = socket.handshake;
-  		  var sessionID = handshake.sessionID;
   		  var meetingID = handshake.meetingID;
   		  var username = handshake.username;
-  		  store.srem("users", "user:" + sessionID, function(num_deleted) {
-  		    if(reply) {
-  		      store.del("user:" + sessionID, function(reply) {
-              pub.publish(sessionID, JSON.stringify(['logout'])); //send to all users on same session (all tabs)
-            	socket.disconnect(); //disconnect own socket      
-    		    });
-  		    }
+  		  //remove the user from the list of users
+  		  store.srem("users", sessionID, function(numDeleted) {
+  		    //delete key from database
+		      store.del(sessionID, function(reply) {
+            pub.publish(sessionID, JSON.stringify(['logout'])); //send to all users on same session (all tabs)
+          	socket.disconnect(); //disconnect own socket      
+  		    });
   		  });
-        
   		}
   		pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone you have disconnected
+  		publishUsernames(meetingID);
 	  });
 	});
 	
+	// A user clicks to change to previous slide
 	socket.on('prevslide', function(slide_num){
-	  is_valid_connected(socket, function (reply) {
-	    if(reply) {
-  	    var meetingID = socket.handshake.meetingID;
+	  var handshake = socket.handshake;
+		var sessionID = handshake.sessionID;
+	  gfunc.isValidSession(sessionID, function (isValid) {
+	    if(isValid) {
+  	    var meetingID = handshake.meetingID;
   	    var num;
   	    if(slide_num > 0 && slide_num <= maxImage) {
   	      if(slide_num == 1) num = maxImage;
@@ -132,10 +142,13 @@ exports.onconnection = function(socket) {
     });
 	});
 	
+	// A user clicks to change to next slide
 	socket.on('nextslide', function(slide_num){
-	  is_valid_connected(socket, function (reply) {
-	    if(reply) {
-	      var meetingID = socket.handshake.meetingID;
+	  var handshake = socket.handshake;
+		var sessionID = handshake.sessionID;
+	  gfunc.isValidSession(sessionID, function (isValid) {
+	    if(isValid) {
+	      var meetingID = handshake.meetingID;
   	    var num;
   	    if(slide_num > 0 && slide_num <= maxImage) {
   	      if(slide_num == maxImage) num = 1;

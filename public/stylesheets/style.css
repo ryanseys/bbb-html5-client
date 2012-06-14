@@ -21,17 +21,35 @@ a {
 }
 
 #slide {
-  width: 800px;
-  height: 600px;
+  width: 600px;
+  height: 400px;
   border: 1px solid red;
   overflow: auto; /* so they don't overlap */
   background-image: url('/images/presentation/test1.png');
+}
+
+#lol {
+  float:left;
 }
 
 #chat_input {
   clear: both;
   display: block;
   float: right;
+}
+
+#listUsers {
+  float: right;
+}
+
+#current_users {
+  width: 200px;
+  height: 300px;
+  border: 1px solid red;
+}
+
+#haha {
+  float:right;
 }
 
 #logout {
