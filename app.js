@@ -14,6 +14,8 @@ var express = require('express')
 	, io = require('socket.io').listen(app)
 	, RedisStore = require('connect-redis')(express)
 	, redis = require('redis');
+	format = require('util').format;
+	fs = require('fs');
 	
 	gfunc = {
 	    // Checks the Redis datastore whether the session is valid
@@ -114,6 +116,7 @@ app.get('/', routes.get_index);
 app.post('/chat',  routes.post_chat);
 app.post('/logout', requiresLogin, routes.logout);
 app.get('/chat', requiresLogin, routes.get_chat);
+app.post('/', routes.post_index);
 
 // --- 404 (keep as last route) --- //
 app.get('*', routes.error404);

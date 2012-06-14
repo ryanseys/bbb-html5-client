@@ -13,7 +13,7 @@ exports.get_index = function(req, res) {
 };
 
 // When first logging into the chat
-exports.post_chat = function(req, res) {
+exports.post_index = function(req, res) {
   var username = sanitizer.escape(req.body.user.name);
   var meetingid = sanitizer.escape(req.body.meeting.id);
   if((username) && (meetingid) && (username.length <= max_username_length) && (meetingid.length <= max_meetingid_length)) {
@@ -37,6 +37,13 @@ exports.get_chat = function(req, res) {
 	gfunc.getUserProperty(req.cookies['id'], "username", function(username) {
 	  res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: username, max_chat_length: max_chat_length });
 	});
+};
+
+// Demo image upload for first image
+exports.post_chat = function(req, res, next) {
+  fs.rename(req.files.image.path, __dirname + "/../public/images/presentation/test1.png", function (status) {
+    res.redirect('back');
+  });
 };
 
 // Any other page that we have not defined yet.

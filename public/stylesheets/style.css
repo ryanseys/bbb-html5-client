@@ -28,7 +28,7 @@ a {
   background-image: url('/images/presentation/test1.png');
 }
 
-#lol {
+#slideAndControls {
   float:left;
 }
 
@@ -36,6 +36,10 @@ a {
   clear: both;
   display: block;
   float: right;
+}
+
+#uploadcontrols {
+  
 }
 
 #listUsers {
@@ -48,7 +52,7 @@ a {
   border: 1px solid red;
 }
 
-#haha {
+#ChatAndControls {
   float:right;
 }
 
