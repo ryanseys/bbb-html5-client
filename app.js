@@ -9,16 +9,19 @@ subscriptions = ['*'];
 // Module dependencies
 var express = require('express')
 	, routes = require('./routes')
-	, socketroutes = require('./routes/socketio')
+	
 	, app = module.exports = express.createServer()
 	, io = require('socket.io').listen(app)
 	, RedisStore = require('connect-redis')(express)
 	, redis = require('redis');
+	
+	hat = require('hat');
 	format = require('util').format;
 	fs = require('fs');
 	
 	//global variables
 	redisAction = require('./redis');
+	socketAction = require('./routes/socketio');
 	sanitizer = require('sanitizer');
 	store = redis.createClient();
 	store.flushdb();
@@ -132,7 +135,7 @@ io.configure(function () {
 });
 
 // When someone connects to the websocket.
-io.sockets.on('connection', socketroutes.SocketOnConnection);
+io.sockets.on('connection', socketAction.SocketOnConnection);
 
 // Redis Routes
 

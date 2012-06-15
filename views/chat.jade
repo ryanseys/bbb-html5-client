@@ -12,6 +12,7 @@ script(src="/socket.io/socket.io.js")
 script(src='/javascripts/chat/chat.js') //all socket interactions javascript
 
 div(id="ChatAndControls")
+  div(id="chat_title") <b>Chat messages</b>
   div(id="chat_messages")
   form(id='chat_input')
     label(id="charcount")= max_chat_length

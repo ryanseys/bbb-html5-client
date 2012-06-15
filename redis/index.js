@@ -14,6 +14,14 @@ exports.getUserString = function(meetingID, sessionID) {
   return "meeting-" + meetingID + "-user-" + sessionID;
 };
 
+exports.getMessagesString = function(meetingID) {
+  return "meeting-" + meetingID + "-messages";
+};
+
+exports.getMessageString = function(meetingID, messageID) {
+  return "meeting-" + meetingID + "-message-" + messageID;
+};
+
 // Checks the Redis datastore whether the session is valid
 exports.isValidSession = function(meetingID, sessionID, callback) {
   store.sismember(redisAction.getUsersString(meetingID), sessionID, function(err, isValid) {

@@ -1,13 +1,14 @@
 // Publish usernames to all the sockets
-function publishUsernames(meetingID) {
+exports.publishUsernames = function(meetingID, sessionID) {
   var usernames = [];
   redisAction.getUsers(meetingID, function (users) {
       for (var i = users.length - 1; i >= 0; i--){
         usernames.push(users[i].username);
       };
-      pub.publish(meetingID, JSON.stringify(['user list change', usernames]));
+      var receivers = sessionID != undefined ? sessionID : meetingID;
+      pub.publish(receivers, JSON.stringify(['user list change', usernames]));
   });
-}
+};
 
 // All socket IO events that can be emitted by the client
 exports.SocketOnConnection = function(socket) {
@@ -26,6 +27,9 @@ exports.SocketOnConnection = function(socket) {
     	  else {
           var username = handshake.username;
           pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
+          var messageID = hat(); //get a randomly generated id for the message
+          store.rpush(redisAction.getMessagesString(meetingID), messageID); //store the messageID in the list of messages
+          store.hmset(redisAction.getMessageString(meetingID, messageID), "message", msg, "username", username);
         }
 	    }
 	  });
@@ -43,7 +47,7 @@ exports.SocketOnConnection = function(socket) {
     	
         socket.join(meetingID); //join the socket Room with value of the meetingID
         socket.join(sessionID); //join the socket Room with value of the sessionID
-      
+        
         //add socket to list of sockets.
         redisAction.getUserProperties(meetingID, sessionID, function(properties) {
           var numOfSockets = parseInt(properties.sockets, 10);
@@ -53,9 +57,12 @@ exports.SocketOnConnection = function(socket) {
             //all of the next sessions created with this sessionID are duplicates
             store.hset(redisAction.getUserString(meetingID, sessionID), "dupSess", true);
             pub.publish(meetingID, JSON.stringify(['user connect', username]));
-            publishUsernames(meetingID);
+            socketAction.publishUsernames(meetingID);
     			}
-    			else store.hset(redisAction.getUserString(meetingID, sessionID), "refreshing", false);
+    			else {
+    			  store.hset(redisAction.getUserString(meetingID, sessionID), "refreshing", false);
+            socketAction.publishUsernames(meetingID, sessionID);
+  			  }
     		});
   		}
   	});
@@ -84,7 +91,7 @@ exports.SocketOnConnection = function(socket) {
       					    store.srem(redisAction.getUsersString(meetingID), sessionID, function(num_deleted) {
       					      store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
           						  pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
-          						  publishUsernames(meetingID);
+          						  socketAction.publishUsernames(meetingID);
       					      });
       					    });
         					}
@@ -93,7 +100,7 @@ exports.SocketOnConnection = function(socket) {
     				  }
       				else {
       					pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
-      					publishUsernames(meetingID);
+      					socketAction.publishUsernames(meetingID);
       				}
     				});
     			}, 1000);
@@ -121,7 +128,7 @@ exports.SocketOnConnection = function(socket) {
   		  });
   		}
   		pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone you have disconnected
-  		publishUsernames(meetingID);
+  		socketAction.publishUsernames(meetingID);
 	  });
 	});
 	
