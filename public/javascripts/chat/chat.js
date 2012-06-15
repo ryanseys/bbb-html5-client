@@ -57,7 +57,7 @@ $(function() {
 		socket.emit('user connect');
 		
 		//when you get a new message
-		socket.on('msg', function(name, msg) {
+		socket.on('msg', function (name, msg) {
 			$('#chat_messages').append('<div>' + name + ': ' + msg + '</div>');
 		  $('#chat_messages').scrollTop($('#chat_messages').get(0).scrollHeight); //scroll to bottom
 		});
@@ -68,9 +68,9 @@ $(function() {
 		});
 
 		//when a user connects
-		socket.on('user connect', function(name) {
-			$('#chat_messages').append('<div><b>' + name + ' connected! </b></div>');
-		});
+		//socket.on('user connect', function (name) {
+		//	$('#chat_messages').append('<div><b>' + name + ' connected! </b></div>');
+		//});
 		
 		// When the user list needs an update
 		socket.on('user list change', function (names) {
@@ -79,11 +79,19 @@ $(function() {
 		    $('#current_users').append('<div><b>' + names[i] + '</b></div>');
 		  };
 		});
+		
+		socket.on('all_messages', function (messages){
+		  $('#chat_messages').html('');
+		  for (var i = messages.length - 1; i >= 0; i--){
+		    $('#chat_messages').append('<div>' + messages[i].username + ": " + messages[i].message + '</div>');
+		  };
+		  $('#chat_messages').scrollTop($('#chat_messages').get(0).scrollHeight); //scroll to bottom
+		});
 
 		//when a user disconnects
-		socket.on('user disconnected', function(name) {
-			$('#chat_messages').append('<div><b> ' + name + ' disconnected! </b></div>');
-		});
+		//socket.on('user disconnected', function (name) {
+		//	$('#chat_messages').append('<div><b> ' + name + ' disconnected! </b></div>');
+		//});
 
 		socket.on('reconnect', function () {
 			$('#chat_messages').append('<div><b> RECONNECTED! </b></div>');

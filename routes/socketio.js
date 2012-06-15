@@ -10,6 +10,14 @@ exports.publishUsernames = function(meetingID, sessionID) {
   });
 };
 
+exports.publishMessages = function(meetingID, sessionID) {
+  var messages = [];
+  redisAction.getItems(meetingID, "messages", function (messages) {
+    var receivers = sessionID != undefined ? sessionID : meetingID;
+    pub.publish(receivers, JSON.stringify(['all_messages', messages]));
+  });
+};
+
 // All socket IO events that can be emitted by the client
 exports.SocketOnConnection = function(socket) {
 	
@@ -56,13 +64,14 @@ exports.SocketOnConnection = function(socket) {
           if ((properties.refreshing == 'false') && (properties.dupSess == 'false')) {
             //all of the next sessions created with this sessionID are duplicates
             store.hset(redisAction.getUserString(meetingID, sessionID), "dupSess", true);
-            pub.publish(meetingID, JSON.stringify(['user connect', username]));
+            //pub.publish(meetingID, JSON.stringify(['user connect', username]));
             socketAction.publishUsernames(meetingID);
     			}
     			else {
     			  store.hset(redisAction.getUserString(meetingID, sessionID), "refreshing", false);
-            socketAction.publishUsernames(meetingID, sessionID);
+    			  socketAction.publishUsernames(meetingID, sessionID);
   			  }
+  			  socketAction.publishMessages(meetingID, sessionID);
     		});
   		}
   	});
@@ -90,7 +99,7 @@ exports.SocketOnConnection = function(socket) {
       					  if(numOfSockets == 0) {
       					    store.srem(redisAction.getUsersString(meetingID), sessionID, function(num_deleted) {
       					      store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
-          						  pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
+          						  //pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
           						  socketAction.publishUsernames(meetingID);
       					      });
       					    });
@@ -99,7 +108,7 @@ exports.SocketOnConnection = function(socket) {
       				  });
     				  }
       				else {
-      					pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
+      					//pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
       					socketAction.publishUsernames(meetingID);
       				}
     				});
@@ -127,7 +136,7 @@ exports.SocketOnConnection = function(socket) {
   		    });
   		  });
   		}
-  		pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone you have disconnected
+  		//pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone you have disconnected
   		socketAction.publishUsernames(meetingID);
 	  });
 	});

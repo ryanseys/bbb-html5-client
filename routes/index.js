@@ -2,7 +2,6 @@
 
 // When we get the homepage.
 exports.get_index = function(req, res) {
-  console.log(req.cookies);
 	redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function(reply) {
 	  if(!reply) {
   		res.render('index', { title: 'BigBlueButton HTML5 Client', max_u: max_username_length, max_mid: max_meetingid_length });

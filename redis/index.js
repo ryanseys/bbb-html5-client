@@ -62,3 +62,40 @@ exports.getUsers =  function (meetingID, callback) {
     };
   });
 };
+
+exports.getItems = function(meetingID, item, callback) {
+  var items = [];
+  var itemCount = 0;
+  var itemsDone = 0;
+  var itemsGetFunction;
+  var itemGetFunction;
+  
+  if(item == "messages") {
+    itemsGetFunction = redisAction.getMessagesString;
+    itemGetFunction = redisAction.getMessageString;
+  }
+  else if(item == "users") {
+    itemsGetFunction = redisAction.getUsersString;
+    itemGetFunction = redisAction.getUserString;
+  }
+  else callback([]);
+  
+  store.lrange(itemsGetFunction(meetingID), 0, -1, function (err, itemIDs) {
+    itemCount = itemIDs.length;
+    for (var i = itemCount - 1; i >= 0; i--) {
+      store.hgetall(itemGetFunction(meetingID, itemIDs[i]), function(err, itemHash) {
+        items.push(itemHash);
+        itemsDone++;
+        if (itemCount == itemsDone) {
+          callback(items);
+        }
+      });
+    };
+  });
+};
+
+exports.getMessages = function (meetingID, callback) {
+  messages = [];
+  messagecount = 0;
+  
+};
