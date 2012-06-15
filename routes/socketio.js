@@ -1,7 +1,7 @@
 // Publish usernames to all the sockets
 function publishUsernames(meetingID) {
   var usernames = [];
-  gfunc.getUsers(meetingID, function (users) {
+  redisAction.getUsers(meetingID, function (users) {
       for (var i = users.length - 1; i >= 0; i--){
         usernames.push(users[i].username);
       };
@@ -17,7 +17,7 @@ exports.SocketOnConnection = function(socket) {
 	  msg = sanitizer.escape(msg);
 	  var handshake = socket.handshake;
 	  var sessionID = handshake.sessionID;
-	  gfunc.isValidSession(sessionID, function (reply) {
+	  redisAction.isValidSession(sessionID, function (reply) {
 	    if(reply) {
 	      if(msg.length > max_chat_length) {
     	    pub.publish(sessionID, JSON.stringify(['msg', "System", "Message too long."]));
@@ -35,7 +35,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('user connect', function() {
 	  var handshake = socket.handshake;
 	  var sessionID = handshake.sessionID;
-	  gfunc.isValidSession(sessionID, function (reply) {
+	  redisAction.isValidSession(sessionID, function (reply) {
 		  if(reply) {
     		var meetingID = handshake.meetingID;
       	var username = handshake.username;
@@ -45,7 +45,7 @@ exports.SocketOnConnection = function(socket) {
         socket.join(sessionID); //join the socket Room with value of the sessionID
       
         //add socket to list of sockets.
-        gfunc.getUserProperties(sessionID, function(properties) {
+        redisAction.getUserProperties(sessionID, function(properties) {
           var numOfSockets = parseInt(properties.sockets, 10);
           numOfSockets+=1;
           store.hset(sessionID, 'sockets', numOfSockets);
@@ -66,7 +66,7 @@ exports.SocketOnConnection = function(socket) {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		//check if user is still in database
-		gfunc.isValidSession(sessionID, function (isValid) {
+		redisAction.isValidSession(sessionID, function (isValid) {
 		  if(isValid) { 
   		  var meetingID = handshake.meetingID;
   		  var username = handshake.username;
@@ -75,9 +75,9 @@ exports.SocketOnConnection = function(socket) {
   			store.hset(sessionID, "refreshing", true, function(reply) {
   			  setTimeout(function() {
   			    //in one second, check again...
-    			  gfunc.isValidSession(sessionID, function (isValid) {
+    			  redisAction.isValidSession(sessionID, function (isValid) {
     				  if(isValid) {
-    				    gfunc.getUserProperties(sessionID, function(properties) {
+    				    redisAction.getUserProperties(sessionID, function(properties) {
                   var numOfSockets = parseInt(properties.sockets, 10);
                   numOfSockets-=1;
       					  if(numOfSockets == 0) {
@@ -106,7 +106,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('logout', function() {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
-	  gfunc.isValidSession(sessionID, function (isValid) {
+	  redisAction.isValidSession(sessionID, function (isValid) {
 	    if(isValid) {
   		  //initialize local variables
   		  var meetingID = handshake.meetingID;
@@ -129,7 +129,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('prevslide', function(slide_num){
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
-	  gfunc.isValidSession(sessionID, function (isValid) {
+	  redisAction.isValidSession(sessionID, function (isValid) {
 	    if(isValid) {
   	    var meetingID = handshake.meetingID;
   	    var num;
@@ -146,7 +146,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('nextslide', function(slide_num){
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
-	  gfunc.isValidSession(sessionID, function (isValid) {
+	  redisAction.isValidSession(sessionID, function (isValid) {
 	    if(isValid) {
 	      var meetingID = handshake.meetingID;
   	    var num;

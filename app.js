@@ -17,50 +17,8 @@ var express = require('express')
 	format = require('util').format;
 	fs = require('fs');
 	
-	gfunc = {
-	    // Checks the Redis datastore whether the session is valid
-      isValidSession: function(sessionID, callback) {
-        store.sismember("users", sessionID, function(err, isValid) {
-          callback(isValid);
-        });
-      },
-      
-      // Gets all the properties associated with a specific user (sessionID)
-      getUserProperties: function(sessionID, callback) {
-        store.hgetall(sessionID, function(err, properties) {
-          callback(properties);
-        });
-      },
-      
-      // Gets a single property from a specific user
-      getUserProperty: function(sessionID, property, callback) {
-        store.hget(sessionID, property, function(err, prop) { 
-          callback(prop);
-        });
-      },
-      
-      // Get all users and their data in an array
-      getUsers: function (meetingid, callback) {
-        users = [];
-        usercount = 0;
-        usersdone = 0;
-
-        store.smembers("users", function (err, userids) {
-          usercount = userids.length;
-          for (var i = usercount - 1; i >= 0; i--){
-            store.hgetall(userids[i], function (err, props) {
-              users.push(props);
-              usersdone++;
-              if (usercount == usersdone) {
-                callback(users);
-              }
-            });
-          };
-        });
-      }
-  };
-	
 	//global variables
+	redisAction = require('./redis');
 	sanitizer = require('sanitizer');
 	store = redis.createClient();
 	store.flushdb();
@@ -102,7 +60,7 @@ app.configure('production', function(){
 // If a page requires authentication to view...
 function requiresLogin(req, res, next) {
 	//check that they have a cookie with valid session id
-	gfunc.isValidSession(req.cookies['id'], function(isValid) {
+	redisAction.isValidSession(req.cookies['id'], function(isValid) {
 	  if(isValid) {
   		next();
   	} else {
@@ -155,13 +113,13 @@ function getCookie(cookie_string, c_var) {
 io.configure(function () {
   io.set('authorization', function (handshakeData, callback) {
     var id = getCookie(handshakeData.headers.cookie, "id");
-    gfunc.isValidSession(id, function(isValid) {
+    redisAction.isValidSession(id, function(isValid) {
       if(!isValid) {
         console.log("Invalid sessionID");
         callback(null, false); //failed authorization
       }
       else {
-        gfunc.getUserProperties(id, function (properties) {
+        redisAction.getUserProperties(id, function (properties) {
           handshakeData.sessionID = id;
           handshakeData.username = properties.username;
           handshakeData.meetingID = properties.meetingID;

@@ -2,7 +2,7 @@
 
 // When we get the homepage.
 exports.get_index = function(req, res) {
-	gfunc.isValidSession(req.cookies['id'], function(reply) {
+	redisAction.isValidSession(req.cookies['id'], function(reply) {
 	  if(!reply) {
   		res.render('index', { title: 'BigBlueButton HTML5 Client', max_u: max_username_length, max_mid: max_meetingid_length });
   	}
@@ -34,7 +34,7 @@ exports.logout = function(req, res) {
 // When we return to the chat page (or open a new tab when already logged in)
 exports.get_chat = function(req, res) {
 	//requiresLogin before this verifies that a user is logged in...
-	gfunc.getUserProperty(req.cookies['id'], "username", function(username) {
+	redisAction.getUserProperty(req.cookies['id'], "username", function(username) {
 	  res.render('chat', { title: 'BigBlueButton HTML5 Chat', user: username, max_chat_length: max_chat_length });
 	});
 };
