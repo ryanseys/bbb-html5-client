@@ -17,14 +17,14 @@ exports.SocketOnConnection = function(socket) {
 	  msg = sanitizer.escape(msg);
 	  var handshake = socket.handshake;
 	  var sessionID = handshake.sessionID;
-	  redisAction.isValidSession(sessionID, function (reply) {
+	  var meetingID = handshake.meetingID;
+	  redisAction.isValidSession(meetingID, sessionID, function (reply) {
 	    if(reply) {
 	      if(msg.length > max_chat_length) {
     	    pub.publish(sessionID, JSON.stringify(['msg', "System", "Message too long."]));
     	  }
     	  else {
           var username = handshake.username;
-    	    var meetingID = handshake.meetingID;
           pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
         }
 	    }
@@ -35,9 +35,9 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('user connect', function() {
 	  var handshake = socket.handshake;
 	  var sessionID = handshake.sessionID;
-	  redisAction.isValidSession(sessionID, function (reply) {
+	  var meetingID = handshake.meetingID;
+	  redisAction.isValidSession(meetingID, sessionID, function (reply) {
 		  if(reply) {
-    		var meetingID = handshake.meetingID;
       	var username = handshake.username;
       	var socketID = socket.id;
     	
@@ -45,17 +45,17 @@ exports.SocketOnConnection = function(socket) {
         socket.join(sessionID); //join the socket Room with value of the sessionID
       
         //add socket to list of sockets.
-        redisAction.getUserProperties(sessionID, function(properties) {
+        redisAction.getUserProperties(meetingID, sessionID, function(properties) {
           var numOfSockets = parseInt(properties.sockets, 10);
           numOfSockets+=1;
-          store.hset(sessionID, 'sockets', numOfSockets);
+          store.hset(redisAction.getUserString(meetingID, sessionID), 'sockets', numOfSockets);
           if ((properties.refreshing == 'false') && (properties.dupSess == 'false')) {
             //all of the next sessions created with this sessionID are duplicates
-            store.hset(sessionID, "dupSess", true);
+            store.hset(redisAction.getUserString(meetingID, sessionID), "dupSess", true);
             pub.publish(meetingID, JSON.stringify(['user connect', username]));
             publishUsernames(meetingID);
     			}
-    			else store.hset(sessionID, "refreshing", false);
+    			else store.hset(redisAction.getUserString(meetingID, sessionID), "refreshing", false);
     		});
   		}
   	});
@@ -65,30 +65,30 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('disconnect', function () {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
+		var meetingID = handshake.meetingID;
 		//check if user is still in database
-		redisAction.isValidSession(sessionID, function (isValid) {
-		  if(isValid) { 
-  		  var meetingID = handshake.meetingID;
+		redisAction.isValidSession(meetingID, sessionID, function (isValid) {
+		  if(isValid) {
   		  var username = handshake.username;
     		var socketID = socket.id;
 
-  			store.hset(sessionID, "refreshing", true, function(reply) {
+  			store.hset(redisAction.getUserString(meetingID, sessionID), "refreshing", true, function(reply) {
   			  setTimeout(function() {
   			    //in one second, check again...
-    			  redisAction.isValidSession(sessionID, function (isValid) {
+    			  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
     				  if(isValid) {
-    				    redisAction.getUserProperties(sessionID, function(properties) {
+    				    redisAction.getUserProperties(meetingID, sessionID, function(properties) {
                   var numOfSockets = parseInt(properties.sockets, 10);
                   numOfSockets-=1;
       					  if(numOfSockets == 0) {
-      					    store.srem('users', sessionID, function(num_deleted) {
-      					      store.del(sessionID, function(reply) {
+      					    store.srem(redisAction.getUsersString(meetingID), sessionID, function(num_deleted) {
+      					      store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
           						  pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
           						  publishUsernames(meetingID);
       					      });
       					    });
         					}
-        					else store.hset(sessionID, "sockets", numOfSockets);
+        					else store.hset(redisAction.getUserString(meetingID, sessionID), "sockets", numOfSockets);
       				  });
     				  }
       				else {
@@ -106,15 +106,15 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('logout', function() {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
-	  redisAction.isValidSession(sessionID, function (isValid) {
+		var meetingID = handshake.meetingID;
+	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
 	    if(isValid) {
   		  //initialize local variables
-  		  var meetingID = handshake.meetingID;
   		  var username = handshake.username;
   		  //remove the user from the list of users
-  		  store.srem("users", sessionID, function(numDeleted) {
+  		  store.srem(redisAction.getUsersString(meetingID), sessionID, function(numDeleted) {
   		    //delete key from database
-		      store.del(sessionID, function(reply) {
+		      store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
             pub.publish(sessionID, JSON.stringify(['logout'])); //send to all users on same session (all tabs)
           	socket.disconnect(); //disconnect own socket      
   		    });
@@ -129,9 +129,9 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('prevslide', function(slide_num){
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
-	  redisAction.isValidSession(sessionID, function (isValid) {
+		var meetingID = handshake.meetingID;
+	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
 	    if(isValid) {
-  	    var meetingID = handshake.meetingID;
   	    var num;
   	    if(slide_num > 0 && slide_num <= maxImage) {
   	      if(slide_num == 1) num = maxImage;
@@ -146,9 +146,9 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('nextslide', function(slide_num){
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
-	  redisAction.isValidSession(sessionID, function (isValid) {
+		var meetingID = handshake.meetingID;
+	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
 	    if(isValid) {
-	      var meetingID = handshake.meetingID;
   	    var num;
   	    if(slide_num > 0 && slide_num <= maxImage) {
   	      if(slide_num == maxImage) num = 1;

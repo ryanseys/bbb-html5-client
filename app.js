@@ -60,7 +60,7 @@ app.configure('production', function(){
 // If a page requires authentication to view...
 function requiresLogin(req, res, next) {
 	//check that they have a cookie with valid session id
-	redisAction.isValidSession(req.cookies['id'], function(isValid) {
+	redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function(isValid) {
 	  if(isValid) {
   		next();
   	} else {
@@ -112,15 +112,16 @@ function getCookie(cookie_string, c_var) {
 // Authorize a session before it given access to connect to SocketIO
 io.configure(function () {
   io.set('authorization', function (handshakeData, callback) {
-    var id = getCookie(handshakeData.headers.cookie, "id");
-    redisAction.isValidSession(id, function(isValid) {
+    var sessionID = getCookie(handshakeData.headers.cookie, "sessionid");
+    var meetingID = getCookie(handshakeData.headers.cookie, "meetingid");
+    redisAction.isValidSession(meetingID, sessionID, function(isValid) {
       if(!isValid) {
-        console.log("Invalid sessionID");
+        console.log("Invalid sessionID/meetingID");
         callback(null, false); //failed authorization
       }
       else {
-        redisAction.getUserProperties(id, function (properties) {
-          handshakeData.sessionID = id;
+        redisAction.getUserProperties(meetingID, sessionID, function (properties) {
+          handshakeData.sessionID = sessionID;
           handshakeData.username = properties.username;
           handshakeData.meetingID = properties.meetingID;
           callback(null, true); // good authorization
