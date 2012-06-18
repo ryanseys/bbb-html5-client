@@ -180,9 +180,7 @@ exports.SocketOnConnection = function(socket) {
 	});
 	
 	socket.on('mouseMove', function (x, y) {
-    var handshake = socket.handshake;
-    var meetingID = handshake.meetingID;
-    pub.publish(meetingID, JSON.stringify(['mouseMove', x, y]));
+    pub.publish(socket.handshake.meetingID, JSON.stringify(['mouseMove', x, y]));
 	});
 	
 	socket.on('ctxMoveTo', function (x, y) {
@@ -193,7 +191,7 @@ exports.SocketOnConnection = function(socket) {
     pub.publish(socket.handshake.meetingID, JSON.stringify(['ctxDrawLine', x, y]));
 	});
 	
-	socket.on('clearCanvas', function () {
-	  pub.publish(socket.handshake.meetingID, JSON.stringify(['clearCanvas']));
+	socket.on('ctxClear', function () {
+	  pub.publish(socket.handshake.meetingID, JSON.stringify(['ctxClear']));
 	});
 };

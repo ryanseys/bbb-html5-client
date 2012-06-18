@@ -26,6 +26,11 @@ $(function() {
 	var c = document.getElementById("drawingArea");
 	var ctx = c.getContext("2d");
 	var pressed = false;
+	var rectangleOn = false;
+	var lineOn = false;
+	var cornerx;
+  var cornery;
+  var ctxTemp;
   
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
@@ -38,12 +43,24 @@ $(function() {
 		$('#chat_input_box').focus();
 	});
 	
-	$('#clearCanvas').submit(function(e) {
+	$('#clearCanvas').submit(function (e) {
 		e.preventDefault();
-		socket.emit("clearCanvas");
+		socket.emit("ctxClear");
 	});
 	
-	$('#drawingArea').mousemove(function(e) {
+	$('#chooseRect').submit(function (e) {
+		e.preventDefault();
+		lineOn = false;
+		rectangleOn = true;
+	});
+	
+	$('#chooseLine').submit(function (e) {
+		e.preventDefault();
+		rectangleOn = false;
+		lineOn = true;
+	});
+	
+	$('#drawingArea').mousemove(function (e) {
       var offset = $(this).offset();
       // document.body.scrollLeft doesn't work
       var x = e.clientX - offset.left + $(window).scrollLeft();
@@ -51,17 +68,32 @@ $(function() {
       socket.emit("mouseMove", x, y);
   });
   
-  $(document).mousedown(function() {
-      $("#drawingArea").bind('mouseover',function(e){
+  $(document).mousedown(function () {
+      $("#drawingArea").bind('mouseover', function (e) {
+        
         var offset = $(this).offset();
         // document.body.scrollLeft doesn't work
-        var x = e.clientX - offset.left + $(window).scrollLeft();
-        var y = e.clientY - offset.top + $(window).scrollTop();
-        if(pressed) {
-          socket.emit('ctxDrawLine', x, y);
-        }
+        if(lineOn) {
+          var x = e.clientX - offset.left + $(window).scrollLeft();
+          var y = e.clientY - offset.top + $(window).scrollTop();
+          if(pressed) {
+            socket.emit('ctxDrawLine', x, y);
+          }
           socket.emit('ctxMoveTo', x, y);
           pressed = true;
+        }
+        else if(rectangleOn) {
+          var x = e.clientX - offset.left + $(window).scrollLeft() - cornerx;
+          var y = e.clientY - offset.top + $(window).scrollTop() - cornery;
+          if(pressed) {
+            ctx.strokeRect(cornerx, cornery, x, y);
+          }
+          else {
+            cornerx = e.clientX - offset.left + $(window).scrollLeft();
+            cornery = e.clientY - offset.top + $(window).scrollTop();
+            pressed = true;
+          }
+        }
       });
   })
   .mouseup(function() {
@@ -116,7 +148,7 @@ $(function() {
       ctx.stroke();
 		});
 		
-		socket.on('clearCanvas', function () {
+		socket.on('ctxClear', function () {
 		  ctx.clearRect(0, 0, c.width, c.height);
 		  ctx.beginPath();
 		});
