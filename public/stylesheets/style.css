@@ -72,3 +72,14 @@ a {
 #imagecontrols form {
   display: inline;
 }
+
+#cursor {
+			width: 12px;
+			height: 12px;
+			background: red;
+}
+
+.circle {
+			border-radius: 50%;
+			display: inline-block;
+}

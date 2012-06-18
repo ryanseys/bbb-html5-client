@@ -11,9 +11,7 @@ exports.publishUsernames = function(meetingID, sessionID) {
   
   //check if no users left in meeting
   store.scard(redisAction.getUsersString(meetingID), function(err, cardinality) {
-    console.log("cardinality = " + cardinality);
     if(cardinality == '0') {
-      console.log("processing meeting");
       redisAction.processMeeting(meetingID);
     }
   });
@@ -31,7 +29,7 @@ exports.publishMessages = function(meetingID, sessionID) {
 exports.SocketOnConnection = function(socket) {
 	
 	//When a user sends a message...
-	socket.on('msg', function(msg) {
+	socket.on('msg', function (msg) {
 	  msg = sanitizer.escape(msg);
 	  var handshake = socket.handshake;
 	  var sessionID = handshake.sessionID;
@@ -54,7 +52,7 @@ exports.SocketOnConnection = function(socket) {
   });
 
 	// When a user connects to the socket...
-	socket.on('user connect', function() {
+	socket.on('user connect', function () {
 	  var handshake = socket.handshake;
 	  var sessionID = handshake.sessionID;
 	  var meetingID = handshake.meetingID;
@@ -74,7 +72,6 @@ exports.SocketOnConnection = function(socket) {
           if ((properties.refreshing == 'false') && (properties.dupSess == 'false')) {
             //all of the next sessions created with this sessionID are duplicates
             store.hset(redisAction.getUserString(meetingID, sessionID), "dupSess", true);
-            //pub.publish(meetingID, JSON.stringify(['user connect', username]));
             socketAction.publishUsernames(meetingID);
     			}
     			else {
@@ -99,7 +96,7 @@ exports.SocketOnConnection = function(socket) {
     		var socketID = socket.id;
 
   			store.hset(redisAction.getUserString(meetingID, sessionID), "refreshing", true, function(reply) {
-  			  setTimeout(function() {
+  			  setTimeout(function () {
   			    //in one second, check again...
     			  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
     				  if(isValid) {
@@ -109,7 +106,6 @@ exports.SocketOnConnection = function(socket) {
       					  if(numOfSockets == 0) {
       					    store.srem(redisAction.getUsersString(meetingID), sessionID, function(err, num_deleted) {
       					      store.del(redisAction.getUserString(meetingID, sessionID), function(err, reply) {
-          						  //pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
           						  socketAction.publishUsernames(meetingID);
       					      });
       					    });
@@ -118,7 +114,6 @@ exports.SocketOnConnection = function(socket) {
       				  });
     				  }
       				else {
-      					//pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
       					socketAction.publishUsernames(meetingID);
       				}
     				});
@@ -146,13 +141,12 @@ exports.SocketOnConnection = function(socket) {
   		    });
   		  });
   		}
-  		//pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone you have disconnected
   		socketAction.publishUsernames(meetingID);
 	  });
 	});
 	
 	// A user clicks to change to previous slide
-	socket.on('prevslide', function(slide_num){
+	socket.on('prevslide', function (slide_num){
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		var meetingID = handshake.meetingID;
@@ -169,7 +163,7 @@ exports.SocketOnConnection = function(socket) {
 	});
 	
 	// A user clicks to change to next slide
-	socket.on('nextslide', function(slide_num){
+	socket.on('nextslide', function (slide_num){
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		var meetingID = handshake.meetingID;
@@ -183,5 +177,11 @@ exports.SocketOnConnection = function(socket) {
         }
       }
     });
+	});
+	
+	socket.on('mouseMove', function (x, y) {
+    var handshake = socket.handshake;
+    var meetingID = handshake.meetingID;
+    pub.publish(meetingID, JSON.stringify(['mouseMove', x, y]));
 	});
 };

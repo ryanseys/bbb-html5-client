@@ -89,7 +89,8 @@ exports.getUserProperty = function(meetingID, sessionID, property, callback) {
   });
 };
 
-// Get all users and their data in an array
+// Get all users and their data in an array 
+// (users are in a set, not a list, because they need to be accessed with O(1))
 exports.getUsers =  function (meetingID, callback) {
   users = [];
   usercount = 0;

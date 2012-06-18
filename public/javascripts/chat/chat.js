@@ -18,8 +18,8 @@ $(function() {
   }
   
 	var PORT = 3000;
-	//var SERVER_IP = 'localhost';
-	var SERVER_IP = '192.168.0.233';
+	var SERVER_IP = 'localhost';
+	//var SERVER_IP = '192.168.0.233';
 	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
   
@@ -33,6 +33,14 @@ $(function() {
 		}
 		$('#chat_input_box').focus();
 	});
+	
+	$('#slide').mousemove(function(e) {
+      var offset = $(this).offset();
+      // document.body.scrollLeft doesn't work
+      var x = e.clientX - offset.left + $(window).scrollLeft();
+      var y = e.clientY - offset.top + $(window).scrollTop();
+      socket.emit("mouseMove", x, y);
+  });
 	
 	$('#forward_image').submit(function(e) {
 		e.preventDefault();
@@ -62,11 +70,16 @@ $(function() {
 		  $('#chat_messages').scrollTop($('#chat_messages').get(0).scrollHeight); //scroll to bottom
 		});
 
-		socket.on('logout', function() {
+		socket.on('logout', function () {
 			$.post('logout');
 			window.location.replace("./");
 		});
-
+		
+		socket.on('mouseMove', function (x, y) {
+		  slide = document.getElementById('slide');
+		  $('#cursor').offset({ top: y + slide.offsetTop - 5, left: x+slide.offsetLeft - 5 });
+		});
+    
 		//when a user connects
 		//socket.on('user connect', function (name) {
 		//	$('#chat_messages').append('<div><b>' + name + ' connected! </b></div>');
