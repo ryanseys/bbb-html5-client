@@ -74,12 +74,17 @@ a {
 }
 
 #cursor {
-			width: 12px;
-			height: 12px;
+			width: 10px;
+			height: 10px;
 			background: red;
 }
 
 .circle {
 			border-radius: 50%;
 			display: inline-block;
+}
+
+#drawingArea {
+  border: 1px solid blue;
+  position: absolute;
 }

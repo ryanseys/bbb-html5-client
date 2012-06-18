@@ -22,6 +22,10 @@ $(function() {
 	//var SERVER_IP = '192.168.0.233';
 	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
+	
+	var c = document.getElementById("drawingArea");
+	var ctx = c.getContext("2d");
+	var pressed = false;
   
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
@@ -34,12 +38,31 @@ $(function() {
 		$('#chat_input_box').focus();
 	});
 	
-	$('#slide').mousemove(function(e) {
+	$('#drawingArea').mousemove(function(e) {
       var offset = $(this).offset();
       // document.body.scrollLeft doesn't work
       var x = e.clientX - offset.left + $(window).scrollLeft();
       var y = e.clientY - offset.top + $(window).scrollTop();
       socket.emit("mouseMove", x, y);
+  });
+  
+  $(document).mousedown(function() {
+      $("#drawingArea").bind('mouseover',function(e){
+        var offset = $(this).offset();
+        // document.body.scrollLeft doesn't work
+        var x = e.clientX - offset.left + $(window).scrollLeft();
+        var y = e.clientY - offset.top + $(window).scrollTop();
+        if(pressed) {
+          ctx.lineTo(x,y);
+          ctx.stroke();
+        }
+          ctx.moveTo(x,y);
+          pressed = true;
+      });
+  })
+  .mouseup(function() {
+    $("#drawingArea").unbind('mouseover');
+    pressed = false;
   });
 	
 	$('#forward_image').submit(function(e) {
