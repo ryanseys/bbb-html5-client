@@ -20,7 +20,8 @@ div(id="ChatAndControls")
     input(id="send_chat", type="submit", value="Send")
 
 div(id="slideAndControls")
-  canvas(id="drawingArea", width="600px", height="400px")
+  canvas(id="drawingArea", class='canvas', width="600px", height="400px", z-index: 0)
+  canvas(id='drawingTemp', class='canvas', width="600px", height="400px", z-index: 1)
   div(id="slide")
   div(id='imagecontrols')
     form(id='backward_image')
@@ -45,6 +46,8 @@ div(id="listUsers")
   div(id="current_users")
 
 div(onmousedown="return false;", id="cursor", class="circle")
+svg(id="mysvg", xmlns="http://www.w3.org/2000/svg", xmlns:xlink="http://www.w3.org/1999/xlink", width="300", height="300")
+
 
 
   

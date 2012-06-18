@@ -84,7 +84,7 @@ a {
 			display: inline-block;
 }
 
-#drawingArea {
+.canvas {
   border: 1px solid blue;
   position: absolute;
 }

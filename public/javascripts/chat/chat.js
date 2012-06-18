@@ -25,12 +25,30 @@ $(function() {
 	
 	var c = document.getElementById("drawingArea");
 	var ctx = c.getContext("2d");
+	
+	var cTemp = document.getElementById("drawingTemp");
+	var ctxTemp = cTemp.getContext("2d");
+	
 	var pressed = false;
 	var rectangleOn = false;
 	var lineOn = false;
 	var cornerx;
   var cornery;
-  var ctxTemp;
+  var rectX;
+  var rectY;
+  var svg = document.getElementById("mysvg");
+  
+  var rect = function(h, w, fill) {
+    var NS="http://www.w3.org/2000/svg";
+    var SVGObj= document.createElementNS(NS,"rect");
+    SVGObj.width.baseVal.value=w;
+    SVGObj.height.baseVal.value=h;
+    SVGObj.setAttribute("height",h);
+    SVGObj.style.fill=fill;
+    return SVGObj;
+  }
+  var r = rect(100,100,"blue");
+  svg.appendChild(r);
   
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
@@ -60,22 +78,22 @@ $(function() {
 		lineOn = true;
 	});
 	
-	$('#drawingArea').mousemove(function (e) {
+	$('.canvas').mousemove(function (e) {
       var offset = $(this).offset();
       // document.body.scrollLeft doesn't work
       var x = e.clientX - offset.left + $(window).scrollLeft();
       var y = e.clientY - offset.top + $(window).scrollTop();
       socket.emit("mouseMove", x, y);
+      var r = rect(x,y,"blue");
+      svg.appendChild(r);
   });
   
   $(document).mousedown(function () {
-      $("#drawingArea").bind('mouseover', function (e) {
-        
+      $(".canvas").bind('mouseover', function (e) {
         var offset = $(this).offset();
-        // document.body.scrollLeft doesn't work
+        var x = e.clientX - offset.left + $(window).scrollLeft();
+        var y = e.clientY - offset.top + $(window).scrollTop();
         if(lineOn) {
-          var x = e.clientX - offset.left + $(window).scrollLeft();
-          var y = e.clientY - offset.top + $(window).scrollTop();
           if(pressed) {
             socket.emit('ctxDrawLine', x, y);
           }
@@ -83,22 +101,27 @@ $(function() {
           pressed = true;
         }
         else if(rectangleOn) {
-          var x = e.clientX - offset.left + $(window).scrollLeft() - cornerx;
-          var y = e.clientY - offset.top + $(window).scrollTop() - cornery;
           if(pressed) {
-            ctx.strokeRect(cornerx, cornery, x, y);
+            rectX = x - cornerx;
+            rectY = y - cornery;
+            ctxTemp.clearRect(0, 0, 600, 400);
+            ctxTemp.strokeRect(cornerx, cornery, rectX, rectY);
           }
           else {
-            cornerx = e.clientX - offset.left + $(window).scrollLeft();
-            cornery = e.clientY - offset.top + $(window).scrollTop();
+            cornerx = x;
+            cornery = y;
             pressed = true;
           }
         }
       });
   })
   .mouseup(function() {
-    $("#drawingArea").unbind('mouseover');
+    $(".canvas").unbind('mouseover');
     pressed = false;
+    if(rectangleOn) {
+      ctx.strokeRect(cornerx, cornery, rectX, rectY);
+      ctxTemp.clearRect(0, 0, cTemp.width, cTemp.height);
+    }
   });
 	
 	$('#forward_image').submit(function(e) {
