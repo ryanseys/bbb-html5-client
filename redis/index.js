@@ -1,3 +1,13 @@
+exports.getItemStringFunction = function(itemString) {
+  var functions = {"messages" : redisAction.getMessageString };
+  return functions[itemString];
+};
+
+exports.getItemsStringFunction = function(itemString) {
+  var functions = {"messages" : redisAction.getMessagesString };
+  return functions[itemString];
+};
+
 exports.getMeetingsString = function() {
   return "meetings";
 };
@@ -20,6 +30,42 @@ exports.getMessagesString = function(meetingID) {
 
 exports.getMessageString = function(meetingID, messageID) {
   return "meeting-" + meetingID + "-message-" + messageID;
+};
+
+exports.deleteItems = function(meetingID, itemName, itemIDs) {
+  //delete the list which contains the item ids
+  store.del(redisAction.getItemsStringFunction(itemName)(meetingID), function(err, reply) {
+    if(reply) {
+      console.log("Delete the list of items");
+    }
+  });
+  
+  //delete each item
+  for (var j = itemIDs.length - 1; j >= 0; j--) {
+    store.del(redisAction.getItemStringFunction(itemName)(meetingID, itemIDs[j]), function(err, reply) {
+      if(reply) {
+        console.log("Deleted item");
+      }
+    });
+  };
+};
+
+exports.processMeeting = function(meetingID) {
+  items = ['messages'];
+  var i = 0;
+  for (var i = items.length - 1; i >= 0; i--){
+    redisAction.getItemIDs(meetingID, items[i], function(itemIDs, itemName) {
+      redisAction.deleteItems(meetingID, itemName, itemIDs);
+    });
+  };
+};
+
+// This doesn't work right now. It is supossed to delete all the messages from
+// a specific meeting
+exports.getItemIDs = function(meetingID, itemName, callback) {
+  store.lrange(redisAction.getItemsStringFunction(itemName)(meetingID), 0, -1, function(err, itemIDs) {
+      callback(itemIDs, itemName);
+  });
 };
 
 // Checks the Redis datastore whether the session is valid
@@ -74,10 +120,6 @@ exports.getItems = function(meetingID, item, callback) {
     itemsGetFunction = redisAction.getMessagesString;
     itemGetFunction = redisAction.getMessageString;
   }
-  else if(item == "users") {
-    itemsGetFunction = redisAction.getUsersString;
-    itemGetFunction = redisAction.getUserString;
-  }
   else callback([]);
   
   store.lrange(itemsGetFunction(meetingID), 0, -1, function (err, itemIDs) {
@@ -92,10 +134,4 @@ exports.getItems = function(meetingID, item, callback) {
       });
     };
   });
-};
-
-exports.getMessages = function (meetingID, callback) {
-  messages = [];
-  messagecount = 0;
-  
 };

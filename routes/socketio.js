@@ -8,6 +8,15 @@ exports.publishUsernames = function(meetingID, sessionID) {
       var receivers = sessionID != undefined ? sessionID : meetingID;
       pub.publish(receivers, JSON.stringify(['user list change', usernames]));
   });
+  
+  //check if no users left in meeting
+  store.scard(redisAction.getUsersString(meetingID), function(err, cardinality) {
+    console.log("cardinality = " + cardinality);
+    if(cardinality == '0') {
+      console.log("processing meeting");
+      redisAction.processMeeting(meetingID);
+    }
+  });
 };
 
 exports.publishMessages = function(meetingID, sessionID) {
@@ -38,6 +47,7 @@ exports.SocketOnConnection = function(socket) {
           var messageID = hat(); //get a randomly generated id for the message
           store.rpush(redisAction.getMessagesString(meetingID), messageID); //store the messageID in the list of messages
           store.hmset(redisAction.getMessageString(meetingID, messageID), "message", msg, "username", username);
+          
         }
 	    }
 	  });
@@ -97,8 +107,8 @@ exports.SocketOnConnection = function(socket) {
                   var numOfSockets = parseInt(properties.sockets, 10);
                   numOfSockets-=1;
       					  if(numOfSockets == 0) {
-      					    store.srem(redisAction.getUsersString(meetingID), sessionID, function(num_deleted) {
-      					      store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
+      					    store.srem(redisAction.getUsersString(meetingID), sessionID, function(err, num_deleted) {
+      					      store.del(redisAction.getUserString(meetingID, sessionID), function(err, reply) {
           						  //pub.publish(meetingID, JSON.stringify(['user disconnected', username])); //tell everyone they disconnected
           						  socketAction.publishUsernames(meetingID);
       					      });
