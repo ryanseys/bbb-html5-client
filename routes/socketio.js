@@ -184,4 +184,12 @@ exports.SocketOnConnection = function(socket) {
     var meetingID = handshake.meetingID;
     pub.publish(meetingID, JSON.stringify(['mouseMove', x, y]));
 	});
+	
+	socket.on('ctxMoveTo', function (x, y) {
+    pub.publish(socket.handshake.meetingID, JSON.stringify(['ctxMoveTo', x, y]));
+	});
+	
+	socket.on('ctxDrawLine', function (x, y) {
+    pub.publish(socket.handshake.meetingID, JSON.stringify(['ctxDrawLine', x, y]));
+	});
 };

@@ -53,10 +53,9 @@ $(function() {
         var x = e.clientX - offset.left + $(window).scrollLeft();
         var y = e.clientY - offset.top + $(window).scrollTop();
         if(pressed) {
-          ctx.lineTo(x,y);
-          ctx.stroke();
+          socket.emit('ctxDrawLine', x, y);
         }
-          ctx.moveTo(x,y);
+          socket.emit('ctxMoveTo', x, y);
           pressed = true;
       });
   })
@@ -101,6 +100,15 @@ $(function() {
 		socket.on('mouseMove', function (x, y) {
 		  slide = document.getElementById('slide');
 		  $('#cursor').offset({ top: y + slide.offsetTop - 5, left: x+slide.offsetLeft - 5 });
+		});
+		
+		socket.on('ctxMoveTo', function(x, y) {
+		  ctx.moveTo(x,y);
+		});
+		
+		socket.on('ctxDrawLine', function(x, y) {
+		  ctx.lineTo(x,y);
+      ctx.stroke();
 		});
     
 		//when a user connects
