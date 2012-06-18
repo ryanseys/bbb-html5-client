@@ -38,6 +38,11 @@ $(function() {
 		$('#chat_input_box').focus();
 	});
 	
+	$('#clearCanvas').submit(function(e) {
+		e.preventDefault();
+		socket.emit("clearCanvas");
+	});
+	
 	$('#drawingArea').mousemove(function(e) {
       var offset = $(this).offset();
       // document.body.scrollLeft doesn't work
@@ -109,6 +114,11 @@ $(function() {
 		socket.on('ctxDrawLine', function(x, y) {
 		  ctx.lineTo(x,y);
       ctx.stroke();
+		});
+		
+		socket.on('clearCanvas', function () {
+		  ctx.clearRect(0, 0, c.width, c.height);
+		  ctx.beginPath();
 		});
     
 		//when a user connects

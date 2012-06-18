@@ -192,4 +192,8 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('ctxDrawLine', function (x, y) {
     pub.publish(socket.handshake.meetingID, JSON.stringify(['ctxDrawLine', x, y]));
 	});
+	
+	socket.on('clearCanvas', function () {
+	  pub.publish(socket.handshake.meetingID, JSON.stringify(['clearCanvas']));
+	});
 };
