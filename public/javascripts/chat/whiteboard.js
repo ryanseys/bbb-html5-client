@@ -1,18 +1,30 @@
 //initialize variables
-var paper = Raphael("slide", 600, 400);
+var slide_w;
+var slide_h;
+
+var paper;
 var cur;
 var slide;
 var defaults;
 
+//cursor variables
+var p_curx;
+var p_cury;
+var curx;
+var cury;
+
 function initDefaults() {
+  slide_w = 600;
+  slide_h = 400;
+  paper = paper || Raphael("slide", slide_w, slide_h);
   defaults = paper.add([
       {
           type: "image",
           src: '/images/presentation/test1.png',
           x: 0,
           y: 0,
-          width: 600,
-          height: 400
+          width: slide_w,
+          height: slide_h
       },
       {
           type: "circle",
@@ -32,20 +44,24 @@ function initEvents() {
   slide.mousemove(mvCur);
   
   //when dragging
-  cur = cur.drag(curDragging, curDragStart, curDragStop);
+  cur.drag(curDragging, curDragStart, curDragStop);
 }
 
-var curDragStart = function() {
-  var c = paper.path("M10 10L90 90");
-  console.log("start dragging");
+var curDragStart = function(x, y, e) {
+  p_curx = e.offsetX;
+  p_cury = e.offsetY;
 };
 
-var curDragging = function() {
-  console.log("dragging");
+var curDragging = function(dx, dy, x, y, e) {
+  curx = e.offsetX;
+  cury = e.offsetY;
+  paper.path("M" + p_curx + " " + p_cury + "L" + curx + " " + cury);
+  p_curx = curx;
+  p_cury = cury;
 };
 
 var curDragStop = function() {
-  console.log("stop dragging");
+  //console.log("stop dragging");
 };
 
 var mvCur = function(e) {
