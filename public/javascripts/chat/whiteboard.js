@@ -2,26 +2,27 @@
 var paper = Raphael("slide", 600, 400);
 var cur;
 var slide;
-
-var defaults = paper.add([
-    {
-        type: "image",
-        src: '/images/presentation/test1.png',
-        x: 0,
-        y: 0,
-        width: 600,
-        height: 400
-    },
-    {
-        type: "circle",
-        cx: 10,
-        cy: 10,
-        r: 3,
-        fill: "red"
-    }
-]);
+var defaults;
 
 function initDefaults() {
+  defaults = paper.add([
+      {
+          type: "image",
+          src: '/images/presentation/test1.png',
+          x: 0,
+          y: 0,
+          width: 600,
+          height: 400
+      },
+      {
+          type: "circle",
+          cx: 10,
+          cy: 10,
+          r: 3,
+          fill: "red"
+      }
+  ]);
+  
   cur = defaults[1];
   slide = defaults[0];
 }
