@@ -1,13 +1,67 @@
-$(function() {
-  var paper = Raphael("slide", 600, 400);
-  var slide_img = paper.image('/images/presentation/test1.png', 0, 0, 600, 400);
-  var cursor = paper.circle(10, 10, 3);
-  cursor.attr({fill: "red"});
+//initialize variables
+var paper = Raphael("slide", 600, 400);
+var cur;
+var slide;
+
+var defaults = paper.add([
+    {
+        type: "image",
+        src: '/images/presentation/test1.png',
+        x: 0,
+        y: 0,
+        width: 600,
+        height: 400
+    },
+    {
+        type: "circle",
+        cx: 10,
+        cy: 10,
+        r: 3,
+        fill: "red"
+    }
+]);
+
+function initDefaults() {
+  cur = defaults[1];
+  slide = defaults[0];
+}
+
+function initEvents() {
+  //when moving mouse around
+  slide.mousemove(mvCur);
   
-  slide_img.mousemove(function(e) {
-    cursor.attr({ cx: e.offsetX, cy: e.offsetY });
-  });
-});
+  //when dragging
+  cur = cur.drag(curDragging, curDragStart, curDragStop);
+}
+
+var curDragStart = function() {
+  var c = paper.path("M10 10L90 90");
+  console.log("start dragging");
+};
+
+var curDragging = function() {
+  console.log("dragging");
+};
+
+var curDragStop = function() {
+  console.log("stop dragging");
+};
+
+var mvCur = function(e) {
+  cur.attr({ cx: e.offsetX, cy: e.offsetY });
+};
+
+function clearPaper() {
+  paper.clear();
+  initPaper();
+}
+
+function initPaper() {
+  initDefaults();
+  initEvents();
+}
+
+initPaper();
 
 /*
 

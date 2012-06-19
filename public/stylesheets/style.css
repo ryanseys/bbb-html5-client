@@ -1,5 +1,5 @@
 body {
-  padding: 50px;
+  padding: 10px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
@@ -10,7 +10,7 @@ a {
 #chat_messages {
     float: right;
     width: 300px;
-    height: 500px;
+    height: 400px;
     border: 1px solid red;
 	  overflow:scroll;
 	  word-wrap: break-word;
@@ -21,6 +21,7 @@ a {
 }
 
 #slide {
+  cursor: none;
   border: 1px solid red;
   overflow: auto; /* so they don't overlap */
 }
@@ -68,17 +69,6 @@ a {
 
 #imagecontrols form {
   display: inline;
-}
-
-#cursor {
-			width: 10px;
-			height: 10px;
-			background: red;
-}
-
-.circle {
-			border-radius: 50%;
-			display: inline-block;
 }
 
 .canvas {

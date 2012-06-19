@@ -1,17 +1,7 @@
 h1= title
+  form(id="logout")
+    input(type="submit", value="Logout", onclick="logout();return false;")
 p Welcome to BigBlueButton, #{user}!
-
-form(id="logout")
-  input(type="submit", value="Logout")
-br
-br
-
-// External scripts here
-script(src='/javascripts/lib/raphael-min.js')
-script(src="/javascripts/lib/jquery-1.7.2.min.js")
-script(src="/socket.io/socket.io.js")
-script(src='/javascripts/chat/whiteboard.js')
-script(src='/javascripts/chat/chat.js') //all socket interactions javascript
 
 div(id="ChatAndControls")
   div(id="chat_title") <b>Chat messages</b>
@@ -19,21 +9,21 @@ div(id="ChatAndControls")
   form(id='chat_input')
     label(id="charcount")= max_chat_length
     input(id="chat_input_box", maxlength="#{max_chat_length}", onKeyUp="countchars(#{max_chat_length})", placeholder="Type and press enter")
-    input(id="send_chat", type="submit", value="Send")
+    input(id="send_chat", type="submit", value="Send", onclick="sendMessage();return false;")
 
 div(id="slideAndControls")
   div(id="slide")
   div(id='imagecontrols')
     form(id='backward_image')
-      input(type="submit", value="<<<")
+      input(type="submit", value="<<<", onclick="prevImg();return false;")
     form(id='forward_image')
-      input(type="submit", value=">>>")
+      input(type="submit", value=">>>", onclick='nextImg();return false;')
     form(id='clearCanvas')
-      input(type="submit", value="Clear")
+      input(type="submit", value="Clear", onclick="clearCanvas();return false;")
     form(id="chooseLine")
-      input(type="submit", value="Line")
+      input(type="submit", value="Line", onclick="chooseLine();return false;")
     form(id="chooseRect")
-      input(type="submit", value="Rect")
+      input(type="submit", value="Rect", onclick="chooseRect();return false;")
   div(id="uploadcontrols")
     p Upload a custom first image
     form(method="post", enctype="multipart/form-data")
@@ -45,10 +35,12 @@ div(id="listUsers")
   div Current users
   div(id="current_users")
 
-div(onmousedown="return false;", id="cursor", class="circle")
-svg(id="mysvg", xmlns="http://www.w3.org/2000/svg", xmlns:xlink="http://www.w3.org/1999/xlink", width="300", height="300")
-
-
+// External scripts here
+script(src='/javascripts/lib/raphael-min.js')
+script(src="/javascripts/lib/jquery-1.7.2.min.js")
+script(src="/socket.io/socket.io.js")
+script(src='/javascripts/chat/whiteboard.js')
+script(src='/javascripts/chat/chat.js') //all socket interactions javascript
 
   
 
