@@ -22,33 +22,23 @@ $(function() {
 	//var SERVER_IP = '192.168.0.233';
 	//connect to the websocket.
 	var socket = io.connect('http://'+SERVER_IP+':'+PORT);
-	
-	var c = document.getElementById("drawingArea");
-	var ctx = c.getContext("2d");
-	
-	var cTemp = document.getElementById("drawingTemp");
-	var ctxTemp = cTemp.getContext("2d");
-	
-	var pressed = false;
-	var rectangleOn = false;
-	var lineOn = false;
-	var cornerx;
-  var cornery;
-  var rectX;
-  var rectY;
-  var svg = document.getElementById("mysvg");
   
-  var rect = function(h, w, fill) {
-    var NS="http://www.w3.org/2000/svg";
-    var SVGObj= document.createElementNS(NS,"rect");
-    SVGObj.width.baseVal.value=w;
-    SVGObj.height.baseVal.value=h;
-    SVGObj.setAttribute("height",h);
-    SVGObj.style.fill=fill;
-    return SVGObj;
-  }
-  var r = rect(100,100,"blue");
-  svg.appendChild(r);
+  $('#clearCanvas').submit(function (e) {
+  	e.preventDefault();
+  	socket.emit("ctxClear");
+  });
+
+  $('#chooseRect').submit(function (e) {
+  	e.preventDefault();
+  	lineOn = false;
+  	rectangleOn = true;
+  });
+
+  $('#chooseLine').submit(function (e) {
+  	e.preventDefault();
+  	rectangleOn = false;
+  	lineOn = true;
+  });
   
 	//when you hit enter
 	$('#chat_input').submit(function(e) {
@@ -60,69 +50,6 @@ $(function() {
 		}
 		$('#chat_input_box').focus();
 	});
-	
-	$('#clearCanvas').submit(function (e) {
-		e.preventDefault();
-		socket.emit("ctxClear");
-	});
-	
-	$('#chooseRect').submit(function (e) {
-		e.preventDefault();
-		lineOn = false;
-		rectangleOn = true;
-	});
-	
-	$('#chooseLine').submit(function (e) {
-		e.preventDefault();
-		rectangleOn = false;
-		lineOn = true;
-	});
-	
-	$('.canvas').mousemove(function (e) {
-      var offset = $(this).offset();
-      // document.body.scrollLeft doesn't work
-      var x = e.clientX - offset.left + $(window).scrollLeft();
-      var y = e.clientY - offset.top + $(window).scrollTop();
-      socket.emit("mouseMove", x, y);
-      var r = rect(x,y,"blue");
-      svg.appendChild(r);
-  });
-  
-  $(document).mousedown(function () {
-      $(".canvas").bind('mouseover', function (e) {
-        var offset = $(this).offset();
-        var x = e.clientX - offset.left + $(window).scrollLeft();
-        var y = e.clientY - offset.top + $(window).scrollTop();
-        if(lineOn) {
-          if(pressed) {
-            socket.emit('ctxDrawLine', x, y);
-          }
-          socket.emit('ctxMoveTo', x, y);
-          pressed = true;
-        }
-        else if(rectangleOn) {
-          if(pressed) {
-            rectX = x - cornerx;
-            rectY = y - cornery;
-            ctxTemp.clearRect(0, 0, 600, 400);
-            ctxTemp.strokeRect(cornerx, cornery, rectX, rectY);
-          }
-          else {
-            cornerx = x;
-            cornery = y;
-            pressed = true;
-          }
-        }
-      });
-  })
-  .mouseup(function() {
-    $(".canvas").unbind('mouseover');
-    pressed = false;
-    if(rectangleOn) {
-      ctx.strokeRect(cornerx, cornery, rectX, rectY);
-      ctxTemp.clearRect(0, 0, cTemp.width, cTemp.height);
-    }
-  });
 	
 	$('#forward_image').submit(function(e) {
 		e.preventDefault();
@@ -163,17 +90,15 @@ $(function() {
 		});
 		
 		socket.on('ctxMoveTo', function(x, y) {
-		  ctx.moveTo(x,y);
+		  console.log("ctxMoveTo");
 		});
 		
 		socket.on('ctxDrawLine', function(x, y) {
-		  ctx.lineTo(x,y);
-      ctx.stroke();
+		  console.log("ctxDrawLine");
 		});
 		
 		socket.on('ctxClear', function () {
-		  ctx.clearRect(0, 0, c.width, c.height);
-		  ctx.beginPath();
+		  console.log("ctxClear");
 		});
     
 		//when a user connects
@@ -220,7 +145,7 @@ $(function() {
 		
 		socket.on('changeslide', function(slidenum, url) {
 		  current_slide = slidenum;
-		  $('#slide').css('background-image', 'url('+ url +')');
+		  slide_img.attr('src', url);
 		});
 	});
 	

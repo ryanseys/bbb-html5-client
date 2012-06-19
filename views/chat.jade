@@ -7,8 +7,10 @@ br
 br
 
 // External scripts here
-script(src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js")
+script(src='/javascripts/lib/raphael-min.js')
+script(src="/javascripts/lib/jquery-1.7.2.min.js")
 script(src="/socket.io/socket.io.js")
+script(src='/javascripts/chat/whiteboard.js')
 script(src='/javascripts/chat/chat.js') //all socket interactions javascript
 
 div(id="ChatAndControls")
@@ -20,8 +22,6 @@ div(id="ChatAndControls")
     input(id="send_chat", type="submit", value="Send")
 
 div(id="slideAndControls")
-  canvas(id="drawingArea", class='canvas', width="600px", height="400px", z-index: 0)
-  canvas(id='drawingTemp', class='canvas', width="600px", height="400px", z-index: 1)
   div(id="slide")
   div(id='imagecontrols')
     form(id='backward_image')

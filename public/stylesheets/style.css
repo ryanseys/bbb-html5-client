@@ -21,11 +21,8 @@ a {
 }
 
 #slide {
-  width: 600px;
-  height: 400px;
   border: 1px solid red;
   overflow: auto; /* so they don't overlap */
-  background-image: url('/images/presentation/test1.png');
 }
 
 #slideAndControls {
