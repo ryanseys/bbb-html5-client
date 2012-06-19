@@ -80,7 +80,7 @@ socket.on('connect', function () {
 	
 	socket.on('changeslide', function(slidenum, url) {
 	  current_slide = slidenum;
-	  slide_img.attr('src', url);
+	  slide.attr('src', url);
 	});
 });
 
@@ -129,14 +129,12 @@ function getPrevSlide(curr, max) {
 
 function chooseLine() {
   console.log('chooseLine');
-  rectangleOn = false;
-  lineOn = true;
+  turnOnShape("line");
 }
 
 function chooseRect() {
   console.log('chooseRect');
-  rectangleOn = true;
-  lineOn = false;
+  turnOnShape("rectangle");
 }
 
 function sendMessage() {

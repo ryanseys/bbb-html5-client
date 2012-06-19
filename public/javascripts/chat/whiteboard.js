@@ -1,17 +1,47 @@
-//initialize variables
+// initialize variables
 var slide_w;
 var slide_h;
 
+// slide variables
 var paper;
 var cur;
 var slide;
 var defaults;
 
-//cursor variables
+// cursor variables
 var p_curx;
 var p_cury;
 var curx;
 var cury;
+
+var rectOn;
+var lineOn;
+
+//for lines
+var path;
+var step;
+
+//for rectangles
+var rect;
+
+function getRectOn() {
+  return rectOn;
+}
+
+function getLineOn() {
+  return lineOn;
+}
+
+function turnOnShape(string) {
+  if(string == "rectangle") {
+    rectOn = true;
+    lineOn = false;
+  }
+  else if(string == "line") {
+    lineOn = true;
+    rectOn = false;
+  }
+}
 
 function initDefaults() {
   slide_w = 600;
@@ -35,8 +65,9 @@ function initDefaults() {
       }
   ]);
   
-  cur = defaults[1];
   slide = defaults[0];
+  cur = defaults[1];
+  turnOnShape("line");
 }
 
 function initEvents() {
@@ -44,24 +75,52 @@ function initEvents() {
   slide.mousemove(mvCur);
   
   //when dragging
-  cur.drag(curDragging, curDragStart, curDragStop);
+  //cur.drag(curDragging, curDragStart, curDragStop); //for lines
+  cur.drag(curRectDragging, curRectDragStart, curRectDragStop); //for rectangles
 }
 
 var curDragStart = function(x, y, e) {
   p_curx = e.offsetX;
   p_cury = e.offsetY;
+  path = "M" + p_curx + " " + p_cury + "L" + p_curx + " " + p_cury;
 };
 
 var curDragging = function(dx, dy, x, y, e) {
   curx = e.offsetX;
   cury = e.offsetY;
-  paper.path("M" + p_curx + " " + p_cury + "L" + curx + " " + cury);
+  step = "M" + p_curx + " " + p_cury + "L" + curx + " " + cury;
+  paper.path(step);
+  path += "L" + curx + " " + cury;
   p_curx = curx;
   p_cury = cury;
 };
 
-var curDragStop = function() {
-  //console.log("stop dragging");
+var curDragStop = function(e) {
+  curves = Raphael.path2curve(path);
+};
+
+var curRectDragStart = function(x, y, e) {
+  p_curx = e.offsetX;
+  p_cury = e.offsetY;
+  rect = paper.rect(p_curx, p_cury, 0, 0);
+};
+
+var curRectDragging = function(dx, dy, x, y, e) {
+  if(dx < 0) {
+    xval = p_curx + dx;
+    dx = -dx;
+  }
+  else xval = p_curx;
+  if(dy < 0) {
+    yval = p_cury + dy;
+    dy = -dy;
+  }
+  else yval = p_cury;
+  rect.attr({ x: xval, y: yval, width: dx, height: dy});
+};
+
+var curRectDragStop = function(e) {
+  console.log('done rectangle');
 };
 
 var mvCur = function(e) {
@@ -79,55 +138,3 @@ function initPaper() {
 }
 
 initPaper();
-
-/*
-
-$('#slide').mousemove(function (e) {
-    var offset = $(this).offset();
-    // document.body.scrollLeft doesn't work
-    var x = e.clientX - offset.left + $(window).scrollLeft();
-    var y = e.clientY - offset.top + $(window).scrollTop();
-    socket.emit("mouseMove", x, y);
-    //var r = rect(x,y,"blue");
-    //svg.appendChild(r);
-    var circle = paper.circle(50, 40, 10);
-});
-
-$(document).mousedown(function () {
-    $(".canvas").bind('mouseover', function (e) {
-      var offset = $(this).offset();
-      var x = e.clientX - offset.left + $(window).scrollLeft();
-      var y = e.clientY - offset.top + $(window).scrollTop();
-      if(lineOn) {
-        if(pressed) {
-          socket.emit('ctxDrawLine', x, y);
-        }
-        socket.emit('ctxMoveTo', x, y);
-        pressed = true;
-      }
-      else if(rectangleOn) {
-        if(pressed) {
-          rectX = x - cornerx;
-          rectY = y - cornery;
-          ctxTemp.clearRect(0, 0, 600, 400);
-          ctxTemp.strokeRect(cornerx, cornery, rectX, rectY);
-        }
-        else {
-          cornerx = x;
-          cornery = y;
-          pressed = true;
-        }
-      }
-    });
-})
-.mouseup(function() {
-  $(".canvas").unbind('mouseover');
-  pressed = false;
-  if(rectangleOn) {
-    ctx.strokeRect(cornerx, cornery, rectX, rectY);
-    ctxTemp.clearRect(0, 0, cTemp.width, cTemp.height);
-  }
-});
-
-*/
-
