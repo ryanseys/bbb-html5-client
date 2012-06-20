@@ -37,12 +37,20 @@ function getLineOn() {
 
 function turnOnShape(string) {
   if(string == "rectangle") {
-    rectOn = true;
-    lineOn = false;
+    if(!rectOn) {
+      rectOn = true;
+      lineOn = false;
+      cur.undrag();
+      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+    }
   }
   else if(string == "line") {
-    lineOn = true;
-    rectOn = false;
+    if(!lineOn) {
+      lineOn = true;
+      rectOn = false;
+      cur.undrag();
+      cur.drag(curDragging, curDragStart, curDragStop);
+    }
   }
 }
 
@@ -82,7 +90,6 @@ function initEvents() {
   
   //when dragging
   cur.drag(curDragging, curDragStart, curDragStop); //for lines
-  //cur.drag(curRectDragging, curRectDragStart, curRectDragStop); //for rectangles
 }
 
 var curDragStart = function(x, y, e) {
