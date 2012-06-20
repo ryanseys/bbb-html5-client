@@ -1,4 +1,3 @@
-
 //default global variables
 max_chat_length = 140;
 max_username_length = 30;

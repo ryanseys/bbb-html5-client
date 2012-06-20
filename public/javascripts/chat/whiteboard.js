@@ -1,6 +1,11 @@
+//object references
+slide_obj = document.getElementById("slide");
+
 // initialize variables
 var slide_w;
 var slide_h;
+var s_left;
+var s_top;
 var onFirefox;
 // slide variables
 var paper;
@@ -42,6 +47,7 @@ function turnOnShape(string) {
       lineOn = false;
       cur.undrag();
       cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+      slide.drag(curRectDragging, curRectDragStart, curRectDragStop);
     }
   }
   else if(string == "line") {
@@ -50,6 +56,7 @@ function turnOnShape(string) {
       rectOn = false;
       cur.undrag();
       cur.drag(curDragging, curDragStart, curDragStop);
+      slide.drag(curDragging, curDragStart, curDragStop);
     }
   }
 }
@@ -59,84 +66,68 @@ function initDefaults() {
   slide_h = 400;
   paper = paper || Raphael("slide", slide_w, slide_h);
   defaults = paper.add([
-      {
-          type: "image",
-          src: '/images/presentation/test1.png',
-          x: 0,
-          y: 0,
-          width: slide_w,
-          height: slide_h
-      },
-      {
-          type: "circle",
-          cx: 10,
-          cy: 10,
-          r: 3,
-          fill: "red"
-      }
+    {
+      type: "image",
+      src: '/images/presentation/test1.png',
+      x: 0,
+      y: 0,
+      width: slide_w,
+      height: slide_h
+    },
+    {
+      type: "circle",
+      cx: 10,
+      cy: 10,
+      r: 3,
+      fill: "red"
+    }
   ]);
   
   slide = defaults[0];
   cur = defaults[1];
-  paper.renderfix();
+  s_left = slide_obj.offsetLeft;
+  s_top = slide_obj.offsetTop;
+  lineOn = false;
+  rectOn = false;
+  turnOnShape("line");
   if (navigator.userAgent.indexOf("Firefox") != -1) {
     onFirefox = true;
+    paper.renderfix();
   }
 }
 
 function initEvents() {
   //when moving mouse around
   slide.mousemove(mvingCur);
-  
-  //when dragging
-  cur.drag(curDragging, curDragStart, curDragStop); //for lines
 }
 
-var curDragStart = function(x, y, e) {
-  if(onFirefox) {
-    cx2 = e.layerX;
-    cy2 = e.layerY;
-  }
-  else {
-    cx2 = e.offsetX;
-    cy2 = e.offsetY;
-  }
-  path = "M" + cx2 + " " + cy2; // + "L" + cx2 + " " + cy2;
+var curDragStart = function(x, y) {
+  cx1 = x - s_left;
+  cy1 = y - s_top;
+  path = "M" + cx1 + " " + cy1;
 };
 
-var curDragging = function(dx, dy, x, y, e) {
-  if(onFirefox) {
-    cx1 = e.layerX;
-    cy1 = e.layerY;
-  }
-  else {
-    cx1 = e.offsetX;
-    cy1 = e.offsetY;
-  }
-  emLi(cx2, cy2, cx1, cy1);
-  path += "L" + cx1 + " " + cy1;
-  cx2 = cx1;
-  cy2 = cy1;
+var curDragging = function(dx, dy, x, y) {
+  cx2 = x - s_left;
+  cy2 = y - s_top;
+  emLi(cx1, cy1, cx2, cy2);
+  path += "L" + cx2 + " " + cy2;
+  cx1 = cx2;
+  cy1 = cy2;
 };
 
 function dPath(x1, y1, x2, y2) {
-  paper.path("M" + x1 +" " + y1+ "L" + x2 + " " + y2);
+  paper.path("M" + x1 +" " + y1 + "L" + x2 + " " + y2);
 }
 
 var curDragStop = function(e) {
     curves = Raphael.path2curve(path);
 };
 
-var curRectDragStart = function(x, y, e) {
-  if(onFirefox) {
-    cx2 = e.layerX;
-    cy2 = e.layerY;
-  }
-  else {
-    cx2 = e.offsetX;
-    cy2 = e.offsetY;
-  }
-    emMakeRect(cx2, cy2);
+var curRectDragStart = function(x, y) {
+  cx2 = x - s_left;
+  cy2 = y - s_top;
+  emMakeRect(cx2, cy2);
 };
 
 var curRectDragging = function(dx, dy, x, y, e) {
@@ -165,9 +156,8 @@ var curRectDragStop = function(e) {
     console.log('done rectangle');
 };
 
-var mvingCur = function(e) {
-  if(onFirefox) emMvCur(e.layerX, e.layerY);
-  else emMvCur(e.offsetX, e.offsetY);
+var mvingCur = function(e, x, y) {
+  emMvCur(x - s_left, y - s_top);
 };
 
 function mvCur(x, y) {
