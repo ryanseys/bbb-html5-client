@@ -142,6 +142,5 @@ io.sockets.on('connection', socketAction.SocketOnConnection);
 //When sub gets a message from pub
 sub.on("pmessage", function(pattern, channel, message) {
   var channel_viewers = io.sockets['in'](channel);
-  var params = JSON.parse(message);
-  channel_viewers.emit.apply(channel_viewers, params);
+  channel_viewers.emit.apply(channel_viewers, JSON.parse(message));
 });

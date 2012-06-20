@@ -41,8 +41,12 @@ socket.on('connect', function () {
 	  console.log("ctxDrawLine");
 	});
 	
-	socket.on('ctxClear', function () {
+	socket.on('clrPaper', function () {
 	  clearPaper();
+	});
+	
+	socket.on('li', function(x1, y1, x2, y2){
+	  dPath(x1, y1, x2, y2);
 	});
 	
 	// When the user list needs an update
@@ -64,6 +68,18 @@ socket.on('connect', function () {
 
 	socket.on('reconnect', function () {
 	  msgbox.innerHTML += '<div><b> RECONNECTED! </b></div>';
+	});
+	
+	socket.on('makeRect', function(x, y) {
+	  makeRect(x, y, 0, 0);
+	});
+	
+	socket.on('updRect', function(x, y, w, h){
+	  updRect(x, y, w, h);
+	});
+	
+	socket.on('mvCur', function(x, y) {
+	  mvCur(x, y);
 	});
 
 	socket.on('reconnecting', function () {
@@ -113,9 +129,26 @@ function post_to_url(path, params, method) {
 }
 
 function clearCanvas() {
-  console.log("lol");
-  socket.emit("ctxClear");
+  socket.emit("clrPaper");
 }
+
+function emLi(x1, y1, x2, y2) {
+  socket.emit("li", x1, y1, x2, y2);
+}
+
+function emMakeRect(x, y) {
+  socket.emit('makeRect', x, y);
+}
+
+function emUpdRect(x, y, w, h) {
+  socket.emit('updRect', x, y, w, h);
+}
+
+
+function emMvCur(x, y) {
+  socket.emit('mvCur', x, y);
+}
+
 
 function getNextSlide(curr, max) {
   if(curr == max) return 1;

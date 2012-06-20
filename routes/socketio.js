@@ -179,8 +179,20 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	socket.on('mouseMove', function (x, y) {
-    pub.publish(socket.handshake.meetingID, JSON.stringify(['mouseMove', x, y]));
+	socket.on('li', function (x1, y1, x2, y2) {
+    pub.publish(socket.handshake.meetingID, JSON.stringify(['li', x1, y1, x2, y2]));
+	});
+	
+	socket.on('makeRect', function (x, y) {
+    pub.publish(socket.handshake.meetingID, JSON.stringify(['makeRect', x, y]));
+	});
+	
+	socket.on('updRect', function (x, y, w, h) {
+    pub.publish(socket.handshake.meetingID, JSON.stringify(['updRect', x, y, w, h]));
+	});
+	
+	socket.on('mvCur', function (x, y) {
+	  pub.publish(socket.handshake.meetingID, JSON.stringify(['mvCur', x, y]));
 	});
 	
 	socket.on('ctxMoveTo', function (x, y) {
@@ -191,7 +203,7 @@ exports.SocketOnConnection = function(socket) {
     pub.publish(socket.handshake.meetingID, JSON.stringify(['ctxDrawLine', x, y]));
 	});
 	
-	socket.on('ctxClear', function () {
-	  pub.publish(socket.handshake.meetingID, JSON.stringify(['ctxClear']));
+	socket.on('clrPaper', function () {
+	  pub.publish(socket.handshake.meetingID, JSON.stringify(['clrPaper']));
 	});
 };
