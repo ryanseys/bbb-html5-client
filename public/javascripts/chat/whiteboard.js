@@ -81,8 +81,8 @@ function initEvents() {
   slide.mousemove(mvingCur);
   
   //when dragging
-  //cur.drag(curDragging, curDragStart, curDragStop); //for lines
-  cur.drag(curRectDragging, curRectDragStart, curRectDragStop); //for rectangles
+  cur.drag(curDragging, curDragStart, curDragStop); //for lines
+  //cur.drag(curRectDragging, curRectDragStart, curRectDragStop); //for rectangles
 }
 
 var curDragStart = function(x, y, e) {
@@ -94,7 +94,7 @@ var curDragStart = function(x, y, e) {
     cx2 = e.offsetX;
     cy2 = e.offsetY;
   }
-  path = "M" + cx2 + " " + cy2 + "L" + cx2 + " " + cy2;
+  path = "M" + cx2 + " " + cy2; // + "L" + cx2 + " " + cy2;
 };
 
 var curDragging = function(dx, dy, x, y, e) {
@@ -106,11 +106,8 @@ var curDragging = function(dx, dy, x, y, e) {
     cx1 = e.offsetX;
     cy1 = e.offsetY;
   }
-  end = "L" + cx1 + " " + cy1;
-  step = "M" + cx2 + " " + cy2 + end;
   emLi(cx2, cy2, cx1, cy1);
-  //paper.path(step);
-  path += end;
+  path += "L" + cx1 + " " + cy1;
   cx2 = cx1;
   cy2 = cy1;
 };
@@ -121,7 +118,6 @@ function dPath(x1, y1, x2, y2) {
 
 var curDragStop = function(e) {
     curves = Raphael.path2curve(path);
-    console.log(curves);
 };
 
 var curRectDragStart = function(x, y, e) {

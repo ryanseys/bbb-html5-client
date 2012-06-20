@@ -29,24 +29,24 @@ socket.on('connect', function () {
 		window.location.replace("./");
 	});
 	
-	socket.on('mouseMove', function (x, y) {
-	  slide = document.getElementById('slide');
-	});
-	
-	socket.on('ctxMoveTo', function(x, y) {
-	  console.log("ctxMoveTo");
-	});
-	
-	socket.on('ctxDrawLine', function(x, y) {
-	  console.log("ctxDrawLine");
-	});
-	
 	socket.on('clrPaper', function () {
 	  clearPaper();
 	});
 	
 	socket.on('li', function(x1, y1, x2, y2){
 	  dPath(x1, y1, x2, y2);
+	});
+	
+	socket.on('makeRect', function(x, y) {
+	  makeRect(x, y, 0, 0);
+	});
+	
+	socket.on('updRect', function(x, y, w, h){
+	  updRect(x, y, w, h);
+	});
+	
+	socket.on('mvCur', function(x, y) {
+	  mvCur(x, y);
 	});
 	
 	// When the user list needs an update
@@ -68,18 +68,6 @@ socket.on('connect', function () {
 
 	socket.on('reconnect', function () {
 	  msgbox.innerHTML += '<div><b> RECONNECTED! </b></div>';
-	});
-	
-	socket.on('makeRect', function(x, y) {
-	  makeRect(x, y, 0, 0);
-	});
-	
-	socket.on('updRect', function(x, y, w, h){
-	  updRect(x, y, w, h);
-	});
-	
-	socket.on('mvCur', function(x, y) {
-	  mvCur(x, y);
 	});
 
 	socket.on('reconnecting', function () {
@@ -144,11 +132,9 @@ function emUpdRect(x, y, w, h) {
   socket.emit('updRect', x, y, w, h);
 }
 
-
 function emMvCur(x, y) {
   socket.emit('mvCur', x, y);
 }
-
 
 function getNextSlide(curr, max) {
   if(curr == max) return 1;
@@ -161,12 +147,10 @@ function getPrevSlide(curr, max) {
 }
 
 function chooseLine() {
-  console.log('chooseLine');
   turnOnShape("line");
 }
 
 function chooseRect() {
-  console.log('chooseRect');
   turnOnShape("rectangle");
 }
 
