@@ -54,6 +54,7 @@ function turnOn(string) {
       rectOn = true;
       cur.undrag();
       slide.undrag();
+      $('#slide').unbind('mousewheel');
       cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
       slide.drag(curRectDragging, curRectDragStart, curRectDragStop);
     }
@@ -65,6 +66,7 @@ function turnOn(string) {
       lineOn = true;
       cur.undrag();
       slide.undrag();
+      $('#slide').unbind('mousewheel');
       cur.drag(curDragging, curDragStart, curDragStop);
       slide.drag(curDragging, curDragStart, curDragStop);
     }
@@ -76,6 +78,7 @@ function turnOn(string) {
       panZoomOn = true;
       cur.undrag();
       slide.undrag();
+      $('#slide').bind('mousewheel', zoomSlide);
       cur.drag(panDragging, panGo, panStop);
       slide.drag(panDragging, panGo, panStop);
     }
@@ -128,8 +131,8 @@ function initEvents() {
 }
 
 var panDragging = function(dx, dy, x, y) {
-  bottom_x = 300;
-  bottom_y = 200;
+  //bottom_x = 300;
+  //bottom_y = 200;
   s_left = cornerx - dx;
   s_top = cornery - dy;
   //check to make sure not out of boundary
@@ -217,6 +220,26 @@ function clearPaper() {
   paper.clear();
   initPaper();
 }
+
+var zoomSlide = function(event, delta) {
+    var dir = delta > 0 ? 'Up' : 'Down',
+        vel = Math.abs(delta);
+    console.log(dir + ' at a velocity of ' + vel);
+    if(delta < 0) {
+      bottom_x = bottom_x * 1.05;
+      bottom_y = bottom_y * 1.05;
+    }
+    else {
+      bottom_x = bottom_x * 0.95;
+      bottom_y = bottom_y * 0.95;
+    }
+    paper.setViewBox(s_left, s_top, bottom_x, bottom_y);
+    return false;
+};
+
+jQuery(function($) {
+    
+});
 
 function initPaper() {
   initDefaults();
