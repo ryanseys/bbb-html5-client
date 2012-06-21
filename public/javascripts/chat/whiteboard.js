@@ -6,6 +6,8 @@ var slide_w;
 var slide_h;
 var bottom_x;
 var bottom_y;
+var zoom_x;
+var zoom_y;
 var s_left;
 var s_top;
 var onFirefox;
@@ -138,8 +140,11 @@ var panDragging = function(dx, dy, x, y) {
   //check to make sure not out of boundary
   if(s_left < 0) s_left = 0;
   if(s_top < 0) s_top = 0;
-  if(bottom_x + s_left > slide_w) s_left = bottom_x;
-  if(bottom_y + s_top > slide_h) s_top = bottom_y;
+  if(bottom_x + s_left > slide_w) s_left = slide_w - bottom_x;
+  if(bottom_y + s_top > slide_h) s_top = slide_h - bottom_y;
+  //if(s_left > slide_w) s_left = slide_w;
+  //if(s_top > slide_h) s_top = slide_h;
+  console.log(s_left + " " + s_top + " " + bottom_x + " " + bottom_y);
   paper.setViewBox(s_left, s_top, bottom_x, bottom_y);
 };
 
@@ -233,6 +238,16 @@ var zoomSlide = function(event, delta) {
       bottom_x = bottom_x * 0.95;
       bottom_y = bottom_y * 0.95;
     }
+    if(bottom_x > slide_w) {
+      bottom_x = slide_w;
+      s_left = 0;
+    }
+    if(bottom_y > slide_h) {
+      bottom_y = slide_h;
+      s_top = 0;
+    }
+    if(bottom_x + s_left > slide_w) s_left = slide_w - bottom_x;
+    if(bottom_y + s_top > slide_h) s_top = slide_h - bottom_y;
     paper.setViewBox(s_left, s_top, bottom_x, bottom_y);
     return false;
 };
