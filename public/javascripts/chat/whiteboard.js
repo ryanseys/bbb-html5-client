@@ -130,8 +130,9 @@ function initEvents() {
 var panDragging = function(dx, dy, x, y) {
   bottom_x = 300;
   bottom_y = 200;
-  s_left = cornerx + dx;
-  s_top = cornery + dy;
+  s_left = cornerx - dx;
+  s_top = cornery - dy;
+  //check to make sure not out of boundary
   if(s_left < 0) s_left = 0;
   if(s_top < 0) s_top = 0;
   if(bottom_x + s_left > slide_w) s_left = bottom_x;
