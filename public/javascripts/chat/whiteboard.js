@@ -10,6 +10,8 @@ var zoom_x;
 var zoom_y;
 var s_left;
 var s_top;
+var pan_x;
+var pan_y;
 var onFirefox;
 
 // slide variables
@@ -117,6 +119,8 @@ function initDefaults() {
   s_top = slide_obj.offsetTop;
   cornerx = 0;
   cornery = 0;
+  pan_x = 0;
+  pan_y = 0;
   lineOn = false;
   rectOn = false;
   panZoomOn = false;
@@ -133,19 +137,14 @@ function initEvents() {
 }
 
 var panDragging = function(dx, dy, x, y) {
-  //bottom_x = 300;
-  //bottom_y = 200;
-  s_left = cornerx - dx;
-  s_top = cornery - dy;
+  pan_x = cornerx - dx;
+  pan_y = cornery - dy;
   //check to make sure not out of boundary
-  if(s_left < 0) s_left = 0;
-  if(s_top < 0) s_top = 0;
-  if(bottom_x + s_left > slide_w) s_left = slide_w - bottom_x;
-  if(bottom_y + s_top > slide_h) s_top = slide_h - bottom_y;
-  //if(s_left > slide_w) s_left = slide_w;
-  //if(s_top > slide_h) s_top = slide_h;
-  console.log(s_left + " " + s_top + " " + bottom_x + " " + bottom_y);
-  paper.setViewBox(s_left, s_top, bottom_x, bottom_y);
+  if(pan_x < 0) pan_x = 0;
+  if(pan_y < 0) pan_y = 0;
+  if(bottom_x + pan_x > slide_w) pan_x = slide_w - bottom_x;
+  if(bottom_y + pan_y > slide_h) pan_y = slide_h - bottom_y;
+  paper.setViewBox(pan_x, pan_y, bottom_x, bottom_y);
 };
 
 var panGo = function(x, y) {
@@ -230,6 +229,7 @@ var zoomSlide = function(event, delta) {
     var dir = delta > 0 ? 'Up' : 'Down',
         vel = Math.abs(delta);
     console.log(dir + ' at a velocity of ' + vel);
+    
     if(delta < 0) {
       bottom_x = bottom_x * 1.05;
       bottom_y = bottom_y * 1.05;
@@ -240,21 +240,17 @@ var zoomSlide = function(event, delta) {
     }
     if(bottom_x > slide_w) {
       bottom_x = slide_w;
-      s_left = 0;
+      pan_x = 0;
     }
     if(bottom_y > slide_h) {
       bottom_y = slide_h;
-      s_top = 0;
+      pan_y = 0;
     }
-    if(bottom_x + s_left > slide_w) s_left = slide_w - bottom_x;
-    if(bottom_y + s_top > slide_h) s_top = slide_h - bottom_y;
-    paper.setViewBox(s_left, s_top, bottom_x, bottom_y);
+    if(bottom_x + pan_x > slide_w) pan_x = slide_w - bottom_x;
+    if(bottom_y + pan_y > slide_h) pan_y = slide_h - bottom_y;
+    paper.setViewBox(pan_x, pan_y, bottom_x, bottom_y);
     return false;
 };
-
-jQuery(function($) {
-    
-});
 
 function initPaper() {
   initDefaults();
