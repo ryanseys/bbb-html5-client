@@ -4,6 +4,8 @@ slide_obj = document.getElementById("slide");
 // initialize variables
 var slide_w;
 var slide_h;
+var bottom_x;
+var bottom_y;
 var s_left;
 var s_top;
 var onFirefox;
@@ -83,6 +85,8 @@ function turnOn(string) {
 function initDefaults() {
   slide_w = 600;
   slide_h = 400;
+  bottom_x = 600;
+  bottom_y = 400;
   paper = paper || Raphael("slide", slide_w, slide_h);
   defaults = paper.add([
     {
@@ -124,9 +128,15 @@ function initEvents() {
 }
 
 var panDragging = function(dx, dy, x, y) {
+  bottom_x = 300;
+  bottom_y = 200;
   s_left = cornerx + dx;
   s_top = cornery + dy;
-  paper.setViewBox(s_left, s_top, slide_w, slide_h);
+  if(s_left < 0) s_left = 0;
+  if(s_top < 0) s_top = 0;
+  if(bottom_x + s_left > slide_w) s_left = bottom_x;
+  if(bottom_y + s_top > slide_h) s_top = bottom_y;
+  paper.setViewBox(s_left, s_top, bottom_x, bottom_y);
 };
 
 var panGo = function(x, y) {
