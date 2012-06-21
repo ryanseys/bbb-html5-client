@@ -8,8 +8,8 @@ var bottom_x;
 var bottom_y;
 var zoom_x;
 var zoom_y;
-var s_left;
-var s_top;
+var s_left; //fixed - DO NOT MODIFY
+var s_top; //fixed - DO NOT MODIFY
 var pan_x;
 var pan_y;
 var onFirefox;
@@ -56,10 +56,10 @@ function turnOn(string) {
       lineOn = false;
       panZoomOn = false;
       rectOn = true;
-      cur.undrag();
+      //cur.undrag();
       slide.undrag();
       $('#slide').unbind('mousewheel');
-      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+      //cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
       slide.drag(curRectDragging, curRectDragStart, curRectDragStop);
     }
   }
@@ -68,10 +68,10 @@ function turnOn(string) {
       rectOn = false;
       panZoomOn = false;
       lineOn = true;
-      cur.undrag();
+      //cur.undrag();
       slide.undrag();
       $('#slide').unbind('mousewheel');
-      cur.drag(curDragging, curDragStart, curDragStop);
+      //cur.drag(curDragging, curDragStart, curDragStop);
       slide.drag(curDragging, curDragStart, curDragStop);
     }
   }
@@ -80,10 +80,10 @@ function turnOn(string) {
       rectOn = false;
       lineOn = false;
       panZoomOn = true;
-      cur.undrag();
+      //cur.undrag();
       slide.undrag();
       $('#slide').bind('mousewheel', zoomSlide);
-      cur.drag(panDragging, panGo, panStop);
+      //cur.drag(panDragging, panGo, panStop);
       slide.drag(panDragging, panGo, panStop);
     }
   }
@@ -106,13 +106,12 @@ function initDefaults() {
     },
     {
       type: "circle",
-      cx: 10,
-      cy: 10,
+      cx: 0,
+      cy: 0,
       r: 3,
       fill: "red"
     }
   ]);
-  
   slide = defaults[0];
   cur = defaults[1];
   s_left = slide_obj.offsetLeft;
@@ -124,7 +123,7 @@ function initDefaults() {
   lineOn = false;
   rectOn = false;
   panZoomOn = false;
-  turnOn("line");
+  turnOn("panzoom");
   if (navigator.userAgent.indexOf("Firefox") != -1) {
     onFirefox = true;
     paper.renderfix();
@@ -187,17 +186,17 @@ var curRectDragStart = function(x, y) {
 };
 
 var curRectDragging = function(dx, dy, x, y, e) {
-    if(dx < 0) {
-      x1 = cx2 + dx;
-      dx = -dx;
-    }
-    else x1 = cx2;
-    if(dy < 0) {
-      y1 = cy2 + dy;
-      dy = -dy;
-    }
-    else y1 = cy2;
-    emUpdRect(x1, y1, dx, dy);
+  if(dx < 0) {
+    x1 = cx2 + dx;
+    dx = -dx;
+  }
+  else x1 = cx2;
+  if(dy < 0) {
+    y1 = cy2 + dy;
+    dy = -dy;
+  }
+  else y1 = cy2;
+  emUpdRect(x1, y1, dx, dy);
 };
 
 function makeRect(x, y) {
@@ -205,7 +204,7 @@ function makeRect(x, y) {
 }
 
 function updRect(x1, y1, w, h) {
-  rect.attr({ x: x1, y: y1, width: w, height: h});
+  rect.attr({ x: x1, y: y1, width: w, height: h });
 }
 
 var curRectDragStop = function(e) {
@@ -213,6 +212,7 @@ var curRectDragStop = function(e) {
 };
 
 var mvingCur = function(e, x, y) {
+  console.log(x + " " + y);
   emMvCur(x - s_left, y - s_top);
 };
 
@@ -226,30 +226,26 @@ function clearPaper() {
 }
 
 var zoomSlide = function(event, delta) {
-    var dir = delta > 0 ? 'Up' : 'Down',
-        vel = Math.abs(delta);
-    console.log(dir + ' at a velocity of ' + vel);
-    
-    if(delta < 0) {
-      bottom_x = bottom_x * 1.05;
-      bottom_y = bottom_y * 1.05;
-    }
-    else {
-      bottom_x = bottom_x * 0.95;
-      bottom_y = bottom_y * 0.95;
-    }
-    if(bottom_x > slide_w) {
-      bottom_x = slide_w;
-      pan_x = 0;
-    }
-    if(bottom_y > slide_h) {
-      bottom_y = slide_h;
-      pan_y = 0;
-    }
-    if(bottom_x + pan_x > slide_w) pan_x = slide_w - bottom_x;
-    if(bottom_y + pan_y > slide_h) pan_y = slide_h - bottom_y;
-    paper.setViewBox(pan_x, pan_y, bottom_x, bottom_y);
-    return false;
+  if(delta < 0) {
+    bottom_x = bottom_x * 1.05;
+    bottom_y = bottom_y * 1.05;
+  }
+  else {
+    bottom_x = bottom_x * 0.95;
+    bottom_y = bottom_y * 0.95;
+  }
+  if(bottom_x > slide_w) {
+    bottom_x = slide_w;
+    pan_x = 0;
+  }
+  if(bottom_y > slide_h) {
+    bottom_y = slide_h;
+    pan_y = 0;
+  }
+  if(bottom_x + pan_x > slide_w) pan_x = slide_w - bottom_x;
+  if(bottom_y + pan_y > slide_h) pan_y = slide_h - bottom_y;
+  paper.setViewBox(pan_x, pan_y, bottom_x, bottom_y);
+  return false;
 };
 
 function initPaper() {

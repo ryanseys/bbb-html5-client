@@ -156,7 +156,6 @@ function choosePanZoom() {
 }
 
 function sendMessage() {
-
   var msg = chatbox.value;
 	if (msg != '') {
 		socket.emit('msg', msg);
