@@ -100,15 +100,21 @@ app.listen(3000, function() {
 
 // Used to parse the cookie data.
 function getCookie(cookie_string, c_var) {
-	var i,x,y,ARRcookies=cookie_string.split(";");
-	for (i=0;i<ARRcookies.length;i++) {
-		x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
-		y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
-		x=x.replace(/^\s+|\s+$/g,"");
-		if (x==c_var) {
-			return unescape(y);
-		}
-	}
+  if(cookie_string) {
+    var i,x,y,ARRcookies=cookie_string.split(";");
+  	for (i=0;i<ARRcookies.length;i++) {
+  		x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+  		y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+  		x=x.replace(/^\s+|\s+$/g,"");
+  		if (x==c_var) {
+  			return unescape(y);
+  		}
+  	}
+  }
+  else {
+    console.log("Invalid cookie");
+    return "";
+  }
 }
 
 // Authorize a session before it given access to connect to SocketIO

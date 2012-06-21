@@ -7,11 +7,14 @@ var slide_h;
 var s_left;
 var s_top;
 var onFirefox;
+
 // slide variables
 var paper;
 var cur;
 var slide;
 var defaults;
+var cornerx;
+var cornery;
 
 // cursor variables
 var cx2;
@@ -21,6 +24,7 @@ var cy1;
 
 var rectOn;
 var lineOn;
+var panZoomOn;
 
 //for lines
 var path;
@@ -40,23 +44,38 @@ function getLineOn() {
   return lineOn;
 }
 
-function turnOnShape(string) {
+function turnOn(string) {
   if(string == "rectangle") {
     if(!rectOn) {
-      rectOn = true;
       lineOn = false;
+      panZoomOn = false;
+      rectOn = true;
       cur.undrag();
+      slide.undrag();
       cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
       slide.drag(curRectDragging, curRectDragStart, curRectDragStop);
     }
   }
   else if(string == "line") {
     if(!lineOn) {
-      lineOn = true;
       rectOn = false;
+      panZoomOn = false;
+      lineOn = true;
       cur.undrag();
+      slide.undrag();
       cur.drag(curDragging, curDragStart, curDragStop);
       slide.drag(curDragging, curDragStart, curDragStop);
+    }
+  }
+  else if(string == "panzoom") {
+    if(!panZoomOn) {
+      rectOn = false;
+      lineOn = false;
+      panZoomOn = true;
+      cur.undrag();
+      slide.undrag();
+      cur.drag(panDragging, panGo, panStop);
+      slide.drag(panDragging, panGo, panStop);
     }
   }
 }
@@ -87,9 +106,12 @@ function initDefaults() {
   cur = defaults[1];
   s_left = slide_obj.offsetLeft;
   s_top = slide_obj.offsetTop;
+  cornerx = 0;
+  cornery = 0;
   lineOn = false;
   rectOn = false;
-  turnOnShape("line");
+  panZoomOn = false;
+  turnOn("line");
   if (navigator.userAgent.indexOf("Firefox") != -1) {
     onFirefox = true;
     paper.renderfix();
@@ -100,6 +122,22 @@ function initEvents() {
   //when moving mouse around
   slide.mousemove(mvingCur);
 }
+
+var panDragging = function(dx, dy, x, y) {
+  s_left = cornerx + dx;
+  s_top = cornery + dy;
+  paper.setViewBox(s_left, s_top, slide_w, slide_h);
+};
+
+var panGo = function(x, y) {
+  cur.hide();
+};
+
+var panStop = function(e) {
+  cornerx = paper._viewBox[0];
+  cornery = paper._viewBox[1];
+  cur.show();
+};
 
 var curDragStart = function(x, y) {
   cx1 = x - s_left;
@@ -121,7 +159,7 @@ function dPath(x1, y1, x2, y2) {
 }
 
 var curDragStop = function(e) {
-    curves = Raphael.path2curve(path);
+  curves = Raphael.path2curve(path);
 };
 
 var curRectDragStart = function(x, y) {
@@ -153,7 +191,7 @@ function updRect(x1, y1, w, h) {
 }
 
 var curRectDragStop = function(e) {
-    console.log('done rectangle');
+  console.log('done rectangle');
 };
 
 var mvingCur = function(e, x, y) {

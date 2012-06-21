@@ -24,6 +24,8 @@ div(id="slideAndControls")
       input(type="submit", value="Line", onclick="chooseLine();return false;")
     form(id="chooseRect")
       input(type="submit", value="Rect", onclick="chooseRect();return false;")
+    form(id="choosePanZoom")
+      input(type="submit", value='Pan & Zoom', onclick="choosePanZoom();return false;")
   div(id="uploadcontrols")
     p Upload a custom first image
     form(method="post", enctype="multipart/form-data")
