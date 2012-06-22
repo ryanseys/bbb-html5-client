@@ -98,6 +98,8 @@ function initDefaults() {
   // Do not touch unless you know what you're doing
   slide_w = 600;
   slide_h = 400;
+  view_w  = 600;
+  view_h = 400;
   ZOOM_MAX = 4;
   
   // Create a slide if not already created
@@ -173,6 +175,7 @@ function setViewBox(xperc, yperc, wperc, hperc) {
 
 //When panning starts (placeholder for now)
 var panGo = function(x, y) {
+  cur.hide();
 };
 
 // When panning finishes
@@ -184,6 +187,7 @@ var panStop = function(e) {
 function panDone() {
   cornerx = paper._viewBox[0];
   cornery = paper._viewBox[1];
+  cur.show();
 }
 
 // When dragging for drawing lines starts
