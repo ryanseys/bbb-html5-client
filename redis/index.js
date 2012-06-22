@@ -1,37 +1,52 @@
+// Returns the function for getting the string of a specific
+// item given the name of the item type in Redis.
 exports.getItemStringFunction = function(itemString) {
   var functions = {"messages" : redisAction.getMessageString };
   return functions[itemString];
 };
 
+// Returns the function for getting the string of all the items
+// given the name of the items in Redis
 exports.getItemsStringFunction = function(itemString) {
   var functions = {"messages" : redisAction.getMessagesString };
   return functions[itemString];
 };
 
+// Get the string respresenting the list of meetings 
+// in Redis
 exports.getMeetingsString = function() {
   return "meetings";
 };
 
+// Get the string representing the key for the meeting
+// given the meetingID in Redis
 exports.getMeetingString = function(meetingID) {
   return "meeting-" + meetingID;
 };
 
+// Get the string representing the key for the hash of all
+// the users for a specified meetingID in Redis
 exports.getUsersString = function(meetingID) {
   return "meeting-" + meetingID + "-users";
 };
 
+// Get the string representing the key for a specific sessionID in Redis
 exports.getUserString = function(meetingID, sessionID) {
   return "meeting-" + meetingID + "-user-" + sessionID;
 };
 
+// Get the string representing the key for the hash of all
+// the messages for a specified meetingID in Redis
 exports.getMessagesString = function(meetingID) {
   return "meeting-" + meetingID + "-messages";
 };
 
+// Get the string representing the key for a specific message in Redis
 exports.getMessageString = function(meetingID, messageID) {
   return "meeting-" + meetingID + "-message-" + messageID;
 };
 
+// Deletes the items by itemName and an array of itemIDs (use helper)
 exports.deleteItems = function(meetingID, itemName, itemIDs) {
   //delete the list which contains the item ids
   store.del(redisAction.getItemsStringFunction(itemName)(meetingID), function(err, reply) {
@@ -50,6 +65,8 @@ exports.deleteItems = function(meetingID, itemName, itemIDs) {
   };
 };
 
+// Process of the meeting once all the users have left
+// For now, this simply deletes all the messages
 exports.processMeeting = function(meetingID) {
   items = ['messages'];
   var i = 0;
@@ -110,6 +127,7 @@ exports.getUsers =  function (meetingID, callback) {
   });
 };
 
+// Get array of items by item name and meeting id
 exports.getItems = function(meetingID, item, callback) {
   var items = [];
   var itemCount = 0;

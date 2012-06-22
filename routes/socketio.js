@@ -17,6 +17,7 @@ exports.publishUsernames = function(meetingID, sessionID) {
   });
 };
 
+//Get all messages from Redis and publish to a specific sessionID (user)
 exports.publishMessages = function(meetingID, sessionID) {
   var messages = [];
   redisAction.getItems(meetingID, "messages", function (messages) {
@@ -179,31 +180,43 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
+	// When a line creation event is received
 	socket.on('li', function (x1, y1, x2, y2) {
     pub.publish(socket.handshake.meetingID, JSON.stringify(['li', x1, y1, x2, y2]));
 	});
 	
+	// When a rectangle creation event is received
 	socket.on('makeRect', function (x, y) {
     pub.publish(socket.handshake.meetingID, JSON.stringify(['makeRect', x, y]));
 	});
 	
+	// When a rectangle update event is received
 	socket.on('updRect', function (x, y, w, h) {
     pub.publish(socket.handshake.meetingID, JSON.stringify(['updRect', x, y, w, h]));
 	});
 	
+	// When a cursor move event is received
 	socket.on('mvCur', function (x, y) {
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['mvCur', x, y]));
 	});
 	
+	// When a clear Paper event is received
 	socket.on('clrPaper', function () {
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['clrPaper']));
 	});
 	
+	// When a user is updating the viewBox of the paper
 	socket.on('viewBox', function (xperc, yperc, wperc, hperc) {
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['viewBox', xperc, yperc, wperc, hperc]));
 	});
 	
+	// When a user is zooming
 	socket.on('zoom', function(delta) {
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['zoom', delta]));
+	});
+	
+	// When a user finishes panning
+	socket.on('panStop', function() {
+	  pub.publish(socket.handshake.meetingID, JSON.stringify(['panStop']));
 	});
 };
