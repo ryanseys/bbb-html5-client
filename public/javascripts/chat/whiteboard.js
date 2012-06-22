@@ -136,14 +136,14 @@ function initEvents() {
 }
 
 var panDragging = function(dx, dy, x, y) {
-  pan_x = cornerx - dx;
-  pan_y = cornery - dy;
+  pan_x = (cornerx - dx)/view_w;
+  pan_y = (cornery - dy)/view_h;
   //check to make sure not out of boundary
   if(pan_x < 0) pan_x = 0;
   if(pan_y < 0) pan_y = 0;
-  if(view_w + pan_x > slide_w) pan_x = slide_w - view_w;
-  if(view_h + pan_y > slide_h) pan_y = slide_h - view_h;
-  paper.setViewBox(pan_x, pan_y, view_w, view_h);
+  //if(pan_x > 1) pan_x = (slide_w - view_w)/slide_w;
+  //if(pan_y > 1) pan_y = (slide_h - view_h)/view_h;
+  paper.setViewBox(pan_x*view_w, pan_y*view_h, view_w, view_h);
 };
 
 var panGo = function(x, y) {
@@ -172,7 +172,7 @@ var curDragging = function(dx, dy, x, y) {
 };
 
 function dPath(x1, y1, x2, y2) {
-  paper.path("M" + x1*slide_w +" " + y1*slide_h + "L" + x2*slide_w + " " + y2*slide_h);
+  paper.path("M" + x1*view_w +" " + y1*view_h + "L" + x2*view_w + " " + y2*view_h);
 }
 
 var curDragStop = function(e) {
@@ -218,7 +218,7 @@ var mvingCur = function(e, x, y) {
 };
 
 function mvCur(x, y) {
-  cur.attr({ cx: x*slide_w, cy: y*slide_h });
+  cur.attr({ cx: (x + pan_x)*view_w, cy: (y + pan_y)*view_h });
 }
 
 function clearPaper() {
@@ -243,9 +243,9 @@ var zoomSlide = function(event, delta) {
     view_h = slide_h;
     pan_y = 0;
   }
-  if(view_w + pan_x > slide_w) pan_x = slide_w - view_w;
-  if(view_h + pan_y > slide_h) pan_y = slide_h - view_h;
-  paper.setViewBox(pan_x, pan_y, view_w, view_h);
+  if(pan_x > 1) pan_x = (slide_w - view_w)/slide_w;
+  if(pan_y > 1) pan_y = (slide_h - view_h)/slide_h;
+  paper.setViewBox(pan_x*slide_w, pan_y*slide_h, view_w, view_h);
   return false;
 };
 
