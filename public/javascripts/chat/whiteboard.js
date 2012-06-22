@@ -4,8 +4,8 @@ slide_obj = document.getElementById("slide");
 // initialize variables
 var slide_w;
 var slide_h;
-var bottom_x;
-var bottom_y;
+var view_w;
+var view_h;
 var zoom_x;
 var zoom_y;
 var s_left; //fixed - DO NOT MODIFY
@@ -56,10 +56,10 @@ function turnOn(string) {
       lineOn = false;
       panZoomOn = false;
       rectOn = true;
-      //cur.undrag();
+      cur.undrag();
       slide.undrag();
       $('#slide').unbind('mousewheel');
-      //cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
       slide.drag(curRectDragging, curRectDragStart, curRectDragStop);
     }
   }
@@ -68,10 +68,10 @@ function turnOn(string) {
       rectOn = false;
       panZoomOn = false;
       lineOn = true;
-      //cur.undrag();
+      cur.undrag();
       slide.undrag();
       $('#slide').unbind('mousewheel');
-      //cur.drag(curDragging, curDragStart, curDragStop);
+      cur.drag(curDragging, curDragStart, curDragStop);
       slide.drag(curDragging, curDragStart, curDragStop);
     }
   }
@@ -80,10 +80,10 @@ function turnOn(string) {
       rectOn = false;
       lineOn = false;
       panZoomOn = true;
-      //cur.undrag();
+      cur.undrag();
       slide.undrag();
       $('#slide').bind('mousewheel', zoomSlide);
-      //cur.drag(panDragging, panGo, panStop);
+      cur.drag(panDragging, panGo, panStop);
       slide.drag(panDragging, panGo, panStop);
     }
   }
@@ -92,8 +92,8 @@ function turnOn(string) {
 function initDefaults() {
   slide_w = 600;
   slide_h = 400;
-  bottom_x = 600;
-  bottom_y = 400;
+  view_w = 600;
+  view_h = 400;
   paper = paper || Raphael("slide", slide_w, slide_h);
   defaults = paper.add([
     {
@@ -141,9 +141,9 @@ var panDragging = function(dx, dy, x, y) {
   //check to make sure not out of boundary
   if(pan_x < 0) pan_x = 0;
   if(pan_y < 0) pan_y = 0;
-  if(bottom_x + pan_x > slide_w) pan_x = slide_w - bottom_x;
-  if(bottom_y + pan_y > slide_h) pan_y = slide_h - bottom_y;
-  paper.setViewBox(pan_x, pan_y, bottom_x, bottom_y);
+  if(view_w + pan_x > slide_w) pan_x = slide_w - view_w;
+  if(view_h + pan_y > slide_h) pan_y = slide_h - view_h;
+  paper.setViewBox(pan_x, pan_y, view_w, view_h);
 };
 
 var panGo = function(x, y) {
@@ -157,14 +157,14 @@ var panStop = function(e) {
 };
 
 var curDragStart = function(x, y) {
-  cx1 = x - s_left;
-  cy1 = y - s_top;
+  cx1 = (x - s_left)/slide_w;
+  cy1 = (y - s_top)/slide_h;
   path = "M" + cx1 + " " + cy1;
 };
 
 var curDragging = function(dx, dy, x, y) {
-  cx2 = x - s_left;
-  cy2 = y - s_top;
+  cx2 = (x - s_left)/slide_w;
+  cy2 = (y - s_top)/slide_h;
   emLi(cx1, cy1, cx2, cy2);
   path += "L" + cx2 + " " + cy2;
   cx1 = cx2;
@@ -172,7 +172,7 @@ var curDragging = function(dx, dy, x, y) {
 };
 
 function dPath(x1, y1, x2, y2) {
-  paper.path("M" + x1 +" " + y1 + "L" + x2 + " " + y2);
+  paper.path("M" + x1*slide_w +" " + y1*slide_h + "L" + x2*slide_w + " " + y2*slide_h);
 }
 
 var curDragStop = function(e) {
@@ -180,44 +180,45 @@ var curDragStop = function(e) {
 };
 
 var curRectDragStart = function(x, y) {
-  cx2 = x - s_left;
-  cy2 = y - s_top;
+  cx2 = (x - s_left)/slide_w;
+  cy2 = (y - s_top)/slide_h;
   emMakeRect(cx2, cy2);
 };
 
 var curRectDragging = function(dx, dy, x, y, e) {
-  if(dx < 0) {
+  dx = dx/slide_w;
+  dy = dy/slide_h;
+  if(dx >= 0) x1 = cx2;
+  else {
     x1 = cx2 + dx;
     dx = -dx;
   }
-  else x1 = cx2;
-  if(dy < 0) {
+  if(dy >= 0) y1 = cy2;
+  else {
     y1 = cy2 + dy;
     dy = -dy;
   }
-  else y1 = cy2;
   emUpdRect(x1, y1, dx, dy);
 };
 
 function makeRect(x, y) {
-  rect = paper.rect(x, y, 0, 0);
+  rect = paper.rect(x*slide_w, y*slide_h, 0, 0);
 }
 
 function updRect(x1, y1, w, h) {
-  rect.attr({ x: x1, y: y1, width: w, height: h });
+  rect.attr({ x: x1*slide_w, y: y1*slide_h, width: w*slide_w, height: h*slide_h });
 }
 
 var curRectDragStop = function(e) {
-  console.log('done rectangle');
+  
 };
 
 var mvingCur = function(e, x, y) {
-  console.log(x + " " + y);
-  emMvCur(x - s_left, y - s_top);
+  emMvCur((x - s_left)/slide_w, (y - s_top)/slide_h);
 };
 
 function mvCur(x, y) {
-  cur.attr({ cx: x, cy: y });
+  cur.attr({ cx: x*slide_w, cy: y*slide_h });
 }
 
 function clearPaper() {
@@ -227,24 +228,24 @@ function clearPaper() {
 
 var zoomSlide = function(event, delta) {
   if(delta < 0) {
-    bottom_x = bottom_x * 1.05;
-    bottom_y = bottom_y * 1.05;
+    view_w = view_w * 1.05;
+    view_h = view_h * 1.05;
   }
   else {
-    bottom_x = bottom_x * 0.95;
-    bottom_y = bottom_y * 0.95;
+    view_w = view_w * 0.95;
+    view_h = view_h * 0.95;
   }
-  if(bottom_x > slide_w) {
-    bottom_x = slide_w;
+  if(view_w > slide_w) {
+    view_w = slide_w;
     pan_x = 0;
   }
-  if(bottom_y > slide_h) {
-    bottom_y = slide_h;
+  if(view_h > slide_h) {
+    view_h = slide_h;
     pan_y = 0;
   }
-  if(bottom_x + pan_x > slide_w) pan_x = slide_w - bottom_x;
-  if(bottom_y + pan_y > slide_h) pan_y = slide_h - bottom_y;
-  paper.setViewBox(pan_x, pan_y, bottom_x, bottom_y);
+  if(view_w + pan_x > slide_w) pan_x = slide_w - view_w;
+  if(view_h + pan_y > slide_h) pan_y = slide_h - view_h;
+  paper.setViewBox(pan_x, pan_y, view_w, view_h);
   return false;
 };
 
