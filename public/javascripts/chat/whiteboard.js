@@ -243,8 +243,8 @@ var zoomSlide = function(event, delta) {
     view_h = slide_h;
     pan_y = 0;
   }
-  if(pan_x > 1) pan_x = (slide_w - view_w)/slide_w;
-  if(pan_y > 1) pan_y = (slide_h - view_h)/slide_h;
+  if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
+  if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
   paper.setViewBox(pan_x*slide_w, pan_y*slide_h, view_w, view_h);
   return false;
 };
