@@ -79,6 +79,10 @@ socket.on('connect', function () {
 	  updRect(x, y, w, h);
 	});
 	
+	socket.on('viewBox', function(xperc, yperc, wperc, hperc){
+	  setViewBox(xperc, yperc, wperc, hperc);
+	});
+	
 	socket.on('mvCur', function(x, y) {
 	  mvCur(x, y);
 	});
@@ -131,6 +135,10 @@ function emUpdRect(x, y, w, h) {
 
 function emMvCur(x, y) {
   socket.emit('mvCur', x, y);
+}
+
+function emViewBox(xperc, yperc, wperc, hperc) {
+  socket.emit('viewBox', xperc, yperc, wperc, hperc);
 }
 
 function getNextSlide(curr, max) {

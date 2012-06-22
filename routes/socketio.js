@@ -198,4 +198,8 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('clrPaper', function () {
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['clrPaper']));
 	});
+	
+	socket.on('viewBox', function (xperc, yperc, wperc, hperc) {
+	  pub.publish(socket.handshake.meetingID, JSON.stringify(['viewBox', xperc, yperc, wperc, hperc]));
+	});
 };
