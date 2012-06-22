@@ -91,6 +91,10 @@ socket.on('connect', function () {
 	  current_slide = slidenum;
 	  slide.attr('src', url);
 	});
+	
+	socket.on('zoom', function(delta) {
+	  setZoom(delta);
+	})
 });
 
 socket.on('error', function (reason) {
@@ -140,6 +144,11 @@ function emMvCur(x, y) {
 function emViewBox(xperc, yperc, wperc, hperc) {
   socket.emit('viewBox', xperc, yperc, wperc, hperc);
 }
+
+function emZoom(delta) {
+  socket.emit('zoom', delta);
+}
+
 
 function getNextSlide(curr, max) {
   if(curr == max) return 1;

@@ -202,4 +202,8 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('viewBox', function (xperc, yperc, wperc, hperc) {
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['viewBox', xperc, yperc, wperc, hperc]));
 	});
+	
+	socket.on('zoom', function(delta) {
+	  pub.publish(socket.handshake.meetingID, JSON.stringify(['zoom', delta]));
+	});
 };

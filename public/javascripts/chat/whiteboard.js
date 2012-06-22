@@ -141,16 +141,12 @@ var panDragging = function(dx, dy, x, y) {
   //check to make sure not out of boundary
   if(pan_x < 0) pan_x = 0;
   if(pan_y < 0) pan_y = 0;
-  
   if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
   if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
-  console.log("emit " + [pan_x, pan_y, view_w/slide_w, view_h/slide_h].join(" "));
   emViewBox(pan_x, pan_y, view_w/slide_w, view_h/slide_h);
-  //paper.setViewBox(pan_x*view_w, pan_y*view_h, view_w, view_h);
 };
 
 function setViewBox(xperc, yperc, wperc, hperc) {
-  console.log("set " + [xperc*view_w, yperc*view_h, wperc*view_w, hperc*view_h].join(" "));
   paper.setViewBox(xperc*view_w, yperc*view_h, wperc*slide_w, hperc*slide_h);
 }
 
@@ -234,6 +230,10 @@ function clearPaper() {
 }
 
 var zoomSlide = function(event, delta) {
+  emZoom(delta);
+};
+
+function setZoom(delta) {
   if(delta < 0) {
     view_w = view_w * 1.05;
     view_h = view_h * 1.05;
@@ -252,10 +252,8 @@ var zoomSlide = function(event, delta) {
   }
   if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
   if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
-  console.log([pan_x, pan_y, view_w/slide_w, view_h/slide_h].join(" "));
-  emViewBox(pan_x, pan_y, view_w/slide_w, view_h/slide_h);
-  //paper.setViewBox(pan_x*view_w, pan_y*view_h, view_w, view_h);
-};
+  setViewBox(pan_x, pan_y, view_w/slide_w, view_h/slide_h);
+}
 
 function initPaper() {
   initDefaults();
