@@ -8,8 +8,8 @@ var msgbox = document.getElementById("chat_messages");
 var chatbox = document.getElementById('chat_input_box');
 
 var PORT = 3000;
-//var SERVER_IP = 'localhost';
-var SERVER_IP = '192.168.0.103';
+var SERVER_IP = 'localhost';
+//var SERVER_IP = '192.168.0.103';
 
 //connect to the websocket.
 var socket = io.connect('http://'+SERVER_IP+':'+PORT);
