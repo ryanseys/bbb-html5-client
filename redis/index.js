@@ -3,7 +3,8 @@
 exports.getItemStringFunction = function(itemString) {
   var functions = {
     "messages" : redisAction.getMessageString, 
-    "paths" : redisAction.getPathString, 
+    "paths" : redisAction.getPathString,
+    "rects" : redisAction.getRectString,
     "currentpaths" : redisAction.getPathString,
     "currentrects" : redisAction.getRectString
   };
@@ -16,6 +17,7 @@ exports.getItemsStringFunction = function(itemString) {
   var functions = {
     "messages" : redisAction.getMessagesString, 
     "paths" : redisAction.getPathsString, 
+    "rects" : redisAction.getRectsString,
     "currentpaths" : redisAction.getCurrentPathsString,
     "currentrects" : redisAction.getCurrentRectsString
   };
@@ -47,56 +49,89 @@ exports.getUserString = function(meetingID, sessionID) {
 
 // Get the string representing the key for the hash of all
 // the messages for a specified meetingID in Redis
-exports.getMessagesString = function(meetingID) {
+exports.getMessagesString = function(meetingID, presentationID, pageID) {
   return "meeting-" + meetingID + "-messages";
 };
 
 // Get the string representing the key for a specific message in Redis
-exports.getMessageString = function(meetingID, messageID) {
+exports.getMessageString = function(meetingID, presentationID, pageID, messageID) {
   return "meeting-" + meetingID + "-message-" + messageID;
 };
 
-exports.getPathString = function(meetingID, pathID) {
-  return "meeting-" + meetingID + "-path-" + pathID;
+exports.getPresentationsString = function(meetingID) {
+  return "meeting-" + meetingID + "-presentations";
 };
 
-exports.getPathsString  = function(meetingID) {
-  return "meeting-" + meetingID + "-paths";
+exports.getPresentationString = function(meetingID, presentationID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID;
 };
 
-exports.getCurrentPathsString = function(meetingID) {
-  return "meeting-" + meetingID + "-currentpaths";
+exports.getPagesString = function(meetingID, presentationID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-pages";
 };
 
-exports.getRectString = function(meetingID, rectID) {
-  return "meeting-" + meetingID + "-rect-" + rectID;
+exports.getCurrentPresentationString = function(meetingID) {
+  return "meeting-" + meetingID + "-currentpresentation";
 };
 
-exports.getRectsString  = function(meetingID) {
-  return "meeting-" + meetingID + "-rects";
+exports.getCurrentPageString = function(meetingID, presentationID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-currentpage";
 };
 
-exports.getCurrentRectsString = function(meetingID) {
-  return "meeting-" + meetingID + "-currentrects";
+exports.getPageString = function(meetingID, presentationID, pageID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID;
 };
 
-exports.deleteItemList = function(meetingID, itemName, callback) {
+exports.getPageImageString = function(meetingID, presentationID, pageID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-image";
+};
+
+exports.getPathString = function(meetingID, presentationID, pageID, pathID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-path-" + pathID;
+};
+
+exports.getPathsString  = function(meetingID, presentationID, pageID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-paths";
+};
+
+exports.getCurrentPathsString = function(meetingID, presentationID, pageID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-currentpaths";
+};
+
+exports.getRectString = function(meetingID, presentationID, pageID, rectID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-rect-" + rectID;
+};
+
+exports.getRectsString  = function(meetingID, presentationID, pageID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-rects";
+};
+
+exports.getCurrentRectsString = function(meetingID, presentationID, pageID) {
+  return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-currentrects";
+};
+
+exports.deleteItemList = function(meetingID, presentationID, pageID, itemName, callback) {
   //delete the list which contains the item ids
-  store.del(redisAction.getItemsStringFunction(itemName)(meetingID), function(err, reply) {
+  store.del(redisAction.getItemsStringFunction(itemName)(meetingID, presentationID, pageID), function(err, reply) {
     if(reply) {
-      console.log("Delete the list of items");
+      console.log("Delete the list of items: " + itemName);
     }
+    else console.log("Error: could not delete list of items: " + itemName);
   });
 };
 
 // Deletes the items by itemName and an array of itemIDs (use helper)
-exports.deleteItems = function(meetingID, itemName, itemIDs) {
+exports.deleteItems = function(meetingID, presentationID, pageID, itemName, itemIDs) {
+  console.log("Deleting " + itemName +" with IDs ");
+  console.log(itemIDs);
   //delete each item
   for (var j = itemIDs.length - 1; j >= 0; j--) {
-    store.del(redisAction.getItemStringFunction(itemName)(meetingID, itemIDs[j]), function(err, reply) {
+    console.log(redisAction.getItemStringFunction(itemName)(meetingID, presentationID, pageID, itemIDs[j]));
+    store.del(redisAction.getItemStringFunction(itemName)(meetingID, presentationID, pageID, itemIDs[j]), function(err, reply) {
       if(reply) {
-        console.log("Deleted item");
+        console.log("Deleted item: " + itemName);
       }
+      else console.log("Error: could not delete item: " + itemName);
     });
   };
 };
@@ -104,21 +139,47 @@ exports.deleteItems = function(meetingID, itemName, itemIDs) {
 // Process of the meeting once all the users have left
 // For now, this simply deletes all the messages
 exports.processMeeting = function(meetingID) {
-  items = ['messages', 'paths', 'currentpaths'];
-  var i = 0;
-  for (var i = items.length - 1; i >= 0; i--){
-    redisAction.getItemIDs(meetingID, items[i], function(itemIDs, itemName) {
-      redisAction.deleteItemList(meetingID, itemName);
-      redisAction.deleteItems(meetingID, itemName, itemIDs);
-    });
-  };
+  redisAction.getPresentationIDs(meetingID, function(presIDs) {
+    for(var k = presIDs.length - 1; k >=0; k--) {
+      redisAction.getPageIDs(meetingID, presIDs[k], function(presID, pageIDs) {
+        for(var m = pageIDs.length - 1; m >= 0; m--) {
+          items = ['messages', 'paths', 'rects'];
+          var j = 0;
+          for (var j = items.length - 1; j >= 0; j--) {
+            //must iterate through all presentations and all pages
+            redisAction.getItemIDs(meetingID, presID, pageIDs[m], items[j], function(meetingID, presentationID, pageID, itemIDs, itemName) {
+              redisAction.deleteItems(meetingID, presentationID, pageID, itemName, itemIDs);
+            });
+          }
+          lists = ['currentpaths', 'currentrects', 'messages', 'paths', 'rects'];
+          for (var n = lists.length - 1; n >= 0; n--) {
+            redisAction.deleteItemList(meetingID, presID, pageIDs[m], lists[n]);
+          }
+        }
+      });
+      redisAction.deletePages(meetingID, presIDs[k]); //delete all the pages for the associated presentation
+    }
+  });
+  redisAction.deletePresentations(meetingID); //delete all the presentations
 };
 
 // This doesn't work right now. It is supossed to delete all the messages from
 // a specific meeting
-exports.getItemIDs = function(meetingID, itemName, callback) {
-  store.lrange(redisAction.getItemsStringFunction(itemName)(meetingID), 0, -1, function(err, itemIDs) {
-      callback(itemIDs, itemName);
+exports.getItemIDs = function(meetingID, presentationID, pageID, itemName, callback) {
+  store.lrange(redisAction.getItemsStringFunction(itemName)(meetingID, presentationID, pageID), 0, -1, function(err, itemIDs) {
+    callback(meetingID, presentationID, pageID, itemIDs, itemName);
+  });
+};
+
+exports.getPresentationIDs = function(meetingID, callback) {
+  store.smembers(redisAction.getPresentationsString(meetingID), function(err, presIDs) {
+    callback(presIDs);
+  });
+};
+
+exports.getPageIDs = function(meetingID, presentationID, callback) {
+  store.lrange(redisAction.getPagesString(meetingID, presentationID), 0, -1, function(err, pageIDs) {
+    callback(presentationID, pageIDs);
   });
 };
 
@@ -126,6 +187,36 @@ exports.getItemIDs = function(meetingID, itemName, callback) {
 exports.isValidSession = function(meetingID, sessionID, callback) {
   store.sismember(redisAction.getUsersString(meetingID), sessionID, function(err, isValid) {
     callback(isValid);
+  });
+};
+
+exports.deletePages = function(meetingID, presentationID) {
+  store.del(redisAction.getPagesString(meetingID, presentationID), function(err, reply) {
+    if(reply) {
+      console.log("Deleted all pages");
+    }
+    else console.log("Couldn't delete all pages");
+  });
+  store.del(redisAction.getCurrentPageString(meetingID, presentationID), function(err, reply) {
+    if(reply) {
+      console.log("Deleted current page");
+    }
+    else console.log("Couldn't delete current page");
+  });
+};
+
+exports.deletePresentations = function(meetingID) {
+  store.del(redisAction.getPresentationsString(meetingID), function(err, reply) {
+    if(reply) {
+      console.log("Deleted all presentations");
+    }
+    else console.log("Couldn't delete all presentations");
+  });
+  store.del(redisAction.getCurrentPresentationString(meetingID), function(err, reply) {
+    if(reply) {
+      console.log("Deleted current presentation");
+    }
+    else console.log("Couldn't delete current presentation");
   });
 };
 
@@ -165,7 +256,7 @@ exports.getUsers =  function (meetingID, callback) {
 };
 
 // Get array of items by item name and meeting id
-exports.getItems = function(meetingID, item, callback) {
+exports.getItems = function(meetingID, presentationID, pageID, item, callback) {
   var items = [];
   var itemCount = 0;
   var itemsDone = 0;
@@ -175,10 +266,10 @@ exports.getItems = function(meetingID, item, callback) {
   itemGetFunction = redisAction.getItemStringFunction(item);
   itemsGetFunction = redisAction.getItemsStringFunction(item);
   
-  store.lrange(itemsGetFunction(meetingID), 0, -1, function (err, itemIDs) {
+  store.lrange(itemsGetFunction(meetingID, presentationID, pageID), 0, -1, function (err, itemIDs) {
     itemCount = itemIDs.length;
     for (var i = itemCount - 1; i >= 0; i--) {
-      store.hgetall(itemGetFunction(meetingID, itemIDs[i]), function(err, itemHash) {
+      store.hgetall(itemGetFunction(meetingID, presentationID, pageID, itemIDs[i]), function(err, itemHash) {
         items.push(itemHash);
         itemsDone++;
         if (itemCount == itemsDone) {
@@ -186,5 +277,23 @@ exports.getItems = function(meetingID, item, callback) {
         }
       });
     };
+  });
+};
+
+exports.getCurrentPresentationID = function(meetingID, callback) {
+  store.get(redisAction.getCurrentPresentationString(meetingID), function(err, currPresID) {
+    if(currPresID) {
+      callback(currPresID);
+    }
+    else console.log("Error: could not get current presentationID");
+  });
+};
+
+exports.getCurrentPageID = function(meetingID, presentationID, callback) {
+  store.get(redisAction.getCurrentPageString(meetingID, presentationID), function(err, currPgID) {
+    if(currPgID) {
+      callback(currPgID);
+    }
+    else console.log("Error: could not get current pageID");
   });
 };

@@ -19,6 +19,26 @@ exports.post_index = function(req, res) {
   if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length)) {
 	  store.sadd(redisAction.getMeetingsString(), meetingID); //create the meeting if not already created.
 	  store.sadd(redisAction.getUsersString(meetingID), req.sessionID); //meeting-123-users.push(sessionID)
+	  
+	  store.get(redisAction.getCurrentPresentationString(meetingID), function(err, currPresID) {
+	    if(!currPresID) {
+	      var presentationID = hat(); //create a new unique presentationID
+	      store.sadd(redisAction.getPresentationsString(meetingID), presentationID, function(err, reply) {
+	        console.log("Added presentationID " + presentationID + " to set of presentations.");
+	      });
+	      store.set(redisAction.getCurrentPresentationString(meetingID), presentationID, function(err, reply) {
+	        console.log("Set presentationID to " + presentationID);
+	      });
+	      var pageID = hat(); //create a new unique pageID.
+	      store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID, function(err, reply) {
+	        console.log("Added pageID " + pageID + " to list of pages."); 
+	      });
+	      store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {
+	        console.log("Set current pageID to " + pageID);
+	      });
+	    }
+	    else console.log("Current presentation already exists as ID " + currPresID);
+	  });
 	  store.hmset(redisAction.getUserString(meetingID, req.sessionID), "username", username,
 	          "meetingID", meetingID, "refreshing", false, "dupSess", false, "sockets", 0);
 	  res.cookie('sessionid', req.sessionID); //save the id so socketio can get the username
