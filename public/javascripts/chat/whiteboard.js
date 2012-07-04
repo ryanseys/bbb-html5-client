@@ -23,6 +23,8 @@ var defaults;
 var cornerx;
 var cornery;
 
+var default_cur_r;
+
 // cursor variables
 var cx2;
 var cy2;
@@ -98,9 +100,8 @@ function initDefaults() {
   // Do not touch unless you know what you're doing
   slide_w = 600;
   slide_h = 400;
-  view_w  = 600;
-  view_h = 400;
   ZOOM_MAX = 4;
+  default_cur_r = 3;
   
   // Create a slide if not already created
   paper = paper || Raphael("slide", slide_w, slide_h);
@@ -119,10 +120,19 @@ function initDefaults() {
       type: "circle",
       cx: 0,
       cy: 0,
-      r: 3,
+      r: default_cur_r,
       fill: "red"
     }
   ]);
+  if (paper._viewBox) {
+    view_w = paper._viewBox[2];
+    view_h = paper._viewBox[3];
+  }
+  else {
+    view_w = slide_w;
+    view_h = slide_h;
+  }
+  
   
   // Set defaults for variables
   slide = defaults[0];
@@ -131,8 +141,15 @@ function initDefaults() {
   s_top = slide_obj.offsetTop;
   cornerx = 0;
   cornery = 0;
-  pan_x = 0;
-  pan_y = 0;
+  if(paper._viewBox) {
+    pan_x = paper._viewBox[0]/view_w;
+    pan_y = paper._viewBox[1]/view_h;
+  }
+  else {
+    pan_x = 0;
+    pan_y = 0;
+  }
+  
   lineOn = false;
   rectOn = false;
   panZoomOn = false;
@@ -295,20 +312,24 @@ function setZoom(delta) {
   if(delta < 0) {
       view_w = view_w * 1.05;
       view_h = view_h * 1.05;
+      cur.attr({ 'r' : cur.attrs.r*1.05 });
   }
   else {
     if(slide_h/view_h < ZOOM_MAX) {
       view_w = view_w * 0.95;
       view_h = view_h * 0.95;
+      cur.attr({ 'r' : cur.attrs.r*0.95 });
     }
   }
   if(view_w > slide_w) {
     view_w = slide_w;
     pan_x = 0;
+    cur.attr({ 'r' : default_cur_r });
   }
   if(view_h > slide_h) {
     view_h = slide_h;
     pan_y = 0;
+    cur.attr({ 'r' : default_cur_r });
   }
   if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
   if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
