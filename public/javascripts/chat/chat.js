@@ -9,7 +9,7 @@ var chatbox = document.getElementById('chat_input_box');
 
 var PORT = 3000;
 var SERVER_IP = 'localhost';
-//var SERVER_IP = '192.168.0.103';
+//var SERVER_IP = '192.168.0.233';
 
 //connect to the websocket.
 var socket = io.connect('http://'+SERVER_IP+':'+PORT);
@@ -48,6 +48,39 @@ socket.on('connect', function () {
       msgbox.innerHTML += '<div>' + messages[i].username + ": " + messages[i].message + '</div>';
 	  };
 	  msgbox.scrollTop = msgbox.scrollHeight;
+	});
+	
+	socket.on('all_paths', function (paths) {
+	  for (var i = paths.length - 1; i >= 0; i--) {
+	    var pathArray = paths[i].path.split(',');
+	    var firstValuesArray = pathArray[0].split(' ');
+	    for (var j = 0; j < 2; j++) {
+        if(j == 0) {
+          firstValuesArray[j] *= 600; //put width
+        }
+        else firstValuesArray[j] *= 400; //put height
+      }
+	    var pathString = "M" + firstValuesArray.join(' ');
+	    var len = pathArray.length;
+	    for (var k = 1; k < len; k++) {
+	      var pairOfPoints = pathArray[k].split(' ');
+	      for (var m = 0; m < 2; m++) {
+	        if(m == 0) {
+	          pairOfPoints[m] *= 600; //put width
+	        }
+	        else pairOfPoints[m] *= 400; //put height
+        }
+	      pathString += "L" + pairOfPoints.join(' ');
+      }
+	    setPath(pathString);
+    }
+	});
+	
+	socket.on('all_rects', function (rects) {
+	  for (var i = rects.length - 1; i >= 0; i--) {
+	    var r = rects[i].rect.split(',');
+	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]));
+    }
 	});
   
   // If the server is reconnected to the client
@@ -208,16 +241,24 @@ function emPanStop() {
   socket.emit('panStop');
 }
 
+function emPublishPath(path) {
+  socket.emit('savePath', path);
+}
+
+function emPublishRect(x, y, w, h) {
+  socket.emit('saveRect', x, y, w, h);
+}
+
 // Calculate the next slide (temporary)
 function getNextSlide(curr, max) {
-  if(curr == max) return 1;
-  else return curr+1;
+  if(curr != max) return curr+1;
+  else return 1;
 }
 
 // Calculate the previous slide (temporary)
 function getPrevSlide(curr, max) {
-  if(curr == 1) return max;
-  else return curr-1;
+  if(curr != 1) return curr-1;
+  else return max;
 }
 
 // Set the drawing type to "line"

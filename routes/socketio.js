@@ -26,6 +26,24 @@ exports.publishMessages = function(meetingID, sessionID) {
   });
 };
 
+//Get all paths from Redis and publish to a specific sessionID (user)
+exports.publishPaths = function(meetingID, sessionID) {
+  var paths = [];
+  redisAction.getItems(meetingID, "currentpaths", function (paths) {
+    var receivers = sessionID != undefined ? sessionID : meetingID;
+    pub.publish(receivers, JSON.stringify(['all_paths', paths]));
+  });
+};
+
+//Get all rectangles from Redis and publish to a specific sessionID (user)
+exports.publishRects = function(meetingID, sessionID) {
+  var rects = [];
+  redisAction.getItems(meetingID, "currentrects", function (rects) {
+    var receivers = sessionID != undefined ? sessionID : meetingID;
+    pub.publish(receivers, JSON.stringify(['all_rects', rects]));
+  });
+};
+
 // All socket IO events that can be emitted by the client
 exports.SocketOnConnection = function(socket) {
 	
@@ -46,7 +64,6 @@ exports.SocketOnConnection = function(socket) {
           var messageID = hat(); //get a randomly generated id for the message
           store.rpush(redisAction.getMessagesString(meetingID), messageID); //store the messageID in the list of messages
           store.hmset(redisAction.getMessageString(meetingID, messageID), "message", msg, "username", username);
-          
         }
 	    }
 	  });
@@ -80,6 +97,8 @@ exports.SocketOnConnection = function(socket) {
     			  socketAction.publishUsernames(meetingID, sessionID);
   			  }
   			  socketAction.publishMessages(meetingID, sessionID);
+  			  socketAction.publishPaths(meetingID, sessionID);
+  			  socketAction.publishRects(meetingID, sessionID);
     		});
   		}
   	});
@@ -202,7 +221,16 @@ exports.SocketOnConnection = function(socket) {
 	
 	// When a clear Paper event is received
 	socket.on('clrPaper', function () {
-	  pub.publish(socket.handshake.meetingID, JSON.stringify(['clrPaper']));
+	  var meetingID = socket.handshake.meetingID;
+	  //delete all current paths
+	  redisAction.getItemIDs(meetingID, 'currentpaths', function(itemIDs, itemName) {
+      redisAction.deleteItemList(meetingID, itemName, itemIDs);
+    });
+    //delete all current rects
+	  redisAction.getItemIDs(meetingID, 'currentrects', function(itemIDs, itemName) {
+      redisAction.deleteItemList(meetingID, itemName, itemIDs);
+    });
+	  pub.publish(meetingID, JSON.stringify(['clrPaper']));
 	});
 	
 	// When a user is updating the viewBox of the paper
@@ -218,5 +246,23 @@ exports.SocketOnConnection = function(socket) {
 	// When a user finishes panning
 	socket.on('panStop', function() {
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['panStop']));
+	});
+	
+	socket.on('savePath', function(path) {
+	  var handshake = socket.handshake;
+		var meetingID = handshake.meetingID;
+	  var pathID = hat(); //get a randomly generated id for the message
+    store.rpush(redisAction.getPathsString(meetingID), pathID); //store the pathID in the list of paths
+    store.rpush(redisAction.getCurrentPathsString(meetingID), pathID); //store the pathID in the list of currentpaths
+    store.hmset(redisAction.getPathString(meetingID, pathID), "path", path);
+	});
+	
+	socket.on('saveRect', function(x, y, w, h) {
+	  var handshake = socket.handshake;
+		var meetingID = handshake.meetingID;
+	  var rectID = hat(); //get a randomly generated id for the message
+	  store.rpush(redisAction.getRectsString(meetingID), rectID); //store the pathID in the list of paths
+    store.rpush(redisAction.getCurrentRectsString(meetingID), rectID); //store the pathID in the list of currentpaths
+    store.hmset(redisAction.getRectString(meetingID, rectID), "rect", [x, y, w, h].join(','));
 	});
 };

@@ -1,14 +1,24 @@
 // Returns the function for getting the string of a specific
 // item given the name of the item type in Redis.
 exports.getItemStringFunction = function(itemString) {
-  var functions = {"messages" : redisAction.getMessageString };
+  var functions = {
+    "messages" : redisAction.getMessageString, 
+    "paths" : redisAction.getPathString, 
+    "currentpaths" : redisAction.getPathString,
+    "currentrects" : redisAction.getRectString
+  };
   return functions[itemString];
 };
 
 // Returns the function for getting the string of all the items
 // given the name of the items in Redis
 exports.getItemsStringFunction = function(itemString) {
-  var functions = {"messages" : redisAction.getMessagesString };
+  var functions = {
+    "messages" : redisAction.getMessagesString, 
+    "paths" : redisAction.getPathsString, 
+    "currentpaths" : redisAction.getCurrentPathsString,
+    "currentrects" : redisAction.getCurrentRectsString
+  };
   return functions[itemString];
 };
 
@@ -46,15 +56,41 @@ exports.getMessageString = function(meetingID, messageID) {
   return "meeting-" + meetingID + "-message-" + messageID;
 };
 
-// Deletes the items by itemName and an array of itemIDs (use helper)
-exports.deleteItems = function(meetingID, itemName, itemIDs) {
+exports.getPathString = function(meetingID, pathID) {
+  return "meeting-" + meetingID + "-path-" + pathID;
+};
+
+exports.getPathsString  = function(meetingID) {
+  return "meeting-" + meetingID + "-paths";
+};
+
+exports.getCurrentPathsString = function(meetingID) {
+  return "meeting-" + meetingID + "-currentpaths";
+};
+
+exports.getRectString = function(meetingID, rectID) {
+  return "meeting-" + meetingID + "-rect-" + rectID;
+};
+
+exports.getRectsString  = function(meetingID) {
+  return "meeting-" + meetingID + "-rects";
+};
+
+exports.getCurrentRectsString = function(meetingID) {
+  return "meeting-" + meetingID + "-currentrects";
+};
+
+exports.deleteItemList = function(meetingID, itemName, callback) {
   //delete the list which contains the item ids
   store.del(redisAction.getItemsStringFunction(itemName)(meetingID), function(err, reply) {
     if(reply) {
       console.log("Delete the list of items");
     }
   });
-  
+};
+
+// Deletes the items by itemName and an array of itemIDs (use helper)
+exports.deleteItems = function(meetingID, itemName, itemIDs) {
   //delete each item
   for (var j = itemIDs.length - 1; j >= 0; j--) {
     store.del(redisAction.getItemStringFunction(itemName)(meetingID, itemIDs[j]), function(err, reply) {
@@ -68,10 +104,11 @@ exports.deleteItems = function(meetingID, itemName, itemIDs) {
 // Process of the meeting once all the users have left
 // For now, this simply deletes all the messages
 exports.processMeeting = function(meetingID) {
-  items = ['messages'];
+  items = ['messages', 'paths', 'currentpaths'];
   var i = 0;
   for (var i = items.length - 1; i >= 0; i--){
     redisAction.getItemIDs(meetingID, items[i], function(itemIDs, itemName) {
+      redisAction.deleteItemList(meetingID, itemName);
       redisAction.deleteItems(meetingID, itemName, itemIDs);
     });
   };
@@ -135,11 +172,8 @@ exports.getItems = function(meetingID, item, callback) {
   var itemsGetFunction;
   var itemGetFunction;
   
-  if(item == "messages") {
-    itemsGetFunction = redisAction.getMessagesString;
-    itemGetFunction = redisAction.getMessageString;
-  }
-  else callback([]);
+  itemGetFunction = redisAction.getItemStringFunction(item);
+  itemsGetFunction = redisAction.getItemsStringFunction(item);
   
   store.lrange(itemsGetFunction(meetingID), 0, -1, function (err, itemIDs) {
     itemCount = itemIDs.length;

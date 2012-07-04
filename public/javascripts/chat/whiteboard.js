@@ -194,7 +194,7 @@ function panDone() {
 var curDragStart = function(x, y) {
   cx1 = (x - s_left)/slide_w;
   cy1 = (y - s_top)/slide_h;
-  path = "M" + cx1 + " " + cy1;
+  path = (cx1+pan_x)*view_w/slide_w + " " + (cy1+pan_y)*view_h/slide_h;
 };
 
 // As line drawing drag continues
@@ -202,19 +202,19 @@ var curDragging = function(dx, dy, x, y) {
   cx2 = (x - s_left)/slide_w;
   cy2 = (y - s_top)/slide_h;
   emLi(cx1, cy1, cx2, cy2); //emit to socket
-  path += "L" + cx2 + " " + cy2;
+  path += "," + (cx2+pan_x)*view_w/slide_w + " " + (cy2+pan_y)*view_h/slide_h;
   cx1 = cx2;
   cy1 = cy2;
 };
 
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2) {
-  paper.path("M" + x1*view_w +" " + y1*view_h + "L" + x2*view_w + " " + y2*view_h);
+  paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
 }
 
 // Drawing line has ended
 var curDragStop = function(e) {
-  curves = Raphael.path2curve(path);
+  emPublishPath(path);
 };
 
 // Creating a rectangle has started
@@ -246,13 +246,23 @@ function makeRect(x, y) {
   rect = paper.rect(x*slide_w, y*slide_h, 0, 0);
 }
 
+function drawRect(x, y, w, h) {
+  var r = paper.rect(x*slide_w, y*slide_h, w*slide_w, h*slide_h);
+}
+
 // Socket response - Update rectangle drawn
 function updRect(x1, y1, w, h) {
-  rect.attr({ x: x1*slide_w, y: y1*slide_h, width: w*slide_w, height: h*slide_h });
+  if(rect) {
+    rect.attr({ x: (x1 + pan_x)*view_w, y: (y1 + pan_y)*view_h, width: w*view_w, height: h*view_h });
+  }
+  else rect = paper.rect(x1*slide_w, y1*slide_h, w, h);
 }
 
 // When rectangle finished being drawn (placeholder for now)
 var curRectDragStop = function(e) {
+  if(rect) var r = rect.attrs;
+  if(r) emPublishRect(r.x/slide_w, r.y/slide_h, r.width/slide_w, r.height/slide_h);
+  rect = null;
 };
 
 // Send cursor moving event to server
@@ -269,6 +279,10 @@ function mvCur(x, y) {
 function clearPaper() {
   paper.clear();
   initPaper();
+}
+
+function setPath(path) {
+  paper.path(path);
 }
 
 // Update zoom variables on all clients
