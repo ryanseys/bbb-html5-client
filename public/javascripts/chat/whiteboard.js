@@ -19,9 +19,12 @@ var onFirefox;
 var paper;
 var cur;
 var slide;
+var current_slide;
 var defaults;
 var cornerx;
 var cornery;
+
+var slides;
 
 var default_cur_r;
 
@@ -98,24 +101,18 @@ function turnOn(string) {
 // Initialize default values
 function initDefaults() {
   // Do not touch unless you know what you're doing
-  slide_w = 600;
-  slide_h = 400;
+  
   ZOOM_MAX = 4;
   default_cur_r = 3;
-  
+
+  slide_w = 600;
+  slide_h = 400;
+
   // Create a slide if not already created
-  paper = paper || Raphael("slide", slide_w, slide_h);
-  
+  paper = paper || Raphael("slide", 600, 400);
+
   //Default objects in paper (canvas)
   defaults = paper.add([
-    {
-      type: "image",
-      src: '/images/presentation/test1.png',
-      x: 0,
-      y: 0,
-      width: slide_w,
-      height: slide_h
-    },
     {
       type: "circle",
       cx: 0,
@@ -124,6 +121,7 @@ function initDefaults() {
       fill: "red"
     }
   ]);
+
   if (paper._viewBox) {
     view_w = paper._viewBox[2];
     view_h = paper._viewBox[3];
@@ -132,11 +130,12 @@ function initDefaults() {
     view_w = slide_w;
     view_h = slide_h;
   }
-  
-  
+
+
   // Set defaults for variables
-  slide = defaults[0];
-  cur = defaults[1];
+  slides = {};
+  slide = addImageToPaper('/images/default.png');
+  cur = defaults[0];
   s_left = slide_obj.offsetLeft;
   s_top = slide_obj.offsetTop;
   cornerx = 0;
@@ -149,17 +148,18 @@ function initDefaults() {
     pan_x = 0;
     pan_y = 0;
   }
-  
+
   lineOn = false;
   rectOn = false;
   panZoomOn = false;
   turnOn("panzoom"); // default tool on is specified here
-  
+
   // Firefox fix
   if (navigator.userAgent.indexOf("Firefox") != -1) {
     onFirefox = true;
     paper.renderfix();
   }
+  initEvents();
 }
 
 // Initialize the events
@@ -170,7 +170,44 @@ function initEvents() {
 // Initialize the paper
 function initPaper() {
   initDefaults();
-  initEvents();
+}
+
+function addImageToPaper(url) {
+  var img = paper.image(url, 0, 0, slide_w, slide_h);
+  slides[url] = img.id;
+  return img;
+}
+
+function removeAllImagesFromPaper() {
+  var img;
+  for (id in slides) {
+    if(slides.hasOwnProperty(id)) {
+      paper.getById(slides[id]).remove();
+    }
+  }
+  slides = {};
+}
+
+function getImageFromPaper(url) {
+  var id = slides[url];
+  if(id) {
+    return paper.getById(id);
+  }
+}
+
+function showImageFromPaper(url) {
+  var id = slides[url];
+  for(thisurl in slides) {
+    if(url != thisurl) {
+      paper.getById(slides[thisurl]).hide();
+    }
+  }
+  paper.getById(id).show();
+}
+
+function hideImageFromPaper(url) {
+  var img = getImageFromPaper(url);
+  img.hide();
 }
 
 // When the user is dragging the cursor (click + move)
@@ -227,7 +264,7 @@ var curDragging = function(dx, dy, x, y) {
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2) {
   paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
-}
+};
 
 // Drawing line has ended
 var curDragStop = function(e) {
@@ -290,7 +327,7 @@ var mvingCur = function(e, x, y) {
 // Socket response - Update the cursor position on screen
 function mvCur(x, y) {
   cur.attr({ cx: (x + pan_x)*view_w, cy: (y + pan_y)*view_h });
-}
+};
 
 // Socket response - Clear canvas
 function clearPaper() {

@@ -1,11 +1,8 @@
-// temporary variables for slide count
-var current_slide = 1;
-var max_slide = 3;
-
 // Object references
 var chcount = document.getElementById('charcount');
 var msgbox = document.getElementById("chat_messages");
 var chatbox = document.getElementById('chat_input_box');
+var proc_img = document.getElementById('processing_img');
 
 var PORT = 3000;
 var SERVER_IP = 'localhost';
@@ -134,9 +131,8 @@ socket.on('connect', function () {
 	});
 	
 	//when the slide changes
-	socket.on('changeslide', function(slidenum, url) {
-	  current_slide = slidenum;
-	  slide.attr('src', url);
+	socket.on('changeslide', function(url) {
+	  showImageFromPaper(url);
 	});
 	
 	//when the zoom level changes
@@ -147,6 +143,19 @@ socket.on('connect', function () {
 	//when the panning action stops
 	socket.on('panStop', function() {
 	  panDone();
+	});
+	
+	socket.on('processing', function() {
+	  
+	});
+	
+	socket.on('all_slides', function(slides) {
+	  console.log(slides);
+	  removeAllImagesFromPaper();
+	  for (var i = slides.length - 1; i >= 0; i--){
+	   addImageToPaper(slides[i]);
+	  };
+	  showImageFromPaper(slides[0]);
 	});
 });
 
@@ -223,12 +232,12 @@ function emZoom(delta) {
 
 // Display the next image
 function nextImg() {
-  socket.emit('nextslide', current_slide);
+  socket.emit('nextslide');
 }
 
 // Display the previous image
 function prevImg() {
-  socket.emit('prevslide', current_slide);
+  socket.emit('prevslide');
 }
 
 // Logout of the meeting
@@ -247,18 +256,6 @@ function emPublishPath(path) {
 
 function emPublishRect(x, y, w, h) {
   socket.emit('saveRect', x, y, w, h);
-}
-
-// Calculate the next slide (temporary)
-function getNextSlide(curr, max) {
-  if(curr != max) return curr+1;
-  else return 1;
-}
-
-// Calculate the previous slide (temporary)
-function getPrevSlide(curr, max) {
-  if(curr != 1) return curr-1;
-  else return max;
 }
 
 // Set the drawing type to "line"

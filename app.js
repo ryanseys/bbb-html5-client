@@ -17,6 +17,10 @@ var express = require('express')
 	hat = require('hat');
 	format = require('util').format;
 	fs = require('fs');
+	im = require('imagemagick');
+	
+	var util = require('util');
+  exec = require('child_process').exec;
 	
 	//global variables
 	redisAction = require('./redis');

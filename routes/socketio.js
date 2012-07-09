@@ -74,6 +74,8 @@ exports.SocketOnConnection = function(socket) {
           var username = handshake.username;
           pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
           var messageID = hat(); //get a randomly generated id for the message
+          
+          //try later taking these nulls out and see if the function still works
           store.rpush(redisAction.getMessagesString(meetingID, null, null), messageID); //store the messageID in the list of messages
           store.hmset(redisAction.getMessageString(meetingID, null, null, messageID), "message", msg, "username", username);
         }
@@ -111,6 +113,7 @@ exports.SocketOnConnection = function(socket) {
   			  socketAction.publishMessages(meetingID, sessionID);
   			  socketAction.publishPaths(meetingID, sessionID);
   			  socketAction.publishRects(meetingID, sessionID);
+  			  pub.publish(meetingID, JSON.stringify(['all_slides', slides]));
     		});
   		}
   	});
@@ -184,29 +187,31 @@ exports.SocketOnConnection = function(socket) {
 		var meetingID = handshake.meetingID;
 	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
 	    if(isValid) {
-  	    var num;
-  	    if(slide_num > 0 && slide_num <= maxImage) {
-  	      if(slide_num == 1) num = maxImage;
-  	      else num = slide_num - 1;
-  	      pub.publish(meetingID, JSON.stringify(['changeslide', num, "images/presentation/test" + num + ".png"]));
-        }
+  	    redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+  	      redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
+  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
+  	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation/"+filename]));
+  	        });
+  	      });
+	      });
       }
     });
 	});
 	
 	// A user clicks to change to next slide
-	socket.on('nextslide', function (slide_num){
+	socket.on('nextslide', function () {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		var meetingID = handshake.meetingID;
 	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
 	    if(isValid) {
-  	    var num;
-  	    if(slide_num > 0 && slide_num <= maxImage) {
-  	      if(slide_num == maxImage) num = 1;
-  	      else num = slide_num + 1;
-  	      pub.publish(meetingID, JSON.stringify(['changeslide', num, "images/presentation/test" + num + ".png"]));
-        }
+	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+  	      redisAction.changeToNextPage(meetingID, presentationID, function(pageID){
+  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
+  	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation/"+filename]));
+  	        });
+  	      });
+	      });
       }
     });
 	});

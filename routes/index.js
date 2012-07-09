@@ -1,5 +1,5 @@
 // Node.js Routes
-
+slides = [];
 // When we get the homepage.
 exports.get_index = function(req, res) {
 	redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function(reply) {
@@ -65,9 +65,41 @@ exports.get_chat = function(req, res) {
 
 // Demo image upload for first image
 exports.post_chat = function(req, res, next) {
-  fs.rename(req.files.image.path, __dirname + "/../public/images/presentation/test1.png", function (status) {
-    res.redirect('back');
+  console.log("Uploading slides...");
+  var meetingID = req.cookies['meetingid'];
+  var sessionID = req.cookies['sessionid'];
+  
+  redisAction.isValidSession(meetingID, sessionID, function(reply) {
+    var presentationID = hat(); //create new presentation id
+    store.sadd(redisAction.getPresentationsString(meetingID), presentationID, function(err, reply) {
+      console.log("Added presentationID " + presentationID + " to set of presentations.");
+    });
+    store.set(redisAction.getCurrentPresentationString(meetingID), presentationID, function(err, reply) {
+      console.log("Set presentationID to " + presentationID);
+    });
+    var pdf_file = req.files.image.path;
+    im.convert(['-quality', '90', '-density', '300x300', req.files.image.path, 'public/images/presentation/slide%d.png'], function(err, reply) {
+      exec("ls -1 public/images/presentation/ | wc -l", function(error, stdout, stdouterr) {
+        var numOfPages = parseInt(stdout, 10);
+        console.log("Number of pages: " + numOfPages);
+        for(var i = 0; i < numOfPages; i++) {
+          var pageID = hat(); //create a new unique pageID.
+          store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID);
+            if(i == 0) {
+              store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {
+                console.log("Set current pageID to " + pageID);
+              });
+            }
+          store.set(redisAction.getPageImageString(meetingID, presentationID, pageID), "slide" + i + ".png");
+          slides.push('images/presentation/slide' + i +'.png');
+        }
+        //pub.publish(meetingID, JSON.stringify(['all_slides', slides]));
+      });
+      console.log("Slides uploaded and processed");
+      pub.publish(meetingID, JSON.stringify(['all_slides', slides]));
+    });
   });
+  res.redirect('back');
 };
 
 // Any other page that we have not defined yet.

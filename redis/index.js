@@ -126,7 +126,6 @@ exports.deleteItems = function(meetingID, presentationID, pageID, itemName, item
   console.log(itemIDs);
   //delete each item
   for (var j = itemIDs.length - 1; j >= 0; j--) {
-    console.log(redisAction.getItemStringFunction(itemName)(meetingID, presentationID, pageID, itemIDs[j]));
     store.del(redisAction.getItemStringFunction(itemName)(meetingID, presentationID, pageID, itemIDs[j]), function(err, reply) {
       if(reply) {
         console.log("Deleted item: " + itemName);
@@ -255,6 +254,13 @@ exports.getUsers =  function (meetingID, callback) {
   });
 };
 
+exports.getPageImage = function(meetingID, presentationID, pageID, callback) {
+  store.get(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, filename) {
+    if(filename) callback(filename);
+    else console.log("Error: Couldn't get page image");
+  });
+};
+
 // Get array of items by item name and meeting id
 exports.getItems = function(meetingID, presentationID, pageID, item, callback) {
   var items = [];
@@ -289,8 +295,36 @@ exports.getCurrentPresentationID = function(meetingID, callback) {
   });
 };
 
+exports.changeToNextPage = function(meetingID, presentationID, callback) {
+  var pages = redisAction.getPagesString(meetingID, presentationID);
+  store.lpop(pages, function(err, reply) {
+    store.rpush(pages, reply, function(err, reply) {
+      store.lindex(pages, -1, function(err, currPage){
+        if(currPage) {
+          callback(currPage);
+        }
+        else console.log("Error: could not get current pageID");
+      });
+    });
+  });
+};
+
+exports.changeToPrevPage = function(meetingID, presentationID, callback) {
+  var pages = redisAction.getPagesString(meetingID, presentationID);
+  //removes the last element and then returns it, only after appending it back
+  //to the beginning of the same list
+  store.rpoplpush(pages, pages, function(err, currPage) {
+    if(currPage) {
+      callback(currPage);
+    }
+    else console.log("Error: could not get current pageID");
+  });
+};
+
 exports.getCurrentPageID = function(meetingID, presentationID, callback) {
-  store.get(redisAction.getCurrentPageString(meetingID, presentationID), function(err, currPgID) {
+  //The first element in the pages is always the current page
+  store.lindex(redisAction.getPagesString(meetingID, presentationID), 0, function(err, currPgID) {
+    console.log("Current page ID found: " + currPgID);
     if(currPgID) {
       callback(currPgID);
     }
