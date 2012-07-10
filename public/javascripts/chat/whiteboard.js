@@ -19,7 +19,7 @@ var onFirefox;
 var paper;
 var cur;
 var slide;
-var current_slide;
+var current_url;
 var defaults;
 var cornerx;
 var cornery;
@@ -133,8 +133,11 @@ function initDefaults() {
 
 
   // Set defaults for variables
-  slides = {};
-  slide = addImageToPaper('/images/default.png');
+  if(slides) {
+    rebuildPaper();
+  }
+  else 
+  slides = {}; //if previously loaded
   cur = defaults[0];
   s_left = slide_obj.offsetLeft;
   s_top = slide_obj.offsetTop;
@@ -152,19 +155,18 @@ function initDefaults() {
   lineOn = false;
   rectOn = false;
   panZoomOn = false;
-  turnOn("panzoom"); // default tool on is specified here
 
   // Firefox fix
   if (navigator.userAgent.indexOf("Firefox") != -1) {
     onFirefox = true;
     paper.renderfix();
   }
-  initEvents();
 }
 
 // Initialize the events
 function initEvents() {
   slide.mousemove(mvingCur);
+  turnOn("panzoom"); // default tool on is specified here
 }
 
 // Initialize the paper
@@ -174,18 +176,21 @@ function initPaper() {
 
 function addImageToPaper(url) {
   var img = paper.image(url, 0, 0, slide_w, slide_h);
+  img.hide();
   slides[url] = img.id;
   return img;
 }
 
 function removeAllImagesFromPaper() {
   var img;
-  for (id in slides) {
-    if(slides.hasOwnProperty(id)) {
-      paper.getById(slides[id]).remove();
+  for (url in slides) {
+    if(slides.hasOwnProperty(url)) {
+      paper.getById(slides[url]).remove();
+      $('#preload' + slides[url]).remove();
     }
   }
   slides = {};
+  slide = null;
 }
 
 function getImageFromPaper(url) {
@@ -193,21 +198,33 @@ function getImageFromPaper(url) {
   if(id) {
     return paper.getById(id);
   }
+  else return null;
+}
+
+function rebuildPaper() {
+  for(url in slides) {
+    if(slides.hasOwnProperty(url)) {
+      addImageToPaper(url);
+    }
+  }
+  showImageFromPaper(current_url);
 }
 
 function showImageFromPaper(url) {
   var id = slides[url];
   for(thisurl in slides) {
     if(url != thisurl) {
-      paper.getById(slides[thisurl]).hide();
+      var img = paper.getById(slides[thisurl]);
+      if(img) img.hide();
     }
   }
-  paper.getById(id).show();
+  slide = paper.getById(id).show();
+  current_url = url;
 }
 
 function hideImageFromPaper(url) {
   var img = getImageFromPaper(url);
-  img.hide();
+  if(img) img.hide();
 }
 
 // When the user is dragging the cursor (click + move)

@@ -19,7 +19,7 @@ var express = require('express')
 	fs = require('fs');
 	im = require('imagemagick');
 	
-	var util = require('util');
+	util = require('util');
   exec = require('child_process').exec;
 	
 	//global variables

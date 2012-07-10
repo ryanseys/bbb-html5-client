@@ -150,10 +150,11 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('all_slides', function(slides) {
-	  console.log(slides);
+	  var img;
 	  removeAllImagesFromPaper();
 	  for (var i = slides.length - 1; i >= 0; i--){
-	   addImageToPaper(slides[i]);
+	    img = addImageToPaper(slides[i]);
+	    $('#slide').append('<img id= "preload'+img.id+'"src="'+slides[i]+'" style="display:none;" alt=""/>');
 	  };
 	  showImageFromPaper(slides[0]);
 	});

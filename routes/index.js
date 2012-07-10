@@ -36,6 +36,18 @@ exports.post_index = function(req, res) {
 	      store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {
 	        console.log("Set current pageID to " + pageID);
 	      });
+	      console.log("Setting default image for pageID: " + pageID);
+	      fs.mkdir('public/images/presentation' + presentationID, 0777 , function(reply) {
+	        newFile = fs.createWriteStream('public/images/presentation' + presentationID + '/default.png');     
+          oldFile = fs.createReadStream('images/default.png');
+          newFile.once('open', function(fd) {
+              util.pump(oldFile, newFile);
+          });
+        });
+	      store.set(redisAction.getPageImageString(meetingID, presentationID, pageID), 'default.png', function(err, reply) {
+	        if(reply) console.log("Set default image to default.png");
+	        else console.log("Error: could not set default image: " + err);
+	      });
 	    }
 	    else console.log("Current presentation already exists as ID " + currPresID);
 	  });
@@ -78,25 +90,28 @@ exports.post_chat = function(req, res, next) {
       console.log("Set presentationID to " + presentationID);
     });
     var pdf_file = req.files.image.path;
-    im.convert(['-quality', '90', '-density', '300x300', req.files.image.path, 'public/images/presentation/slide%d.png'], function(err, reply) {
-      exec("ls -1 public/images/presentation/ | wc -l", function(error, stdout, stdouterr) {
-        var numOfPages = parseInt(stdout, 10);
-        console.log("Number of pages: " + numOfPages);
-        for(var i = 0; i < numOfPages; i++) {
-          var pageID = hat(); //create a new unique pageID.
-          store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID);
+    fs.mkdir('public/images/presentation' + presentationID, 0777 , function(reply) {
+      im.convert(['-quality', '90', '-density', '300x300', req.files.image.path, 'public/images/presentation' + presentationID + '/slide%d.png'], function(err, reply) {
+        exec("ls -1 public/images/presentation" + presentationID + "/ | wc -l", function(error, stdout, stdouterr) {
+          var numOfPages = parseInt(stdout, 10);
+          console.log("Number of pages: " + numOfPages);
+          var numComplete = 0;
+          for(var i = 0; i < numOfPages; i++) {
+            var pageID = hat(); //create a new unique pageID.
+            store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID);
             if(i == 0) {
               store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {
                 console.log("Set current pageID to " + pageID);
               });
             }
-          store.set(redisAction.getPageImageString(meetingID, presentationID, pageID), "slide" + i + ".png");
-          slides.push('images/presentation/slide' + i +'.png');
-        }
-        //pub.publish(meetingID, JSON.stringify(['all_slides', slides]));
+            store.set(redisAction.getPageImageString(meetingID, presentationID, pageID), "slide" + i + ".png", function() {
+              numComplete++;
+              if(numComplete == numOfPages) socketAction.publishSlides(meetingID);
+            });
+          }
+        });
+        console.log("Slides uploaded and processed");
       });
-      console.log("Slides uploaded and processed");
-      pub.publish(meetingID, JSON.stringify(['all_slides', slides]));
     });
   });
   res.redirect('back');

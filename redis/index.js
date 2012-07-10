@@ -299,7 +299,7 @@ exports.changeToNextPage = function(meetingID, presentationID, callback) {
   var pages = redisAction.getPagesString(meetingID, presentationID);
   store.lpop(pages, function(err, reply) {
     store.rpush(pages, reply, function(err, reply) {
-      store.lindex(pages, -1, function(err, currPage){
+      store.lindex(pages, 0, function(err, currPage){
         if(currPage) {
           callback(currPage);
         }

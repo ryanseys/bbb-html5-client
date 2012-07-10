@@ -43,6 +43,25 @@ exports.publishPaths = function(meetingID, sessionID) {
   });
 };
 
+exports.publishSlides = function(meetingID, sessionID, callback) {
+  var slides = [];
+  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+    redisAction.getPageIDs(meetingID, presentationID, function(presentationID, pageIDs) {
+     var numOfSlides = pageIDs.length;
+     var slideCount = 0;
+     for(var i = 0; i < numOfSlides; i++) {
+       redisAction.getPageImage(meetingID, presentationID, pageIDs[i], function(filename) {
+         slides.push('images/presentation' +presentationID+'/'+filename);
+         if(slides.length == numOfSlides) {
+            var receivers = sessionID != undefined ? sessionID : meetingID;
+            pub.publish(receivers, JSON.stringify(['all_slides', slides]));
+         }
+       });
+     }
+    });
+  });
+};
+
 //Get all rectangles from Redis and publish to a specific sessionID (user)
 exports.publishRects = function(meetingID, sessionID) {
   var rects = [];
@@ -113,7 +132,7 @@ exports.SocketOnConnection = function(socket) {
   			  socketAction.publishMessages(meetingID, sessionID);
   			  socketAction.publishPaths(meetingID, sessionID);
   			  socketAction.publishRects(meetingID, sessionID);
-  			  pub.publish(meetingID, JSON.stringify(['all_slides', slides]));
+  			  socketAction.publishSlides(meetingID, sessionID);
     		});
   		}
   	});
@@ -190,7 +209,7 @@ exports.SocketOnConnection = function(socket) {
   	    redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
   	      redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
-  	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation/"+filename]));
+  	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation" + presentationID + "/"+filename]));
   	        });
   	      });
 	      });
@@ -208,7 +227,7 @@ exports.SocketOnConnection = function(socket) {
 	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
   	      redisAction.changeToNextPage(meetingID, presentationID, function(pageID){
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
-  	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation/"+filename]));
+  	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation" + presentationID + "/"+filename]));
   	        });
   	      });
 	      });
