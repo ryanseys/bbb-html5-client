@@ -22,14 +22,14 @@ exports.post_index = function(req, res) {
 	  
 	  store.get(redisAction.getCurrentPresentationString(meetingID), function(err, currPresID) {
 	    if(!currPresID) {
-	      var presentationID = hat(); //create a new unique presentationID
+	      var presentationID = rack(); //create a new unique presentationID
 	      store.sadd(redisAction.getPresentationsString(meetingID), presentationID, function(err, reply) {
 	        console.log("Added presentationID " + presentationID + " to set of presentations.");
 	      });
 	      store.set(redisAction.getCurrentPresentationString(meetingID), presentationID, function(err, reply) {
 	        console.log("Set presentationID to " + presentationID);
 	      });
-	      var pageID = hat(); //create a new unique pageID.
+	      var pageID = rack(); //create a new unique pageID.
 	      store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID, function(err, reply) {
 	        console.log("Added pageID " + pageID + " to list of pages."); 
 	      });
@@ -82,7 +82,7 @@ exports.post_chat = function(req, res, next) {
   var sessionID = req.cookies['sessionid'];
   
   redisAction.isValidSession(meetingID, sessionID, function(reply) {
-    var presentationID = hat(); //create new presentation id
+    var presentationID = rack(); //create new presentation id
     store.sadd(redisAction.getPresentationsString(meetingID), presentationID, function(err, reply) {
       console.log("Added presentationID " + presentationID + " to set of presentations.");
     });
@@ -97,7 +97,7 @@ exports.post_chat = function(req, res, next) {
           console.log("Number of pages: " + numOfPages);
           var numComplete = 0;
           for(var i = 0; i < numOfPages; i++) {
-            var pageID = hat(); //create a new unique pageID.
+            var pageID = rack(); //create a new unique pageID.
             store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID);
             if(i == 0) {
               store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {

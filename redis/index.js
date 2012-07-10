@@ -116,21 +116,17 @@ exports.deleteItemList = function(meetingID, presentationID, pageID, itemName, c
     if(reply) {
       console.log("Delete the list of items: " + itemName);
     }
-    else console.log("Error: could not delete list of items: " + itemName);
+    if(err) console.log("Error: could not delete list of items: " + itemName);
   });
 };
 
 // Deletes the items by itemName and an array of itemIDs (use helper)
 exports.deleteItems = function(meetingID, presentationID, pageID, itemName, itemIDs) {
-  console.log("Deleting " + itemName +" with IDs ");
-  console.log(itemIDs);
   //delete each item
   for (var j = itemIDs.length - 1; j >= 0; j--) {
     store.del(redisAction.getItemStringFunction(itemName)(meetingID, presentationID, pageID, itemIDs[j]), function(err, reply) {
-      if(reply) {
-        console.log("Deleted item: " + itemName);
-      }
-      else console.log("Error: could not delete item: " + itemName);
+      if(reply) console.log("Deleted item: " + itemName);
+      if(err) console.log("Error: could not delete item: " + itemName);
     });
   };
 };
@@ -191,31 +187,23 @@ exports.isValidSession = function(meetingID, sessionID, callback) {
 
 exports.deletePages = function(meetingID, presentationID) {
   store.del(redisAction.getPagesString(meetingID, presentationID), function(err, reply) {
-    if(reply) {
-      console.log("Deleted all pages");
-    }
-    else console.log("Couldn't delete all pages");
+    if(reply) console.log("Deleted all pages");
+    if(err) console.log("Couldn't delete all pages");
   });
   store.del(redisAction.getCurrentPageString(meetingID, presentationID), function(err, reply) {
-    if(reply) {
-      console.log("Deleted current page");
-    }
-    else console.log("Couldn't delete current page");
+    if(reply) console.log("Deleted current page");
+    if(err) console.log("Couldn't delete current page");
   });
 };
 
 exports.deletePresentations = function(meetingID) {
   store.del(redisAction.getPresentationsString(meetingID), function(err, reply) {
-    if(reply) {
-      console.log("Deleted all presentations");
-    }
+    if(reply) console.log("Deleted all presentations");
     else console.log("Couldn't delete all presentations");
   });
   store.del(redisAction.getCurrentPresentationString(meetingID), function(err, reply) {
-    if(reply) {
-      console.log("Deleted current presentation");
-    }
-    else console.log("Couldn't delete current presentation");
+    if(reply) console.log("Deleted current presentation");
+    if(err) console.log("Couldn't delete current presentation");
   });
 };
 
@@ -324,7 +312,6 @@ exports.changeToPrevPage = function(meetingID, presentationID, callback) {
 exports.getCurrentPageID = function(meetingID, presentationID, callback) {
   //The first element in the pages is always the current page
   store.lindex(redisAction.getPagesString(meetingID, presentationID), 0, function(err, currPgID) {
-    console.log("Current page ID found: " + currPgID);
     if(currPgID) {
       callback(currPgID);
     }

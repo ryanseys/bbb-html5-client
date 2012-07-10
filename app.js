@@ -15,6 +15,7 @@ var express = require('express')
 	, redis = require('redis');
 	
 	hat = require('hat');
+	rack = hat.rack();
 	format = require('util').format;
 	fs = require('fs');
 	im = require('imagemagick');

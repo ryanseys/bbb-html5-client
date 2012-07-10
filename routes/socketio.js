@@ -92,7 +92,7 @@ exports.SocketOnConnection = function(socket) {
     	  else {
           var username = handshake.username;
           pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
-          var messageID = hat(); //get a randomly generated id for the message
+          var messageID = rack(); //get a randomly generated id for the message
           
           //try later taking these nulls out and see if the function still works
           store.rpush(redisAction.getMessagesString(meetingID, null, null), messageID); //store the messageID in the list of messages
@@ -291,7 +291,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('savePath', function(path) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
-	  var pathID = hat(); //get a randomly generated id for the message
+	  var pathID = rack(); //get a randomly generated id for the message
 	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
 	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
 	      store.rpush(redisAction.getPathsString(meetingID, presentationID, pageID), pathID); //store the pathID in the list of paths
@@ -304,7 +304,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('saveRect', function(x, y, w, h) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
-	  var rectID = hat(); //get a randomly generated id for the message
+	  var rectID = rack(); //get a randomly generated id for the message
 	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
 	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
 	      store.rpush(redisAction.getRectsString(meetingID, presentationID, pageID), rectID); //store the pathID in the list of paths
