@@ -31,11 +31,12 @@ socket.on('connect', function () {
 	
 	// When the user list needs an update
 	socket.on('user list change', function (names) {
+	  var clickFunc = '$(\'.selected\').removeClass(\'selected\');$(this).addClass(\'selected\');';
 	  var currusers = document.getElementById('current_users');
 	  currusers.innerHTML = ''; //clear it first
 	  for (var i = names.length - 1; i >= 0; i--) {
-	    currusers.innerHTML += '<div><b>' + names[i] + '</b></div>';
-	  };
+	    currusers.innerHTML += '<div class="user clickable" onclick="'+clickFunc+'" id= "'+i+'"><b>' + names[i] + '</b></div>';
+	  }
 	});
 	
 	//Update all the messages in the chat box (e.g. received after first signing in)
@@ -152,9 +153,9 @@ socket.on('connect', function () {
 	socket.on('all_slides', function(slides) {
 	  var img;
 	  removeAllImagesFromPaper();
-	  for (var i = slides.length - 1; i >= 0; i--){
+	  for (var i = slides.length - 1; i >= 0; i--) {
 	    img = addImageToPaper(slides[i]);
-	    $('#slide').append('<img id= "preload'+img.id+'"src="'+slides[i]+'" style="display:none;" alt=""/>');
+	    $('#slide').append('<img id="preload'+img.id+'"src="'+slides[i]+'" style="display:none;" alt=""/>'); //preload images
 	  };
 	  showImageFromPaper(slides[0]);
 	});
@@ -272,6 +273,10 @@ function chooseRect() {
 // Set the drawing type to "panzoom"
 function choosePanZoom() {
   turnOn("panzoom");
+}
+
+function switchPresenter() {
+  console.log($('.selected').attr('id'));
 }
 
 // Update the character count in the chat box

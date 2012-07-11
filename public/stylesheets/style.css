@@ -26,6 +26,15 @@ a {
   overflow: auto; /* so they don't overlap */
 }
 
+.clickable {
+  cursor:pointer;
+}
+
+.selected {
+  background-color:#000;
+  color: #FFF;
+}
+
 #slideAndControls {
   float:left;
 }

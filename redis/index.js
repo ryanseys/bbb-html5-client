@@ -47,6 +47,10 @@ exports.getUserString = function(meetingID, sessionID) {
   return "meeting-" + meetingID + "-user-" + sessionID;
 };
 
+exports.getCurrentUsersString = function(meetingID) {
+  return "meeting-" + meetingID + "-currentusers";
+};
+
 // Get the string representing the key for the hash of all
 // the messages for a specified meetingID in Redis
 exports.getMessagesString = function(meetingID, presentationID, pageID) {
@@ -186,16 +190,30 @@ exports.isValidSession = function(meetingID, sessionID, callback) {
 };
 
 exports.deletePages = function(meetingID, presentationID) {
+  //delete each page image
+  redisAction.getPageIDs(meetingID, presentationID, function(presentationID, pageIDs) {
+    for (var i = pageIDs.length - 1; i >= 0; i--) {
+      redisAction.deletePageImage(meetingID, presentationID, pageIDs[i]);
+    };
+  });
+  //delete list of pages
   store.del(redisAction.getPagesString(meetingID, presentationID), function(err, reply) {
     if(reply) console.log("Deleted all pages");
-    if(err) console.log("Couldn't delete all pages");
+    if(err) console.log("ERROR: Couldn't delete all pages");
   });
+  //delete currentpage
   store.del(redisAction.getCurrentPageString(meetingID, presentationID), function(err, reply) {
     if(reply) console.log("Deleted current page");
-    if(err) console.log("Couldn't delete current page");
+    if(err) console.log("ERROR: Couldn't delete current page");
   });
 };
 
+exports.deletePageImage = function(meetingID, presentationID, pageID) {
+  store.del(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, reply) {
+    if(reply) console.log("Deleted page image");
+    if(err) console.log("ERROR: Could not delete page image");
+  });
+};
 exports.deletePresentations = function(meetingID) {
   store.del(redisAction.getPresentationsString(meetingID), function(err, reply) {
     if(reply) console.log("Deleted all presentations");
