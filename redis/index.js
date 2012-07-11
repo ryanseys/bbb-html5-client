@@ -118,9 +118,9 @@ exports.deleteItemList = function(meetingID, presentationID, pageID, itemName, c
   //delete the list which contains the item ids
   store.del(redisAction.getItemsStringFunction(itemName)(meetingID, presentationID, pageID), function(err, reply) {
     if(reply) {
-      console.log("Delete the list of items: " + itemName);
+      console.log("REDIS: Deleted the list of items: " + itemName);
     }
-    if(err) console.log("Error: could not delete list of items: " + itemName);
+    if(err) console.log("REDIS ERROR: could not delete list of items: " + itemName);
   });
 };
 
@@ -129,8 +129,8 @@ exports.deleteItems = function(meetingID, presentationID, pageID, itemName, item
   //delete each item
   for (var j = itemIDs.length - 1; j >= 0; j--) {
     store.del(redisAction.getItemStringFunction(itemName)(meetingID, presentationID, pageID, itemIDs[j]), function(err, reply) {
-      if(reply) console.log("Deleted item: " + itemName);
-      if(err) console.log("Error: could not delete item: " + itemName);
+      if(reply) console.log("REDIS: Deleted item: " + itemName);
+      if(err) console.log("REDIS ERROR: could not delete item: " + itemName);
     });
   };
 };
@@ -189,39 +189,43 @@ exports.isValidSession = function(meetingID, sessionID, callback) {
   });
 };
 
-exports.deletePages = function(meetingID, presentationID) {
+exports.deletePages = function(meetingID, presentationID, callback) {
   //delete each page image
   redisAction.getPageIDs(meetingID, presentationID, function(presentationID, pageIDs) {
     for (var i = pageIDs.length - 1; i >= 0; i--) {
       redisAction.deletePageImage(meetingID, presentationID, pageIDs[i]);
     };
-  });
-  //delete list of pages
-  store.del(redisAction.getPagesString(meetingID, presentationID), function(err, reply) {
-    if(reply) console.log("Deleted all pages");
-    if(err) console.log("ERROR: Couldn't delete all pages");
-  });
-  //delete currentpage
-  store.del(redisAction.getCurrentPageString(meetingID, presentationID), function(err, reply) {
-    if(reply) console.log("Deleted current page");
-    if(err) console.log("ERROR: Couldn't delete current page");
+    //delete list of pages
+    store.del(redisAction.getPagesString(meetingID, presentationID), function(err, reply) {
+      if(reply) console.log("REDIS: Deleted all pages");
+      if(err) console.log("REDIS ERROR: Couldn't delete all pages");
+      //delete currentpage
+      store.del(redisAction.getCurrentPageString(meetingID, presentationID), function(err, reply) {
+        if(reply) console.log("REDIS: Deleted current page");
+        if(err) console.log("REDIS ERROR: Couldn't delete current page");
+        if(callback) callback();
+      });
+    });
   });
 };
 
-exports.deletePageImage = function(meetingID, presentationID, pageID) {
+exports.deletePageImage = function(meetingID, presentationID, pageID, callback) {
   store.del(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, reply) {
-    if(reply) console.log("Deleted page image");
-    if(err) console.log("ERROR: Could not delete page image");
+    if(reply) console.log("REDIS: Deleted page image");
+    if(err) console.log("REDIS ERROR: Could not delete page image");
+    if(callback) callback();
   });
 };
-exports.deletePresentations = function(meetingID) {
+
+exports.deletePresentations = function(meetingID, callback) {
   store.del(redisAction.getPresentationsString(meetingID), function(err, reply) {
-    if(reply) console.log("Deleted all presentations");
-    else console.log("Couldn't delete all presentations");
-  });
-  store.del(redisAction.getCurrentPresentationString(meetingID), function(err, reply) {
-    if(reply) console.log("Deleted current presentation");
-    if(err) console.log("Couldn't delete current presentation");
+    if(reply) console.log("REDIS: Deleted all presentations");
+    else console.log("REDIS ERROR: Couldn't delete all presentations");
+    store.del(redisAction.getCurrentPresentationString(meetingID), function(err, reply) {
+      if(reply) console.log("REDIS: Deleted current presentation");
+      if(err) console.log("REDIS ERROR: Couldn't delete current presentation");
+      if(callback) callback();
+    });
   });
 };
 
@@ -263,7 +267,7 @@ exports.getUsers =  function (meetingID, callback) {
 exports.getPageImage = function(meetingID, presentationID, pageID, callback) {
   store.get(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, filename) {
     if(filename) callback(filename);
-    else console.log("Error: Couldn't get page image");
+    else console.log("REDIS ERROR: Couldn't get page image");
   });
 };
 
@@ -297,7 +301,7 @@ exports.getCurrentPresentationID = function(meetingID, callback) {
     if(currPresID) {
       callback(currPresID);
     }
-    else console.log("Error: could not get current presentationID");
+    else console.log("REDIS ERROR: Couldn't get current presentationID");
   });
 };
 
@@ -309,7 +313,7 @@ exports.changeToNextPage = function(meetingID, presentationID, callback) {
         if(currPage) {
           callback(currPage);
         }
-        else console.log("Error: could not get current pageID");
+        else console.log("REDIS ERROR: Couldn't get current pageID");
       });
     });
   });
@@ -323,7 +327,7 @@ exports.changeToPrevPage = function(meetingID, presentationID, callback) {
     if(currPage) {
       callback(currPage);
     }
-    else console.log("Error: could not get current pageID");
+    else console.log("REDIS ERROR: Couldn't get current pageID");
   });
 };
 
@@ -333,6 +337,85 @@ exports.getCurrentPageID = function(meetingID, presentationID, callback) {
     if(currPgID) {
       callback(currPgID);
     }
-    else console.log("Error: could not get current pageID");
+    else console.log("REDIS ERROR: Couldn't get current pageID");
   });
+};
+
+exports.createPresentation = function(meetingID, setCurrent, callback) {
+  var presentationID = rack(); //create a new unique presentationID
+  store.sadd(redisAction.getPresentationsString(meetingID), presentationID, function(err, reply) {
+    if(reply) {
+      console.log("REDIS: Added presentationID " + presentationID + " to set of presentations.");
+      if(setCurrent) {
+        redisAction.setCurrentPresentation(meetingID, presentationID, function() {
+          callback(presentationID);
+        });
+      }
+      else callback(presentationID);
+    }
+    else if(err) {
+      console.log("REDIS ERROR: Couldn't add presentationID " + presentationID + "to set of presentations");
+      callback(null);
+    }
+  });
+};
+
+exports.setCurrentPage = function(meetingID, presentationID, pageID, callback) {
+  store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {
+    if(reply) console.log("REDIS: Set current pageID to " + pageID);
+    if(err) console.log("REDIS ERROR: Couldn't set current pageID to " + pageID);
+    if(callback) callback();
+  });
+};
+
+exports.createPage = function(meetingID, presentationID, imageName, setCurrent, callback) {
+  var pageID = rack(); //create a new unique pageID
+  store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID, function(err, reply) {
+    if(reply) {
+      console.log("REDIS: Created page with ID " + pageID);
+      redisAction.setPageImage(meetingID, presentationID, pageID, imageName, function() {
+        if(setCurrent) {
+          redisAction.setCurrentPage(meetingID, presentationID, pageID, function() {
+            callback(pageID);
+          });
+        }
+        else callback(pageID);
+      });
+    }
+    else if(err) {
+      console.log("REDIS ERROR: Couldn't create page with ID " + pageID);
+      callback(null);
+    }
+  });
+};
+
+exports.setPageImage = function(meetingID, presentationID, pageID, imageName, callback) {
+  store.set(redisAction.getPageImageString(meetingID, presentationID, pageID), imageName, function (err, reply) {
+    if(reply) console.log("REDIS: Set page " + pageID +" image to " + imageName);
+    if(err) console.log("REDIS ERROR: Couldn't set page " + pageID +" image to " + imageName);
+    if(callback) callback();
+  });
+};
+
+exports.setCurrentPresentation = function(meetingID, presentationID, callback) {
+  store.set(redisAction.getCurrentPresentationString(meetingID), presentationID, function(err, reply) {
+    if(reply) console.log("REDIS: Set current presentationID to " + presentationID);
+    if(err) console.log("REDIS ERROR: Couldn't set current presentationID"); //impossible because set never fails
+    if(callback) callback();
+  });
+};
+
+exports.createMeeting = function(meetingID, callback) {
+  store.sadd(redisAction.getMeetingsString(), meetingID); //create the meeting if not already created.
+  if(callback) callback();
+};
+
+exports.createUser = function(meetingID, userID, callback) {
+  store.sadd(redisAction.getUsersString(meetingID), userID); //meeting-123-users.push(sessionID)
+  if(callback) callback();
+};
+
+exports.updateUserProperties = function(meetingID, userID, properties, callback) {
+  properties.unshift(redisAction.getUserString(meetingID, userID));
+  store.hmset.apply(store, properties);
 };

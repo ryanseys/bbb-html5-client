@@ -7,13 +7,13 @@ subscriptions = ['*'];
 
 // Module dependencies
 var express = require('express')
-	, routes = require('./routes')
-	
-	, app = module.exports = express.createServer()
-	, io = require('socket.io').listen(app)
-	, RedisStore = require('connect-redis')(express)
-	, redis = require('redis');
-	
+  , app = module.exports = express.createServer()
+  , io = require('socket.io').listen(app)
+  , RedisStore = require('connect-redis')(express)
+  , redis = require('redis');
+
+	routes = require('./routes');
+
 	hat = require('hat');
 	rack = hat.rack();
 	format = require('util').format;
