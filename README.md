@@ -25,9 +25,3 @@ redis-server
 cd bbb-html5-client
 node app.js
 ```
-
-
-
-
-
-

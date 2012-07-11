@@ -2,7 +2,7 @@
 // item given the name of the item type in Redis.
 exports.getItemStringFunction = function(itemString) {
   var functions = {
-    "messages" : redisAction.getMessageString, 
+    "messages" : redisAction.getMessageString,
     "paths" : redisAction.getPathString,
     "rects" : redisAction.getRectString,
     "currentpaths" : redisAction.getPathString,
@@ -15,8 +15,8 @@ exports.getItemStringFunction = function(itemString) {
 // given the name of the items in Redis
 exports.getItemsStringFunction = function(itemString) {
   var functions = {
-    "messages" : redisAction.getMessagesString, 
-    "paths" : redisAction.getPathsString, 
+    "messages" : redisAction.getMessagesString,
+    "paths" : redisAction.getPathsString,
     "rects" : redisAction.getRectsString,
     "currentpaths" : redisAction.getCurrentPathsString,
     "currentrects" : redisAction.getCurrentRectsString
@@ -24,7 +24,7 @@ exports.getItemsStringFunction = function(itemString) {
   return functions[itemString];
 };
 
-// Get the string respresenting the list of meetings 
+// Get the string respresenting the list of meetings
 // in Redis
 exports.getMeetingsString = function() {
   return "meetings";
@@ -234,12 +234,12 @@ exports.getUserProperties = function(meetingID, sessionID, callback) {
 
 // Gets a single property from a specific user
 exports.getUserProperty = function(meetingID, sessionID, property, callback) {
-  store.hget(redisAction.getUserString(meetingID, sessionID), property, function(err, prop) { 
+  store.hget(redisAction.getUserString(meetingID, sessionID), property, function(err, prop) {
     callback(prop);
   });
 };
 
-// Get all users and their data in an array 
+// Get all users and their data in an array
 // (users are in a set, not a list, because they need to be accessed with O(1))
 exports.getUsers =  function (meetingID, callback) {
   users = [];

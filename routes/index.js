@@ -31,14 +31,14 @@ exports.post_index = function(req, res) {
 	      });
 	      var pageID = rack(); //create a new unique pageID.
 	      store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID, function(err, reply) {
-	        console.log("Added pageID " + pageID + " to list of pages."); 
+	        console.log("Added pageID " + pageID + " to list of pages.");
 	      });
 	      store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {
 	        console.log("Set current pageID to " + pageID);
 	      });
 	      console.log("Setting default image for pageID: " + pageID);
 	      fs.mkdir('public/images/presentation' + presentationID, 0777 , function(reply) {
-	        newFile = fs.createWriteStream('public/images/presentation' + presentationID + '/default.png');     
+	        newFile = fs.createWriteStream('public/images/presentation' + presentationID + '/default.png');
           oldFile = fs.createReadStream('images/default.png');
           newFile.once('open', function(fd) {
               util.pump(oldFile, newFile);

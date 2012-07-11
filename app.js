@@ -93,7 +93,7 @@ app.listen(3000, function() {
 
 // Socket.IO Routes
 
-/* 
+/*
   This verifies with the database that the sessionID
   contained within the connected socket is indeed valid.
   If the sessionID is not valid, the socket is disconnected

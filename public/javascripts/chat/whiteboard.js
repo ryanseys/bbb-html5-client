@@ -136,7 +136,7 @@ function initDefaults() {
   if(slides) {
     rebuildPaper();
   }
-  else 
+  else
   slides = {}; //if previously loaded
   cur = defaults[0];
   s_left = slide_obj.offsetLeft;

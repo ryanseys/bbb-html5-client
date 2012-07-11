@@ -172,7 +172,7 @@ exports.SocketOnConnection = function(socket) {
       				}
     				});
     			}, 1000);
-  			}); 
+  			});
   		}
 		});
 	});
@@ -191,7 +191,7 @@ exports.SocketOnConnection = function(socket) {
   		    //delete key from database
 		      store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
             pub.publish(sessionID, JSON.stringify(['logout'])); //send to all users on same session (all tabs)
-          	socket.disconnect(); //disconnect own socket      
+          	socket.disconnect(); //disconnect own socket
   		    });
   		  });
   		}
