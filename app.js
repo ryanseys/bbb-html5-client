@@ -6,11 +6,11 @@ maxImage = 3;
 subscriptions = ['*'];
 
 // Module dependencies
-var express = require('express')
-  , app = module.exports = express.createServer()
-  , io = require('socket.io').listen(app)
-  , RedisStore = require('connect-redis')(express)
-  , redis = require('redis');
+var express = require('express'),
+  app = module.exports = express.createServer(),
+  io = require('socket.io').listen(app),
+  RedisStore = require('connect-redis')(express),
+  redis = require('redis');
 
 	routes = require('./routes');
 
@@ -89,7 +89,17 @@ app.get('*', routes.error404);
 // Start the web server listening
 app.listen(3000, function() {
 	console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
+	/*
+	console.log(redisAction.getLowestHops(0, 60, 100));
+	console.log(redisAction.getLowestHops(60, 60, 100));
+	console.log(redisAction.getLowestHops(57, 56, 1000));
+	console.log(redisAction.getLowestHops(0, 1, 1000));
+	console.log(redisAction.getLowestHops(0, 999, 1000));
+	console.log(redisAction.getLowestHops(40, 60, 500));
+	*/
 });
+
+
 
 // Socket.IO Routes
 

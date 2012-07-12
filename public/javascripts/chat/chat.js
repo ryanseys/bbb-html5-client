@@ -122,7 +122,12 @@ socket.on('connect', function () {
 	});
 	
 	//when the viewBox changes
-	socket.on('viewBox', function(xperc, yperc, wperc, hperc){
+	socket.on('viewBox', function(xperc, yperc, wperc, hperc) {
+	  xperc = parseFloat(xperc, 10);
+	  yperc = parseFloat(yperc, 10);
+	  wperc = parseFloat(wperc, 10);
+	  hperc = parseFloat(hperc, 10);
+	  console.log("set viewbox to " + [xperc, yperc, wperc, hperc].join(" ") );
 	  setViewBox(xperc, yperc, wperc, hperc);
 	});
 	

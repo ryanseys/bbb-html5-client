@@ -61,40 +61,61 @@ exports.get_chat = function(req, res) {
 	//requiresLogin before this verifies that a user is logged in...
 	redisAction.getUserProperty(req.cookies['meetingid'], req.cookies['sessionid'], "username", function (username) {
 	  res.render('chat', { title: 'BigBlueButton HTML5 Client', user: username, max_chat_length: max_chat_length });
+	  socketAction.publishSlides(req.cookies['meetingid']);
 	});
 };
 
 // Demo image upload for first image
 exports.post_chat = function(req, res, next) {
-  var meetingID = req.cookies['meetingid'];
-  var sessionID = req.cookies['sessionid'];
-  redisAction.isValidSession(meetingID, sessionID, function (reply) {
-    var file = req.files.image.path;
-    var pageIDs = [];
-    redisAction.createPresentation(meetingID, true, function (presentationID) {
-      var folder = routes.presentationImageFolder(presentationID);
-      fs.mkdir(folder, 0777 , function (reply) {
-        im.convert(['-quality', '90', '-density', '300x300', file, folder + '/slide%d.png'], function (err, reply) {
-          //counts how many files are in the folder for the presentation to get the slide count.
-          exec("ls -1 " + folder + "/ | wc -l", function (error, stdout, stdouterr) {
-            var numOfPages = parseInt(stdout, 10);
-            var numComplete = 0;
-            
-            for(var i = 0; i < numOfPages; i++) {
-              if(i != 0) var setCurrent = false;
-              else var setCurrent = true;
-              redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID) {
-                pageIDs.push(pageID);
-                numComplete++;
-                if(numComplete == numOfPages) socketAction.publishSlides(meetingID);
+  if(req.files.image.size != 0) {
+    var meetingID = req.cookies['meetingid'];
+    var sessionID = req.cookies['sessionid'];
+    redisAction.isValidSession(meetingID, sessionID, function (reply) {
+      var file = req.files.image.path;
+      var pageIDs = [];
+      redisAction.getCurrentPresentationID(meetingID, function(prevPresID) {
+        redisAction.getCurrentPageID(meetingID, prevPresID, function(prevPageID) {
+          redisAction.createPresentation(meetingID, true, function (presentationID) {
+            var folder = routes.presentationImageFolder(presentationID);
+            fs.mkdir(folder, 0777 , function (reply) {
+              im.convert(['-quality', '50', '-density', '150x150', file, folder + '/slide%d.png'], function (err, reply) {
+                if(!err) {
+                  //counts how many files are in the folder for the presentation to get the slide count.
+                  exec("ls -1 " + folder + "/ | wc -l", function (error, stdout, stdouterr) {
+                    var numOfPages = parseInt(stdout, 10);
+                    var numComplete = 0;
+                    for(var i = 0; i < numOfPages; i++) {
+                      if(i != 0) var setCurrent = false;
+                      else var setCurrent = true;
+                      redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID) {
+                        pageIDs.push(pageID);
+                        numComplete++;
+                        if(numComplete == numOfPages) {
+                	        socketAction.publishSlides(meetingID);
+                        }
+                      });
+                    }
+                  });
+                }
+                else {
+                  fs.rmdir(folder, function() {
+                    console.log("Deleted invalid presentation folder");
+                  });
+                  console.log("CONVERT ERROR: " + err);
+                  //go back to previous presentation
+                  redisAction.setCurrentPresentation(meetingID, prevPresID, function() {
+                    redisAction.setCurrentPage(meetingID, prevPresID, prevPageID, function() {
+                      socketAction.publishSlides(meetingID);
+                    });
+                  });
+                }
               });
-            }
+            });
           });
         });
       });
     });
-  });
-  
+  }
   res.redirect('back');
 };
 

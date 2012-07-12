@@ -55,6 +55,7 @@ exports.publishSlides = function(meetingID, sessionID, callback) {
          if(slides.length == numOfSlides) {
             var receivers = sessionID != undefined ? sessionID : meetingID;
             pub.publish(receivers, JSON.stringify(['all_slides', slides]));
+            if(callback) callback();
          }
        });
      }
@@ -71,6 +72,16 @@ exports.publishRects = function(meetingID, sessionID) {
         var receivers = sessionID != undefined ? sessionID : meetingID;
         pub.publish(receivers, JSON.stringify(['all_rects', rects]));
       });
+    });
+  });
+};
+
+exports.publishViewBox = function(meetingID, sessionID) {
+  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+    redisAction.getViewBox(meetingID, presentationID, function(viewBox) {
+      viewBox = JSON.parse(viewBox);
+      var receivers = sessionID != undefined ? sessionID : meetingID;
+      pub.publish(receivers, JSON.stringify(['viewBox', viewBox[0], viewBox[1], viewBox[2], viewBox[3]]));
     });
   });
 };
@@ -133,6 +144,7 @@ exports.SocketOnConnection = function(socket) {
   			  socketAction.publishPaths(meetingID, sessionID);
   			  socketAction.publishRects(meetingID, sessionID);
   			  socketAction.publishSlides(meetingID, sessionID);
+  			  socketAction.publishViewBox(meetingID, sessionID);
     		});
   		}
   	});
@@ -210,6 +222,9 @@ exports.SocketOnConnection = function(socket) {
   	      redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
   	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation" + presentationID + "/"+filename]));
+  	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
+  	          socketAction.publishPaths(meetingID);
+      			  socketAction.publishRects(meetingID);
   	        });
   	      });
 	      });
@@ -228,6 +243,9 @@ exports.SocketOnConnection = function(socket) {
   	      redisAction.changeToNextPage(meetingID, presentationID, function(pageID){
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
   	          pub.publish(meetingID, JSON.stringify(['changeslide', "images/presentation" + presentationID + "/"+filename]));
+  	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
+  	          socketAction.publishPaths(meetingID);
+      			  socketAction.publishRects(meetingID);
   	        });
   	      });
 	      });
@@ -275,6 +293,10 @@ exports.SocketOnConnection = function(socket) {
 	
 	// When a user is updating the viewBox of the paper
 	socket.on('viewBox', function (xperc, yperc, wperc, hperc) {
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+      redisAction.setViewBox(socket.handshake.meetingID, presentationID, JSON.stringify([xperc, yperc, wperc, hperc]));
+	  });
 	  pub.publish(socket.handshake.meetingID, JSON.stringify(['viewBox', xperc, yperc, wperc, hperc]));
 	});
 	

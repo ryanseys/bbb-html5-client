@@ -57,6 +57,7 @@ function getLineOn() {
 }
 
 function turnOn(string) {
+  
   // If the user requests to turn on the rectangle tool
   if(string == "rectangle") {
     if(!rectOn) {
@@ -64,10 +65,15 @@ function turnOn(string) {
       panZoomOn = false;
       rectOn = true;
       cur.undrag();
-      slide.undrag();
       $('#slide').unbind('mousewheel');
       cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
-      slide.drag(curRectDragging, curRectDragStart, curRectDragStop);
+      for(url in slides) {
+        if(slides.hasOwnProperty(url)) {
+          paper.getById(slides[url]).undrag();
+          paper.getById(slides[url]).drag(curRectDragging, curRectDragStart, curRectDragStop);
+          //paper.getById(slides[url]).mousemove(mvingCur);
+        }
+      }
     }
   }
   // If the user requests to turn on the line tool
@@ -77,10 +83,15 @@ function turnOn(string) {
       panZoomOn = false;
       lineOn = true;
       cur.undrag();
-      slide.undrag();
       $('#slide').unbind('mousewheel');
       cur.drag(curDragging, curDragStart, curDragStop);
-      slide.drag(curDragging, curDragStart, curDragStop);
+      for(url in slides) {
+        if(slides.hasOwnProperty(url)) {
+          paper.getById(slides[url]).undrag();
+          paper.getById(slides[url]).drag(curDragging, curDragStart, curDragStop);
+          //paper.getById(slides[url]).mousemove(mvingCur);
+        }
+      }
     }
   }
   // If the user requests to turn on the pan & zoom tool
@@ -90,10 +101,15 @@ function turnOn(string) {
       lineOn = false;
       panZoomOn = true;
       cur.undrag();
-      slide.undrag();
       $('#slide').bind('mousewheel', zoomSlide);
       cur.drag(panDragging, panGo, panStop);
-      slide.drag(panDragging, panGo, panStop);
+      for(url in slides) {
+        if(slides.hasOwnProperty(url)) {
+          paper.getById(slides[url]).undrag();
+          paper.getById(slides[url]).drag(panDragging, panGo, panStop);
+          //paper.getById(slides[url]).mousemove(mvingCur);
+        }
+      }
     }
   }
 }
@@ -131,13 +147,13 @@ function initDefaults() {
     view_h = slide_h;
   }
 
-
   // Set defaults for variables
   if(slides) {
     rebuildPaper();
   }
-  else
-  slides = {}; //if previously loaded
+  else {
+    slides = {}; //if previously loaded
+  }
   cur = defaults[0];
   s_left = slide_obj.offsetLeft;
   s_top = slide_obj.offsetTop;
@@ -165,19 +181,21 @@ function initDefaults() {
 
 // Initialize the events
 function initEvents() {
-  slide.mousemove(mvingCur);
-  turnOn("panzoom"); // default tool on is specified here
+  turnOn("line"); // default tool on is specified here
 }
 
 // Initialize the paper
 function initPaper() {
   initDefaults();
+  initEvents();
 }
 
 function addImageToPaper(url) {
   var img = paper.image(url, 0, 0, slide_w, slide_h);
   img.hide();
   slides[url] = img.id;
+  img.drag(curDragging, curDragStart, curDragStop);
+  //img.mousemove(mvingCur);
   return img;
 }
 
@@ -190,7 +208,6 @@ function removeAllImagesFromPaper() {
     }
   }
   slides = {};
-  slide = null;
 }
 
 function getImageFromPaper(url) {
@@ -218,7 +235,7 @@ function showImageFromPaper(url) {
       if(img) img.hide();
     }
   }
-  slide = paper.getById(id).show();
+  paper.getById(id).show();
   current_url = url;
 }
 
@@ -390,5 +407,4 @@ function setZoom(delta) {
   emViewBox(pan_x, pan_y, view_w/slide_w, view_h/slide_h);
 }
 
-// After entire file loaded, initialize the paper
 initPaper();
