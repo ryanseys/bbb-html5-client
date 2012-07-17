@@ -58,26 +58,8 @@ function getLineOn() {
 
 function turnOn(string) {
   
-  // If the user requests to turn on the rectangle tool
-  if(string == "rectangle") {
-    if(!rectOn) {
-      lineOn = false;
-      panZoomOn = false;
-      rectOn = true;
-      cur.undrag();
-      $('#slide').unbind('mousewheel');
-      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
-      for(url in slides) {
-        if(slides.hasOwnProperty(url)) {
-          paper.getById(slides[url]).undrag();
-          paper.getById(slides[url]).drag(curRectDragging, curRectDragStart, curRectDragStop);
-          //paper.getById(slides[url]).mousemove(mvingCur);
-        }
-      }
-    }
-  }
-  // If the user requests to turn on the line tool
-  else if(string == "line") {
+  // If the user requests to turn on the line too
+  if(string == 'line') {
     if(!lineOn) {
       rectOn = false;
       panZoomOn = false;
@@ -94,8 +76,27 @@ function turnOn(string) {
       }
     }
   }
+  // If the user requests to turn on the rectangle tool
+  else if(string == 'rect') {
+    if(!rectOn) {
+      lineOn = false;
+      panZoomOn = false;
+      rectOn = true;
+      cur.undrag();
+      $('#slide').unbind('mousewheel');
+      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+      for(url in slides) {
+        if(slides.hasOwnProperty(url)) {
+          paper.getById(slides[url]).undrag();
+          paper.getById(slides[url]).drag(curRectDragging, curRectDragStart, curRectDragStop);
+          //paper.getById(slides[url]).mousemove(mvingCur);
+        }
+      }
+    }
+  }
+
   // If the user requests to turn on the pan & zoom tool
-  else if(string == "panzoom") {
+  else if(string == 'panzoom') {
     if(!panZoomOn) {
       rectOn = false;
       lineOn = false;
@@ -111,6 +112,9 @@ function turnOn(string) {
         }
       }
     }
+  }
+  else {
+    console.log("ERROR: Cannot turn on tool, invalid tool.");
   }
 }
 

@@ -103,6 +103,7 @@ socket.on('connect', function () {
 	
 	// WHITEBOARD EVENTS //
 	socket.on('clrPaper', function () {
+	  console.log("Clearing paper because socket said so.");
 	  clearPaper();
 	});
 	
@@ -117,7 +118,7 @@ socket.on('connect', function () {
 	});
 	
 	//when the rectangle being drawn is updated
-	socket.on('updRect', function(x, y, w, h){
+	socket.on('updRect', function(x, y, w, h) {
 	  updRect(x, y, w, h);
 	});
 	
@@ -127,7 +128,6 @@ socket.on('connect', function () {
 	  yperc = parseFloat(yperc, 10);
 	  wperc = parseFloat(wperc, 10);
 	  hperc = parseFloat(hperc, 10);
-	  console.log("set viewbox to " + [xperc, yperc, wperc, hperc].join(" ") );
 	  setViewBox(xperc, yperc, wperc, hperc);
 	});
 	
@@ -152,7 +152,11 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('processing', function() {
-	  
+	  console.log("processing");
+	});
+	
+	socket.on('toolChanged', function(tool) {
+	  turnOn(tool);
 	});
 	
 	socket.on('all_slides', function(slides) {
@@ -267,17 +271,17 @@ function emPublishRect(x, y, w, h) {
 
 // Set the drawing type to "line"
 function chooseLine() {
-  turnOn("line");
+  socket.emit('changeTool', 'line');
 }
 
 // Set the drawing type to "rectangle"
 function chooseRect() {
-  turnOn("rectangle");
+  socket.emit('changeTool', 'rect');
 }
 
 // Set the drawing type to "panzoom"
 function choosePanZoom() {
-  turnOn("panzoom");
+  socket.emit('changeTool', 'panzoom');
 }
 
 function switchPresenter() {

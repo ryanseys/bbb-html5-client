@@ -1,5 +1,5 @@
 // Publish usernames to all the sockets
-exports.publishUsernames = function(meetingID, sessionID) {
+exports.publishUsernames = function(meetingID, sessionID, callback) {
   var usernames = [];
   redisAction.getUsers(meetingID, function (users) {
       for (var i = users.length - 1; i >= 0; i--){
@@ -7,37 +7,41 @@ exports.publishUsernames = function(meetingID, sessionID) {
       };
       var receivers = sessionID != undefined ? sessionID : meetingID;
       pub.publish(receivers, JSON.stringify(['user list change', usernames]));
+      if(callback) callback(true);
   });
   
   //check if no users left in meeting
   store.scard(redisAction.getUsersString(meetingID), function(err, cardinality) {
     if(cardinality == '0') {
       redisAction.processMeeting(meetingID);
+      if(callback) callback(false);
     }
   });
 };
 
 //Get all messages from Redis and publish to a specific sessionID (user)
-exports.publishMessages = function(meetingID, sessionID) {
+exports.publishMessages = function(meetingID, sessionID, callback) {
   var messages = [];
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
       redisAction.getItems(meetingID, presentationID, pageID, "messages", function (messages) {
         var receivers = sessionID != undefined ? sessionID : meetingID;
         pub.publish(receivers, JSON.stringify(['all_messages', messages]));
+        if(callback) callback();
       });
     });
   });
 };
 
 //Get all paths from Redis and publish to a specific sessionID (user)
-exports.publishPaths = function(meetingID, sessionID) {
+exports.publishPaths = function(meetingID, sessionID, callback) {
   var paths = [];
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
       redisAction.getItems(meetingID, presentationID, pageID, "currentpaths", function (paths) {
         var receivers = sessionID != undefined ? sessionID : meetingID;
         pub.publish(receivers, JSON.stringify(['all_paths', paths]));
+        if(callback) callback();
       });
     });
   });
@@ -64,13 +68,14 @@ exports.publishSlides = function(meetingID, sessionID, callback) {
 };
 
 //Get all rectangles from Redis and publish to a specific sessionID (user)
-exports.publishRects = function(meetingID, sessionID) {
+exports.publishRects = function(meetingID, sessionID, callback) {
   var rects = [];
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
       redisAction.getItems(meetingID, presentationID, pageID, "currentrects", function (rects) {
         var receivers = sessionID != undefined ? sessionID : meetingID;
         pub.publish(receivers, JSON.stringify(['all_rects', rects]));
+        if(callback) callback();
       });
     });
   });
@@ -82,6 +87,7 @@ exports.publishViewBox = function(meetingID, sessionID) {
       viewBox = JSON.parse(viewBox);
       var receivers = sessionID != undefined ? sessionID : meetingID;
       pub.publish(receivers, JSON.stringify(['viewBox', viewBox[0], viewBox[1], viewBox[2], viewBox[3]]));
+      if(callback) callback();
     });
   });
 };
@@ -160,30 +166,30 @@ exports.SocketOnConnection = function(socket) {
 		  if(isValid) {
   		  var username = handshake.username;
     		var socketID = socket.id;
-
-  			store.hset(redisAction.getUserString(meetingID, sessionID), "refreshing", true, function(reply) {
+  			redisAction.updateUserProperties(meetingID, sessionID, ["refreshing", true], function(success) {
   			  setTimeout(function () {
-  			    //in one second, check again...
-    			  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
-    				  if(isValid) {
-    				    redisAction.getUserProperties(meetingID, sessionID, function(properties) {
+    			    //in one second, check again...
+      			redisAction.isValidSession(meetingID, sessionID, function (isValid) {
+      				if(isValid) {
+      				  redisAction.getUserProperties(meetingID, sessionID, function(properties) {
                   var numOfSockets = parseInt(properties.sockets, 10);
                   numOfSockets-=1;
-      					  if(numOfSockets == 0) {
-      					    store.srem(redisAction.getUsersString(meetingID), sessionID, function(err, num_deleted) {
-      					      store.del(redisAction.getUserString(meetingID, sessionID), function(err, reply) {
-          						  socketAction.publishUsernames(meetingID);
-      					      });
-      					    });
+        					if(numOfSockets == 0) {
+        					  redisAction.deleteUser(meetingID, sessionID, function() {
+        					    socketAction.publishUsernames(meetingID);
+        					  });
+          				}
+          				else {
+          					redisAction.updateUserProperties(meetingID, sessionID, ["sockets", numOfSockets]);
+          					//store.hset(redisAction.getUserString(meetingID, sessionID), "sockets", numOfSockets);
         					}
-        					else store.hset(redisAction.getUserString(meetingID, sessionID), "sockets", numOfSockets);
-      				  });
-    				  }
-      				else {
-      					socketAction.publishUsernames(meetingID);
+        				});
       				}
-    				});
-    			}, 1000);
+        			else {
+        				socketAction.publishUsernames(meetingID);
+        			}
+      			});
+      		}, 1000);
   			});
   		}
 		});
@@ -194,8 +200,8 @@ exports.SocketOnConnection = function(socket) {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		var meetingID = handshake.meetingID;
-	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
-	    if(isValid) {
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == sessionID) {
   		  //initialize local variables
   		  var username = handshake.username;
   		  //remove the user from the list of users
@@ -212,12 +218,12 @@ exports.SocketOnConnection = function(socket) {
 	});
 	
 	// A user clicks to change to previous slide
-	socket.on('prevslide', function (slide_num){
+	socket.on('prevslide', function (slide_num) {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		var meetingID = handshake.meetingID;
-	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
-	    if(isValid) {
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == sessionID) {
   	    redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
   	      redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
@@ -255,39 +261,63 @@ exports.SocketOnConnection = function(socket) {
 	
 	// When a line creation event is received
 	socket.on('li', function (x1, y1, x2, y2) {
-    pub.publish(socket.handshake.meetingID, JSON.stringify(['li', x1, y1, x2, y2]));
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+	      pub.publish(meetingID, JSON.stringify(['li', x1, y1, x2, y2]));
+	    }
+	  });
 	});
 	
 	// When a rectangle creation event is received
 	socket.on('makeRect', function (x, y) {
-    pub.publish(socket.handshake.meetingID, JSON.stringify(['makeRect', x, y]));
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['makeRect', x, y]));
+      }
+    });
 	});
 	
 	// When a rectangle update event is received
 	socket.on('updRect', function (x, y, w, h) {
-    pub.publish(socket.handshake.meetingID, JSON.stringify(['updRect', x, y, w, h]));
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['updRect', x, y, w, h]));
+      }
+    });
 	});
 	
 	// When a cursor move event is received
 	socket.on('mvCur', function (x, y) {
-	  pub.publish(socket.handshake.meetingID, JSON.stringify(['mvCur', x, y]));
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+	      pub.publish(meetingID, JSON.stringify(['mvCur', x, y]));
+      }
+    });
 	});
 	
 	// When a clear Paper event is received
 	socket.on('clrPaper', function () {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
-	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
-	      //delete all current paths
-    	  redisAction.getItemIDs(meetingID, presentationID, pageID, 'currentpaths', function(meetingID, presentationID, pageID, itemIDs, itemName) {
-          redisAction.deleteItemList(meetingID, presentationID, pageID, itemName, itemIDs);
-        });
-        //delete all current rects
-    	  redisAction.getItemIDs(meetingID, presentationID, pageID, 'currentrects', function(meetingID, presentationID, pageID, itemIDs, itemName) {
-          redisAction.deleteItemList(meetingID, presentationID, pageID, itemName, itemIDs);
-        });
-    	  pub.publish(meetingID, JSON.stringify(['clrPaper']));
-	    });
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+    	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
+    	      //delete all current paths
+        	  redisAction.getItemIDs(meetingID, presentationID, pageID, 'currentpaths', function(meetingID, presentationID, pageID, itemIDs, itemName) {
+              redisAction.deleteItemList(meetingID, presentationID, pageID, itemName, itemIDs);
+            });
+            //delete all current rects
+        	  redisAction.getItemIDs(meetingID, presentationID, pageID, 'currentrects', function(meetingID, presentationID, pageID, itemIDs, itemName) {
+              redisAction.deleteItemList(meetingID, presentationID, pageID, itemName, itemIDs);
+            });
+        	  pub.publish(meetingID, JSON.stringify(['clrPaper']));
+    	    });
+    	  });
+  	  }
 	  });
 	});
 	
@@ -302,37 +332,69 @@ exports.SocketOnConnection = function(socket) {
 	
 	// When a user is zooming
 	socket.on('zoom', function(delta) {
-	  pub.publish(socket.handshake.meetingID, JSON.stringify(['zoom', delta]));
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+	      pub.publish(meetingID, JSON.stringify(['zoom', delta]));
+      }
+    });
 	});
 	
 	// When a user finishes panning
 	socket.on('panStop', function() {
-	  pub.publish(socket.handshake.meetingID, JSON.stringify(['panStop']));
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+	      pub.publish(meetingID, JSON.stringify(['panStop']));
+      }
+    });
 	});
 	
 	socket.on('savePath', function(path) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
-	  var pathID = rack(); //get a randomly generated id for the message
-	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
-	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
-	      store.rpush(redisAction.getPathsString(meetingID, presentationID, pageID), pathID); //store the pathID in the list of paths
-        store.rpush(redisAction.getCurrentPathsString(meetingID, presentationID, pageID), pathID); //store the pathID in the list of currentpaths
-        store.hmset(redisAction.getPathString(meetingID, presentationID, pageID, pathID), "path", path);
-	    });
+		redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+        var pathID = rack(); //get a randomly generated id for the message
+    	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+    	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
+    	      store.rpush(redisAction.getPathsString(meetingID, presentationID, pageID), pathID); //store the pathID in the list of paths
+            store.rpush(redisAction.getCurrentPathsString(meetingID, presentationID, pageID), pathID); //store the pathID in the list of currentpaths
+            store.hmset(redisAction.getPathString(meetingID, presentationID, pageID, pathID), "path", path);
+    	    });
+    	  });
+  	  }
 	  });
 	});
 	
 	socket.on('saveRect', function(x, y, w, h) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
-	  var rectID = rack(); //get a randomly generated id for the message
-	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
-	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
-	      store.rpush(redisAction.getRectsString(meetingID, presentationID, pageID), rectID); //store the pathID in the list of paths
-        store.rpush(redisAction.getCurrentRectsString(meetingID, presentationID, pageID), rectID); //store the pathID in the list of currentpaths
-        store.hmset(redisAction.getRectString(meetingID, presentationID, pageID, rectID), "rect", [x, y, w, h].join(','));
-	    });
+		redisAction.getPresenter(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+        var rectID = rack(); //get a randomly generated id for the message
+    	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+    	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
+    	      store.rpush(redisAction.getRectsString(meetingID, presentationID, pageID), rectID); //store the pathID in the list of paths
+            store.rpush(redisAction.getCurrentRectsString(meetingID, presentationID, pageID), rectID); //store the pathID in the list of currentpaths
+            store.hmset(redisAction.getRectString(meetingID, presentationID, pageID, rectID), "rect", [x, y, w, h].join(','));
+    	    });
+    	  });
+  	  }
 	  });
-	});
+  });
+  
+  socket.on('changeTool', function (tool) {
+     var handshake = socket.handshake;
+  	 var meetingID = handshake.meetingID;
+  	 redisAction.getPresenter(meetingID, function(presenterID) {
+  	   if(presenterID == socket.handshake.sessionID) {
+	        redisAction.setCurrentTool(meetingID, tool, function(success) {
+	          if(success) {
+	            pub.publish(meetingID, JSON.stringify(['toolChanged', tool]));
+	          }
+	        });
+	     }
+     });
+  });
 };

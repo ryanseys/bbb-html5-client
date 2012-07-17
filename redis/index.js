@@ -122,6 +122,62 @@ exports.getCurrentViewBoxString = function(meetingID, presentationID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-viewbox";
 };
 
+exports.getCurrentToolString = function(meetingID) {
+  return "meeting-" + meetingID + "-currenttool";
+};
+
+exports.getPresenterString = function(meetingID) {
+  return "meeting-" + meetingID + "-presenter";
+};
+
+exports.setCurrentTool = function(meetingID, tool, callback) {
+  store.set(redisAction.getCurrentToolString(meetingID), tool, function(err, reply) {
+    if(reply) {
+      if(callback) callback(true);
+    }
+    else if(err) {
+      console.log(err);
+      if(callback) callback(null);
+    }
+  });
+};
+
+exports.setPresenter = function(meetingID, sessionID, callback) {
+  store.set(redisAction.getPresenterString(meetingID), sessionID, function(err, reply) {
+    if(reply) {
+      if(callback) callback(true);
+    }
+    else if(err) {
+      console.log(err);
+      if(callback) callback(false);
+    }
+  });
+};
+
+exports.getPresenter = function(meetingID, callback) {
+  store.get(redisAction.getPresenterString(meetingID), function(err, reply) {
+    if(reply) {
+      callback(reply);
+    }
+    else if(err) {
+      console.log(err);
+      callback(null);
+    }
+  });
+};
+
+exports.getCurrentTool = function(meetingID, callback) {
+  store.get(redisAction.getCurrentToolString(meetingID), function(err, reply) {
+    if(reply) {
+      callback(reply);
+    }
+    else if(err) {
+      console.log(err);
+      callback(null);
+    }
+  });
+};
+
 exports.deleteItemList = function(meetingID, presentationID, pageID, itemName, callback) {
   //delete the list which contains the item ids
   store.del(redisAction.getItemsStringFunction(itemName)(meetingID, presentationID, pageID), function(err, reply) {
@@ -143,9 +199,23 @@ exports.deleteItems = function(meetingID, presentationID, pageID, itemName, item
   };
 };
 
+exports.deleteMeeting = function(meetingID, callback) {
+  store.srem(redisAction.getMeetingsString(), meetingID, function(err, reply) {
+    if(reply) {
+      console.log("Deleted meeting " + meetingID + " from list of meetings.");
+      if(callback) callback(true);
+    }
+    else if(err) {
+      console.log("Meeting was not in the list of meetings.");
+      if(callback) callback(false);
+    }
+  });
+};
+
 // Process of the meeting once all the users have left
 // For now, this simply deletes all the messages
 exports.processMeeting = function(meetingID) {
+  redisAction.deleteMeeting(meetingID);
   redisAction.getPresentationIDs(meetingID, function(presIDs) {
     for(var k = presIDs.length - 1; k >=0; k--) {
       redisAction.getPageIDs(meetingID, presIDs[k], function(presID, pageIDs) {
@@ -178,6 +248,17 @@ exports.getItemIDs = function(meetingID, presentationID, pageID, itemName, callb
   });
 };
 
+exports.getCurrentUsers = function(meetingID, callback) {
+  store.smembers(redisAction.getCurrentUsersString(meetingID), function(err, reply) {
+    if(reply) {
+      callback(reply);
+    }
+    else if(err) {
+      
+    }
+  });
+};
+
 exports.getPresentationIDs = function(meetingID, callback) {
   store.smembers(redisAction.getPresentationsString(meetingID), function(err, presIDs) {
     callback(presIDs);
@@ -194,6 +275,17 @@ exports.getPageIDs = function(meetingID, presentationID, callback) {
 exports.isValidSession = function(meetingID, sessionID, callback) {
   store.sismember(redisAction.getUsersString(meetingID), sessionID, function(err, isValid) {
     callback(isValid);
+  });
+};
+
+exports.isMeetingRunning = function(meetingID, callback) {
+  store.sismember(redisAction.getMeetingsString(), meetingID, function(err, reply) {
+    if(reply == 1) {
+      callback(true);
+    }
+    else if(reply == 0) {
+      callback(false);
+    }
   });
 };
 
@@ -237,6 +329,21 @@ exports.deletePresentations = function(meetingID, callback) {
   });
 };
 
+exports.deleteUser = function(meetingID, sessionID, callback) {
+  store.srem(redisAction.getUsersString(meetingID), sessionID, function(err, num_deleted) {
+    store.del(redisAction.getUserString(meetingID, sessionID), function(err, reply) {
+		  callback(true);
+    });
+  });
+};
+
+//Remove the current user from the list of current user
+exports.deleteCurrentUser = function(meetingID, sessionID, callback) {
+  store.srem(redisAction.getCurrentUsersString(meetingID), sessionID, function(err, num_deleted) {
+    callback(true);
+  });
+};
+
 // Gets all the properties associated with a specific user (sessionID)
 exports.getUserProperties = function(meetingID, sessionID, callback) {
   store.hgetall(redisAction.getUserString(meetingID, sessionID), function(err, properties) {
@@ -247,7 +354,11 @@ exports.getUserProperties = function(meetingID, sessionID, callback) {
 // Gets a single property from a specific user
 exports.getUserProperty = function(meetingID, sessionID, property, callback) {
   store.hget(redisAction.getUserString(meetingID, sessionID), property, function(err, prop) {
-    callback(prop);
+    if(prop) callback(prop);
+    if(err) {
+      console.log(err);
+      callback(null);
+    }
   });
 };
 
@@ -378,30 +489,25 @@ exports.setCurrentPage = function(meetingID, presentationID, pageID, callback) {
 
 exports.createPage = function(meetingID, presentationID, imageName, setCurrent, callback) {
   var pageID = rack(); //create a new unique pageID
+  var afterPush = function(err, reply) {
+    if(reply) {
+      console.log("REDIS: Created page with ID " + pageID);
+      redisAction.setPageImage(meetingID, presentationID, pageID, imageName, function() {
+        callback(pageID);
+      });
+    }
+    else if(err) {
+      console.log("REDIS ERROR: Couldn't create page with ID " + pageID);
+      callback(null);
+    }
+  };
+  
   console.log("Making page with id " + pageID);
   if(setCurrent) {
-    store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID, function(err, reply) {
-       if(reply) {
-          console.log("REDIS: Created page with ID " + pageID);
-          redisAction.setPageImage(meetingID, presentationID, pageID, imageName, function() {
-            callback(pageID);
-          });
-        }
-    });
+    store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID, afterPush);
   }
   else {
-    store.rpush(redisAction.getPagesString(meetingID, presentationID), pageID, function(err, reply) {
-      if(reply) {
-        console.log("REDIS: Created page with ID " + pageID);
-        redisAction.setPageImage(meetingID, presentationID, pageID, imageName, function() {
-          callback(pageID);
-        });
-      }
-      else if(err) {
-        console.log("REDIS ERROR: Couldn't create page with ID " + pageID);
-        callback(null);
-      }
-    });
+    store.rpush(redisAction.getPagesString(meetingID, presentationID), pageID, afterPush);
   }
 };
 
@@ -534,7 +640,6 @@ exports.setViewBox = function(meetingID, presentationID, viewbox, callback) {
 
 exports.getViewBox = function(meetingID, presentationID, callback) {
   store.get(redisAction.getCurrentViewBoxString(meetingID, presentationID), function(err, reply) {
-    console.log("REPLY: " + reply);
     if(reply) callback(reply);
     else if(err) {
       console.log(err);
@@ -555,5 +660,14 @@ exports.createUser = function(meetingID, userID, callback) {
 
 exports.updateUserProperties = function(meetingID, userID, properties, callback) {
   properties.unshift(redisAction.getUserString(meetingID, userID));
+  properties.push(function(err, reply) {
+    if(reply) {
+      if(callback) callback(true);
+    }
+    else if(err) {
+      console.log(err);
+      if(callback) callback(false);
+    }
+  });
   store.hmset.apply(store, properties);
 };

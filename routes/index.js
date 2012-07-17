@@ -21,9 +21,21 @@ exports.post_index = function(req, res) {
   var meetingID = sanitizer.escape(req.body.meeting.id);
   if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length) && (meetingID.split(' ').length == 1)) {
 	  var sessionID = req.sessionID;
-	  redisAction.createMeeting(meetingID);
+	  redisAction.isMeetingRunning(meetingID, function(isRunning) {
+	    console.log("is Running:" + isRunning);
+	    if(isRunning) {
+	      console.log("Meeting " + meetingID + " is already running.");
+	    }
+	    else {
+	      console.log("Meeting " + meetingID + " is NOT already running, creating meeting...");
+	      redisAction.createMeeting(meetingID, function() {
+	        redisAction.setPresenter(meetingID, sessionID, function(){
+	          console.log("Set a presenter");
+	        });
+	      });
+	    }
+	  });
 	  redisAction.createUser(meetingID, sessionID);
-	  
 	  store.get(redisAction.getCurrentPresentationString(meetingID), function (err, currPresID) {
 	    if(!currPresID) {
 	      redisAction.createPresentation(meetingID, true, function (presentationID) {
@@ -61,7 +73,6 @@ exports.get_chat = function(req, res) {
 	//requiresLogin before this verifies that a user is logged in...
 	redisAction.getUserProperty(req.cookies['meetingid'], req.cookies['sessionid'], "username", function (username) {
 	  res.render('chat', { title: 'BigBlueButton HTML5 Client', user: username, max_chat_length: max_chat_length });
-	  socketAction.publishSlides(req.cookies['meetingid']);
 	});
 };
 
