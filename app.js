@@ -22,6 +22,7 @@ var express = require('express'),
 	
 	util = require('util');
   exec = require('child_process').exec;
+  ip_address = 'localhost';
 	
 	//global variables
 	redisAction = require('./redis');
@@ -90,7 +91,6 @@ app.get('*', routes.error404);
 app.listen(3000, function() {
 	console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
 });
-
 
 
 // Socket.IO Routes

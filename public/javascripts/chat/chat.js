@@ -5,8 +5,7 @@ var chatbox = document.getElementById('chat_input_box');
 var proc_img = document.getElementById('processing_img');
 
 var PORT = 3000;
-var SERVER_IP = 'localhost';
-//var SERVER_IP = '192.168.0.233';
+var SERVER_IP = window.location.hostname;
 
 //connect to the websocket.
 var socket = io.connect('http://'+SERVER_IP+':'+PORT);
