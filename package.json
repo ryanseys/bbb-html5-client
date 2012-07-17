@@ -13,6 +13,5 @@
 		, "sanitizer": ">= 0.0.15"
 		, "hat": ">= 0.0.3"
 		, "imagemagick": ">= 0.1.2"
-		, "socket.io": ">= 0.9.6"
 	}
 }
