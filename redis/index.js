@@ -640,10 +640,12 @@ exports.setViewBox = function(meetingID, presentationID, viewbox, callback) {
 
 exports.getViewBox = function(meetingID, presentationID, callback) {
   store.get(redisAction.getCurrentViewBoxString(meetingID, presentationID), function(err, reply) {
-    if(reply) callback(reply);
+    if(reply) {
+      if(callback) callback(reply);
+    }
     else if(err) {
       console.log(err);
-      callback(null);
+      if(callback) callback(null);
     }
   });
 };

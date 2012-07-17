@@ -81,7 +81,7 @@ exports.publishRects = function(meetingID, sessionID, callback) {
   });
 };
 
-exports.publishViewBox = function(meetingID, sessionID) {
+exports.publishViewBox = function(meetingID, sessionID, callback) {
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     redisAction.getViewBox(meetingID, presentationID, function(viewBox) {
       viewBox = JSON.parse(viewBox);
