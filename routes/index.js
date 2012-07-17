@@ -87,6 +87,7 @@ exports.post_chat = function(req, res, next) {
       redisAction.getCurrentPresentationID(meetingID, function(prevPresID) {
         redisAction.getCurrentPageID(meetingID, prevPresID, function(prevPageID) {
           redisAction.createPresentation(meetingID, true, function (presentationID) {
+            redisAction.setViewBox(meetingID, presentationID, JSON.stringify([0, 0, 1, 1]));
             var folder = routes.presentationImageFolder(presentationID);
             fs.mkdir(folder, 0777 , function (reply) {
               im.convert(['-quality', '50', '-density', '150x150', file, folder + '/slide%d.png'], function (err, reply) {
@@ -102,6 +103,7 @@ exports.post_chat = function(req, res, next) {
                         pageIDs.push(pageID);
                         numComplete++;
                         if(numComplete == numOfPages) {
+                          
                 	        socketAction.publishSlides(meetingID);
                         }
                       });
