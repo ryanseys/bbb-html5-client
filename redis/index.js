@@ -118,8 +118,8 @@ exports.getCurrentPageNumString = function(meetingID, presentationID, pageID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-currentpagenum";
 };
 
-exports.getCurrentViewBoxString = function(meetingID, presentationID) {
-  return "meeting-" + meetingID + "-presentation-" + presentationID + "-viewbox";
+exports.getCurrentViewBoxString = function(meetingID) {
+  return "meeting-" + meetingID + "-viewbox";
 };
 
 exports.getCurrentToolString = function(meetingID) {
@@ -626,8 +626,8 @@ exports.setCurrentPresentation = function(meetingID, presentationID, callback) {
   });
 };
 
-exports.setViewBox = function(meetingID, presentationID, viewbox, callback) {
-  store.set(redisAction.getCurrentViewBoxString(meetingID, presentationID), viewbox, function(err, reply){
+exports.setViewBox = function(meetingID, viewbox, callback) {
+  store.set(redisAction.getCurrentViewBoxString(meetingID), viewbox, function(err, reply){
     if(reply) {
       if(callback) callback(true);
     }
@@ -638,8 +638,8 @@ exports.setViewBox = function(meetingID, presentationID, viewbox, callback) {
   });
 };
 
-exports.getViewBox = function(meetingID, presentationID, callback) {
-  store.get(redisAction.getCurrentViewBoxString(meetingID, presentationID), function(err, reply) {
+exports.getViewBox = function(meetingID, callback) {
+  store.get(redisAction.getCurrentViewBoxString(meetingID), function(err, reply) {
     if(reply) {
       if(callback) callback(reply);
     }

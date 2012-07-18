@@ -102,7 +102,6 @@ socket.on('connect', function () {
 	
 	// WHITEBOARD EVENTS //
 	socket.on('clrPaper', function () {
-	  console.log("Clearing paper because socket said so.");
 	  clearPaper();
 	});
 	

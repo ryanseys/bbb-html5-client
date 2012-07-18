@@ -185,7 +185,6 @@ function initDefaults() {
 
 // Initialize the events
 function initEvents() {
-  turnOn("line"); // default tool on is specified here
 }
 
 // Initialize the paper

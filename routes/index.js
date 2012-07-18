@@ -22,13 +22,13 @@ exports.post_index = function(req, res) {
   if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length) && (meetingID.split(' ').length == 1)) {
 	  var sessionID = req.sessionID;
 	  redisAction.isMeetingRunning(meetingID, function(isRunning) {
-	    console.log("is Running:" + isRunning);
 	    if(isRunning) {
 	      console.log("Meeting " + meetingID + " is already running.");
 	    }
 	    else {
 	      console.log("Meeting " + meetingID + " is NOT already running, creating meeting...");
 	      redisAction.createMeeting(meetingID, function() {
+	        redisAction.setCurrentTool(meetingID, 'line');
 	        redisAction.setPresenter(meetingID, sessionID, function(){
 	          console.log("Set a presenter");
 	        });
@@ -86,8 +86,8 @@ exports.post_chat = function(req, res, next) {
       var pageIDs = [];
       redisAction.getCurrentPresentationID(meetingID, function(prevPresID) {
         redisAction.getCurrentPageID(meetingID, prevPresID, function(prevPageID) {
-          redisAction.createPresentation(meetingID, true, function (presentationID) {
-            redisAction.setViewBox(meetingID, presentationID, JSON.stringify([0, 0, 1, 1]));
+          redisAction.createPresentation(meetingID, false, function (presentationID) {
+            redisAction.setViewBox(meetingID, JSON.stringify([0, 0, 1, 1]));
             var folder = routes.presentationImageFolder(presentationID);
             fs.mkdir(folder, 0777 , function (reply) {
               im.convert(['-quality', '50', '-density', '150x150', file, folder + '/slide%d.png'], function (err, reply) {
@@ -103,8 +103,9 @@ exports.post_chat = function(req, res, next) {
                         pageIDs.push(pageID);
                         numComplete++;
                         if(numComplete == numOfPages) {
-                          
-                	        socketAction.publishSlides(meetingID);
+                          redisAction.setCurrentPresentation(meetingID, presentationID, function() {
+                            socketAction.publishSlides(meetingID);
+                          });
                         }
                       });
                     }
@@ -116,11 +117,13 @@ exports.post_chat = function(req, res, next) {
                   });
                   console.log("CONVERT ERROR: " + err);
                   //go back to previous presentation
+                  /*
                   redisAction.setCurrentPresentation(meetingID, prevPresID, function() {
                     redisAction.setCurrentPage(meetingID, prevPresID, prevPageID, function() {
                       socketAction.publishSlides(meetingID);
                     });
                   });
+                  */
                 }
               });
             });
