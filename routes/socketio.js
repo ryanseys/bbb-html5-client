@@ -362,15 +362,6 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	socket.on('corners', function(x, y) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['corners', x, y]));
-	    }
-	  });
-	});
-	
 	socket.on('savePath', function(path) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;

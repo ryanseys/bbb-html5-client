@@ -295,11 +295,6 @@ function panDone() {
   panning = 0;
 }
 
-function setCorners(x, y) {
-  cornerx = x*view_w;
-  cornery = y*view_h;
-}
-
 // When dragging for drawing lines starts
 var curDragStart = function(x, y) {
   cx1 = (x - s_left)/slide_w;
