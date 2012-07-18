@@ -397,29 +397,36 @@ var zoomSlide = function(event, delta) {
 
 // Socket response - Update zoom variables and viewbox
 function setZoom(delta) {
+  //zooming out
   if(delta < 0) {
       view_w = view_w * 1.05;
       view_h = view_h * 1.05;
       cur.attr({ 'r' : cur.attrs.r*1.05 });
   }
+  //zooming in
   else {
+    //cannot zoom in too much
     if(slide_h/view_h < ZOOM_MAX) {
       view_w = view_w * 0.95;
       view_h = view_h * 0.95;
       cur.attr({ 'r' : cur.attrs.r*0.95 });
     }
   }
+  //handle left side collision
   if(view_w > slide_w) {
     view_w = slide_w;
     pan_x = 0;
     cur.attr({ 'r' : default_cur_r });
   }
+  //handle top collision
   if(view_h > slide_h) {
     view_h = slide_h;
     pan_y = 0;
     cur.attr({ 'r' : default_cur_r });
   }
+  //handle right wall collisions
   if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
+  //handle left wall collisions
   if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
   emViewBox(pan_x, pan_y, view_w/slide_w, view_h/slide_h);
 }
