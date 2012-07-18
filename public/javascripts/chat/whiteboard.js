@@ -14,7 +14,7 @@ var ZOOM_MAX; //static
 var pan_x;
 var pan_y;
 var onFirefox;
-
+var panning; // 0 is off, 1 is started, 2 is in progress
 // slide variables
 var paper;
 var cur;
@@ -163,6 +163,7 @@ function initDefaults() {
   s_top = slide_obj.offsetTop;
   cornerx = 0;
   cornery = 0;
+  panning = 0;
   if(paper._viewBox) {
     pan_x = paper._viewBox[0]/view_w;
     pan_y = paper._viewBox[1]/view_h;
@@ -261,24 +262,42 @@ var panDragging = function(dx, dy, x, y) {
 
 // Socket response - Set the ViewBox of the paper
 function setViewBox(xperc, yperc, wperc, hperc) {
+  pan_x = xperc;
+  pan_y = yperc;
+  view_w = wperc*slide_w;
+  view_h = hperc*slide_h;
   paper.setViewBox(xperc*view_w, yperc*view_h, wperc*slide_w, hperc*slide_h);
+  if((panning == 0) || (panning == 1)) {
+    cornerx = xperc*view_w;
+    cornery = yperc*view_h;
+    if(panning == 1) {
+     panning = 2;
+    }
+  }
 }
 
 //When panning starts (placeholder for now)
 var panGo = function(x, y) {
   cur.hide();
+  panning = 1;
 };
 
 // When panning finishes
 var panStop = function(e) {
+  cornerx = paper._viewBox[0];
+  cornery = paper._viewBox[1];
   emPanStop();
 };
 
 // Socket response - panStop occurred
 function panDone() {
-  cornerx = paper._viewBox[0];
-  cornery = paper._viewBox[1];
   cur.show();
+  panning = 0;
+}
+
+function setCorners(x, y) {
+  cornerx = x*view_w;
+  cornery = y*view_h;
 }
 
 // When dragging for drawing lines starts

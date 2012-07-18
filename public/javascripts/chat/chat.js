@@ -79,6 +79,10 @@ socket.on('connect', function () {
 	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]));
     }
 	});
+	
+	socket.on('corners', function(x, y) {
+	  setCorners(x, y);
+	});
   
   // If the server is reconnected to the client
 	socket.on('reconnect', function () {
@@ -265,6 +269,10 @@ function emPublishPath(path) {
 
 function emPublishRect(x, y, w, h) {
   socket.emit('saveRect', x, y, w, h);
+}
+
+function emCorners(x, y) {
+  socket.emit('corners', x, y);
 }
 
 // Set the drawing type to "line"
