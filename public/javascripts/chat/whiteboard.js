@@ -6,8 +6,6 @@ var slide_w;
 var slide_h;
 var view_w;
 var view_h;
-var zoom_x;
-var zoom_y;
 var s_left; //fixed - DO NOT MODIFY
 var s_top; //fixed - DO NOT MODIFY
 var ZOOM_MAX; //static
@@ -18,7 +16,6 @@ var panning; // 0 is off, 1 is started, 2 is in progress
 // slide variables
 var paper;
 var cur;
-var slide;
 var current_url;
 var defaults;
 var cornerx;
@@ -56,10 +53,10 @@ function getLineOn() {
   return lineOn;
 }
 
-function turnOn(string) {
+function turnOn(tool) {
   
   // If the user requests to turn on the line too
-  if(string == 'line') {
+  if(tool == 'line') {
     if(!lineOn) {
       rectOn = false;
       panZoomOn = false;
@@ -77,7 +74,7 @@ function turnOn(string) {
     }
   }
   // If the user requests to turn on the rectangle tool
-  else if(string == 'rect') {
+  else if(tool == 'rect') {
     if(!rectOn) {
       lineOn = false;
       panZoomOn = false;
@@ -96,7 +93,7 @@ function turnOn(string) {
   }
 
   // If the user requests to turn on the pan & zoom tool
-  else if(string == 'panzoom') {
+  else if(tool == 'panzoom') {
     if(!panZoomOn) {
       rectOn = false;
       lineOn = false;
@@ -114,7 +111,7 @@ function turnOn(string) {
     }
   }
   else {
-    console.log("ERROR: Cannot turn on tool, invalid tool.");
+    console.log("ERROR: Cannot turn on tool, invalid tool: " + tool);
   }
 }
 
@@ -184,14 +181,9 @@ function initDefaults() {
   }
 }
 
-// Initialize the events
-function initEvents() {
-}
-
 // Initialize the paper
 function initPaper() {
   initDefaults();
-  initEvents();
 }
 
 function addImageToPaper(url) {
