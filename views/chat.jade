@@ -12,25 +12,33 @@ div(id="ChatAndControls")
     input(id="chat_input_box", maxlength="#{max_chat_length}", onKeyUp="countchars(#{max_chat_length})", placeholder="Type and press enter")
     input(id="send_chat", type="submit", value="Send", onclick="sendMessage();return false;")
 
+// List of the connected users
+div(id="listUsers")
+  div Current users
+  div(id="current_users")
 // The slide and controls of the chat page
+
 div(id="slideAndControls")
-  div(id="slide")
+  input(id='wslider', type="range", value="600", min="20", max="800", onchange="recalculateView()")
+  input(id='hslider', type="range", value="400", min="20", max="800", onchange="recalculateView()")
+  div(id="slide", onresize="alert('resizing');")
+
   // Buttons below the slide
-  div(id='imagecontrols')
-    form(id='backward_image')
-      input(type="submit", value="<<<", onclick="prevImg();return false;")
-    form(id='forward_image')
-      input(type="submit", value=">>>", onclick='nextImg();return false;')
-    form(id='clearCanvas')
-      input(type="submit", value="Clear", onclick="clearCanvas();return false;")
-    form(id="chooseLine")
-      input(type="submit", value="Line", onclick="chooseLine();return false;")
-    form(id="chooseRect")
-      input(type="submit", value="Rect", onclick="chooseRect();return false;")
-    form(id="choosePanZoom")
-      input(type="submit", value='Pan & Zoom', onclick="choosePanZoom();return false;")
-    form(id="switchPresenter")
-      input(type="submit", value="Switch presenter (not working yet)", onclick="switchPresenter();return false;")
+div(id='imagecontrols', style="clear:left")
+  form(id='backward_image')
+    input(type="submit", value="<<<", onclick="prevImg();return false;")
+  form(id='forward_image')
+    input(type="submit", value=">>>", onclick='nextImg();return false;')
+  form(id='clearCanvas')
+    input(type="submit", value="Clear", onclick="clearCanvas();return false;")
+  form(id="chooseLine")
+    input(type="submit", value="Line", onclick="chooseLine();return false;")
+  form(id="chooseRect")
+    input(type="submit", value="Rect", onclick="chooseRect();return false;")
+  form(id="choosePanZoom")
+    input(type="submit", value='Pan & Zoom', onclick="choosePanZoom();return false;")
+  form(id="switchPresenter")
+    input(type="submit", value="Switch presenter (not working yet)", onclick="switchPresenter();return false;")
   
   // Upload controls
   div(id="uploadcontrols")
@@ -39,10 +47,7 @@ div(id="slideAndControls")
         input(type="file", name="image")
         input(type="submit", value="Upload")
 
-// List of the connected users
-div(id="listUsers")
-  div Current users
-  div(id="current_users")
+
 
 // External scripts here
 script(src='/javascripts/lib/raphael-min.js')

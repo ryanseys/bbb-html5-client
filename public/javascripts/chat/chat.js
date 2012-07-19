@@ -53,9 +53,9 @@ socket.on('connect', function () {
 	    var firstValuesArray = pathArray[0].split(' ');
 	    for (var j = 0; j < 2; j++) {
         if(j == 0) {
-          firstValuesArray[j] *= 600; //put width
+          firstValuesArray[j] *= global_box_w; //put width
         }
-        else firstValuesArray[j] *= 400; //put height
+        else firstValuesArray[j] *= global_box_h; //put height
       }
 	    var pathString = "M" + firstValuesArray.join(' ');
 	    var len = pathArray.length;
@@ -63,9 +63,9 @@ socket.on('connect', function () {
 	      var pairOfPoints = pathArray[k].split(' ');
 	      for (var m = 0; m < 2; m++) {
 	        if(m == 0) {
-	          pairOfPoints[m] *= 600; //put width
+	          pairOfPoints[m] *= global_box_w; //put width
 	        }
-	        else pairOfPoints[m] *= 400; //put height
+	        else pairOfPoints[m] *= global_box_h; //put height
         }
 	      pathString += "L" + pairOfPoints.join(' ');
       }
@@ -102,6 +102,7 @@ socket.on('connect', function () {
 	
 	// WHITEBOARD EVENTS //
 	socket.on('clrPaper', function () {
+	  console.log("clearing");
 	  clearPaper();
 	});
 	
@@ -162,6 +163,7 @@ socket.on('connect', function () {
 	  removeAllImagesFromPaper();
 	  for (var i = slides.length - 1; i >= 0; i--) {
 	    img = addImageToPaper(slides[i]);
+	    //this simply stores the image in the dom so it can be fetched quickly during switching slides
 	    $('#slide').append('<img id="preload'+img.id+'"src="'+slides[i]+'" style="display:none;" alt=""/>'); //preload images
 	  };
 	  showImageFromPaper(slides[0]);

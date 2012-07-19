@@ -2,15 +2,25 @@
 slide_obj = document.getElementById("slide");
 
 // initialize variables
-var slide_w;
-var slide_h;
+var slide_w; //the width of the slide div (container for the svg) (in pixels)
+var slide_h; //the height of the slide div (container for the svg) (in pixels)
+
+//the number of pixels from left to right shown in the slide div (more zoom = less pixels, max pixels = slide_w)
 var view_w;
+//the number of pixels from top to bottom shown in the slide div (more zoom = less pixels, max pixels = slide_h)
 var view_h;
+
+//svg offset is from the corner of the document to the slide div
 var s_left; //fixed - DO NOT MODIFY
 var s_top; //fixed - DO NOT MODIFY
+
 var ZOOM_MAX; //static
+//percentage as a decimal of the pan from the top left corner of the view to the top left corner of the svg.
+//this is a weird number
 var pan_x;
 var pan_y;
+
+//whether person is on firefox browser or not
 var onFirefox;
 var panning; // 0 is off, 1 is started, 2 is in progress
 // slide variables
@@ -18,7 +28,10 @@ var paper;
 var cur;
 var current_url;
 var defaults;
+
+//number of pixels to the left the corner of the view is
 var cornerx;
+// number of pixels down from the top corner of the view
 var cornery;
 
 var slides;
@@ -122,11 +135,14 @@ function initDefaults() {
   ZOOM_MAX = 4;
   default_cur_r = 3;
   
-  slide_w = 600;
-  slide_h = 400;
-
+  global_box_w = 600;
+  global_box_h = 400;
+  
+  slide_w = global_box_w;
+  slide_h = global_box_h;
+  
   // Create a slide if not already created
-  paper = paper || Raphael("slide", 600, 400);
+  paper = paper || Raphael("slide", global_box_w, global_box_h);
 
   //Default objects in paper (canvas)
   defaults = paper.add([
@@ -194,6 +210,7 @@ function addImageToPaper(url) {
   
   var newimg = new Image();
   newimg.onload = function() {
+    console.log("height: " + newimg.height + " width: " + newimg.width);
     slides[url].height = newimg.height;
     slides[url].width = newimg.width;
   };
@@ -214,14 +231,6 @@ function removeAllImagesFromPaper() {
   slides = {};
 }
 
-function getImageFromPaper(url) {
-  var id = slides[url].id;
-  if(id) {
-    return paper.getById(id);
-  }
-  else return null;
-}
-
 function rebuildPaper() {
   for(url in slides) {
     if(slides.hasOwnProperty(url)) {
@@ -232,16 +241,21 @@ function rebuildPaper() {
 }
 
 function showImageFromPaper(url) {
-  var id = slides[url].id;
-  for(thisurl in slides) {
-    if(url != thisurl) {
-      console.log(slides[thisurl].height);
-      var img = paper.getById(slides[thisurl].id);
-      if(img) img.hide();
+  var current = getImageFromPaper(current_url);
+  if(current) current.hide();
+  var next = getImageFromPaper(url);
+  if(next) next.show();
+  current_url = url;
+}
+
+function getImageFromPaper(url) {
+  if(slides[url]) {
+    var id = slides[url].id;
+    if(id) {
+      return paper.getById(id);
     }
   }
-  paper.getById(id).show();
-  current_url = url;
+  return null;
 }
 
 function hideImageFromPaper(url) {
