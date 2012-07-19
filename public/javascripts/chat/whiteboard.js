@@ -121,7 +121,7 @@ function initDefaults() {
   
   ZOOM_MAX = 4;
   default_cur_r = 3;
-
+  
   slide_w = 600;
   slide_h = 400;
 
@@ -235,6 +235,7 @@ function showImageFromPaper(url) {
   var id = slides[url].id;
   for(thisurl in slides) {
     if(url != thisurl) {
+      console.log(slides[thisurl].height);
       var img = paper.getById(slides[thisurl].id);
       if(img) img.hide();
     }
