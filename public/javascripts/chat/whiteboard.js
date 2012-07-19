@@ -66,8 +66,8 @@ function turnOn(tool) {
       cur.drag(curDragging, curDragStart, curDragStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
-          paper.getById(slides[url]).undrag();
-          paper.getById(slides[url]).drag(curDragging, curDragStart, curDragStop);
+          paper.getById(slides[url].id).undrag();
+          paper.getById(slides[url].id).drag(curDragging, curDragStart, curDragStop);
           //paper.getById(slides[url]).mousemove(mvingCur);
         }
       }
@@ -84,8 +84,8 @@ function turnOn(tool) {
       cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
-          paper.getById(slides[url]).undrag();
-          paper.getById(slides[url]).drag(curRectDragging, curRectDragStart, curRectDragStop);
+          paper.getById(slides[url].id).undrag();
+          paper.getById(slides[url].id).drag(curRectDragging, curRectDragStart, curRectDragStop);
           //paper.getById(slides[url]).mousemove(mvingCur);
         }
       }
@@ -103,8 +103,8 @@ function turnOn(tool) {
       cur.drag(panDragging, panGo, panStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
-          paper.getById(slides[url]).undrag();
-          paper.getById(slides[url]).drag(panDragging, panGo, panStop);
+          paper.getById(slides[url].id).undrag();
+          paper.getById(slides[url].id).drag(panDragging, panGo, panStop);
           //paper.getById(slides[url]).mousemove(mvingCur);
         }
       }
@@ -189,8 +189,16 @@ function initPaper() {
 function addImageToPaper(url) {
   var img = paper.image(url, 0, 0, slide_w, slide_h);
   img.hide();
-  slides[url] = img.id;
+  slides[url] = { 'id' : img.id };
   img.drag(curDragging, curDragStart, curDragStop);
+  
+  var newimg = new Image();
+  newimg.onload = function() {
+    slides[url].height = newimg.height;
+    slides[url].width = newimg.width;
+  };
+  
+  newimg.src = url;
   //img.mousemove(mvingCur);
   return img;
 }
@@ -199,15 +207,15 @@ function removeAllImagesFromPaper() {
   var img;
   for (url in slides) {
     if(slides.hasOwnProperty(url)) {
-      paper.getById(slides[url]).remove();
-      $('#preload' + slides[url]).remove();
+      paper.getById(slides[url].id).remove();
+      $('#preload' + slides[url].id).remove();
     }
   }
   slides = {};
 }
 
 function getImageFromPaper(url) {
-  var id = slides[url];
+  var id = slides[url].id;
   if(id) {
     return paper.getById(id);
   }
@@ -224,10 +232,10 @@ function rebuildPaper() {
 }
 
 function showImageFromPaper(url) {
-  var id = slides[url];
+  var id = slides[url].id;
   for(thisurl in slides) {
     if(url != thisurl) {
-      var img = paper.getById(slides[thisurl]);
+      var img = paper.getById(slides[thisurl].id);
       if(img) img.hide();
     }
   }
