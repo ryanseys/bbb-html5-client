@@ -15,7 +15,7 @@ var s_left; //fixed - DO NOT MODIFY
 var s_top; //fixed - DO NOT MODIFY
 
 var ZOOM_MAX; //static
-//percentage as a decimal of the pan from the top left corner of the view to the top left corner of the svg.
+//percentage as a decimal of the pan from the top left corner of the *view* to the top left corner of the svg.
 //this is a weird number
 var pan_x;
 var pan_y;
@@ -28,6 +28,9 @@ var paper;
 var cur;
 var current_url;
 var defaults;
+
+var global_box_w = 600;
+var global_box_h = 400;
 
 //number of pixels to the left the corner of the view is
 var cornerx;
@@ -55,6 +58,11 @@ var end;
 var x1;
 var y1;
 
+var shapes;
+
+//
+var resizing = false;
+
 //for rectangles
 var rect;
 
@@ -74,9 +82,9 @@ function turnOn(tool) {
       rectOn = false;
       panZoomOn = false;
       lineOn = true;
-      cur.undrag();
+      //cur.undrag();
       $('#slide').unbind('mousewheel');
-      cur.drag(curDragging, curDragStart, curDragStop);
+      //cur.drag(curDragging, curDragStart, curDragStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
           paper.getById(slides[url].id).undrag();
@@ -92,9 +100,9 @@ function turnOn(tool) {
       lineOn = false;
       panZoomOn = false;
       rectOn = true;
-      cur.undrag();
+      //cur.undrag();
       $('#slide').unbind('mousewheel');
-      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+      //cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
           paper.getById(slides[url].id).undrag();
@@ -111,9 +119,9 @@ function turnOn(tool) {
       rectOn = false;
       lineOn = false;
       panZoomOn = true;
-      cur.undrag();
+      //cur.undrag();
       $('#slide').bind('mousewheel', zoomSlide);
-      cur.drag(panDragging, panGo, panStop);
+      //cur.drag(panDragging, panGo, panStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
           paper.getById(slides[url].id).undrag();
@@ -132,29 +140,30 @@ function turnOn(tool) {
 function initDefaults() {
   // Do not touch unless you know what you're doing
   
-  ZOOM_MAX = 4;
-  default_cur_r = 3;
-  
-  global_box_w = 600;
-  global_box_h = 400;
+
   
   slide_w = global_box_w;
   slide_h = global_box_h;
   
   // Create a slide if not already created
   paper = paper || Raphael("slide", global_box_w, global_box_h);
-
+  
   //Default objects in paper (canvas)
-  defaults = paper.add([
-    {
-      type: "circle",
-      cx: 0,
-      cy: 0,
-      r: default_cur_r,
-      fill: "red"
-    }
-  ]);
-
+  if(!resizing) {
+    ZOOM_MAX = 4;
+    default_cur_r = 3;
+    shapes = paper.set();
+    defaults = paper.add([
+      {
+        type: "circle",
+        cx: 0,
+        cy: 0,
+        r: default_cur_r,
+        fill: "red"
+      }
+    ]);
+  }
+  
   if (paper._viewBox) {
     view_w = paper._viewBox[2];
     view_h = paper._viewBox[3];
@@ -163,20 +172,18 @@ function initDefaults() {
     view_w = slide_w;
     view_h = slide_h;
   }
-
+  
   // Set defaults for variables
-  if(slides) {
-    rebuildPaper();
-  }
-  else {
-    slides = {}; //if previously loaded
-  }
+  if(slides && !resizing) rebuildPaper();
+  else slides = {}; //if previously loaded
+  
   cur = defaults[0];
   s_left = slide_obj.offsetLeft;
   s_top = slide_obj.offsetTop;
   cornerx = 0;
   cornery = 0;
   panning = 0;
+  
   if(paper._viewBox) {
     pan_x = paper._viewBox[0]/view_w;
     pan_y = paper._viewBox[1]/view_h;
@@ -197,6 +204,25 @@ function initDefaults() {
   }
 }
 
+/*
+function recalculateView() {
+  var w = parseInt($('#wslider').val(), 10);
+  var h = parseInt($('#hslider').val(), 10);
+  $('#slide').height(h);
+  $('#slide').width(w);
+  
+  paper.setSize(w, h);
+
+  global_box_w = w;
+  global_box_h = h;
+  resizing = true;
+  document.getElementsByTagName('svg')[0].setAttribute('preserveAspectRatio', 'XMidYMid');
+  initDefaults();
+  resizing = false;
+  document.getElementsByTagName('svg')[0].forceRedraw();
+}
+*/
+
 // Initialize the paper
 function initPaper() {
   initDefaults();
@@ -204,19 +230,18 @@ function initPaper() {
 
 function addImageToPaper(url) {
   var img = paper.image(url, 0, 0, slide_w, slide_h);
+  img.node.setAttribute('preserveAspectRatio', 'XMidYMid');
   img.hide();
   slides[url] = { 'id' : img.id };
   img.drag(curDragging, curDragStart, curDragStop);
-  
   var newimg = new Image();
   newimg.onload = function() {
-    console.log("height: " + newimg.height + " width: " + newimg.width);
     slides[url].height = newimg.height;
     slides[url].width = newimg.width;
   };
   
   newimg.src = url;
-  //img.mousemove(mvingCur);
+  img.mousemove(mvingCur);
   return img;
 }
 
@@ -329,7 +354,7 @@ var curDragging = function(dx, dy, x, y) {
 
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2) {
-  paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
+  shapes.push(paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h));
 };
 
 // Drawing line has ended
