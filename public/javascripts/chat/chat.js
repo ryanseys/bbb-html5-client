@@ -48,6 +48,7 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('all_paths', function (paths) {
+	  clearPaper();
 	  for (var i = paths.length - 1; i >= 0; i--) {
 	    var pathArray = paths[i].path.split(',');
 	    var firstValuesArray = pathArray[0].split(' ');
@@ -287,6 +288,10 @@ function chooseRect() {
 // Set the drawing type to "panzoom"
 function choosePanZoom() {
   socket.emit('changeTool', 'panzoom');
+}
+
+function undoShape() {
+  socket.emit('undo');
 }
 
 function switchPresenter() {

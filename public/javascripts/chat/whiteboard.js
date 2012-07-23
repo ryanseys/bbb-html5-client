@@ -58,6 +58,9 @@ var end;
 var x1;
 var y1;
 
+var path_count = 0;
+var path_max = 30; //number of paths to be drawn with a 
+
 var shapes;
 
 //
@@ -139,8 +142,6 @@ function turnOn(tool) {
 // Initialize default values
 function initDefaults() {
   // Do not touch unless you know what you're doing
-  
-
   
   slide_w = global_box_w;
   slide_h = global_box_h;
@@ -350,11 +351,17 @@ var curDragging = function(dx, dy, x, y) {
   path += "," + (cx2+pan_x)*view_w/slide_w + " " + (cy2+pan_y)*view_h/slide_h;
   cx1 = cx2;
   cy1 = cy2;
+  path_count++;
+  if(path_count == path_max) {
+    path_count = 0;
+    emPublishPath(path);
+    path = (cx1+pan_x)*view_w/slide_w + " " + (cy1+pan_y)*view_h/slide_h;
+  }
 };
 
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2) {
-  shapes.push(paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h));
+  paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
 };
 
 // Drawing line has ended

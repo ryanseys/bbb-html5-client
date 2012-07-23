@@ -385,6 +385,21 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
+	socket.on('undo', function() {
+	   var meetingID = socket.handshake.meetingID;
+  	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+  	    if(presenterID == socket.handshake.sessionID) {
+  	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+            redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
+  	          store.rpop(redisAction.getCurrentPathsString(meetingID, presentationID, pageID), function(err, reply) {
+  	            socketAction.publishPaths(meetingID);
+  	          });
+	          });
+          });
+        }
+      });
+	});
+	
 	socket.on('savePath', function(path) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;

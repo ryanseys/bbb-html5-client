@@ -458,6 +458,7 @@ exports.getItems = function(meetingID, presentationID, pageID, item, callback) {
   
   store.lrange(itemsGetFunction(meetingID, presentationID, pageID), 0, -1, function (err, itemIDs) {
     itemCount = itemIDs.length;
+    if(itemCount == 0) callback([]);
     for (var i = itemCount - 1; i >= 0; i--) {
       store.hgetall(itemGetFunction(meetingID, presentationID, pageID, itemIDs[i]), function(err, itemHash) {
         items.push(itemHash);
