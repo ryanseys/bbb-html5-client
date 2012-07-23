@@ -3,7 +3,7 @@ exports.publishUsernames = function(meetingID, sessionID, callback) {
   var usernames = [];
   redisAction.getUsers(meetingID, function (users) {
       for (var i = users.length - 1; i >= 0; i--){
-        usernames.push(users[i].username);
+        usernames.push({ 'name' : users[i].username, 'id' : users[i].pubID });
       };
       var receivers = sessionID != undefined ? sessionID : meetingID;
       pub.publish(receivers, JSON.stringify(['user list change', usernames]));
@@ -16,6 +16,14 @@ exports.publishUsernames = function(meetingID, sessionID, callback) {
       redisAction.processMeeting(meetingID);
       if(callback) callback(false);
     }
+  });
+};
+
+exports.publishPresenter = function(meetingID, sessionID, callback) {
+  redisAction.getPresenterPublicID(meetingID, function(publicID) {
+    var receivers = sessionID != undefined ? sessionID : meetingID;
+    pub.publish(receivers, JSON.stringify(['setPresenter', publicID]));
+    if(callback) callback(true);
   });
 };
 
@@ -148,11 +156,15 @@ exports.SocketOnConnection = function(socket) {
           if ((properties.refreshing == 'false') && (properties.dupSess == 'false')) {
             //all of the next sessions created with this sessionID are duplicates
             store.hset(redisAction.getUserString(meetingID, sessionID), 'dupSess', true);
-            socketAction.publishUsernames(meetingID);
+            socketAction.publishUsernames(meetingID, null, function() {
+              socketAction.publishPresenter(meetingID);
+            });
     			}
     			else {
     			  store.hset(redisAction.getUserString(meetingID, sessionID), 'refreshing', false);
-    			  socketAction.publishUsernames(meetingID, sessionID);
+    			  socketAction.publishUsernames(meetingID, sessionID, function() {
+    			    socketAction.publishPresenter(meetingID, sessionID);
+    			  });
   			  }
   			  socketAction.publishMessages(meetingID, sessionID);
   			  socketAction.publishPaths(meetingID, sessionID);
@@ -197,6 +209,7 @@ exports.SocketOnConnection = function(socket) {
       				}
         			else {
         				socketAction.publishUsernames(meetingID);
+        				socketAction.publishPresenter(meetingID, sessionID);
         			}
       			});
       		}, 1000);
@@ -232,7 +245,7 @@ exports.SocketOnConnection = function(socket) {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		var meetingID = handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == sessionID) {
   	    redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
   	      redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
@@ -253,8 +266,8 @@ exports.SocketOnConnection = function(socket) {
 	  var handshake = socket.handshake;
 		var sessionID = handshake.sessionID;
 		var meetingID = handshake.meetingID;
-	  redisAction.isValidSession(meetingID, sessionID, function (isValid) {
-	    if(isValid) {
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+	    if(presenterID == sessionID) {
 	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
   	      redisAction.changeToNextPage(meetingID, presentationID, function(pageID){
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
@@ -272,7 +285,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a line creation event is received
 	socket.on('li', function (x1, y1, x2, y2) {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
 	      pub.publish(meetingID, JSON.stringify(['li', x1, y1, x2, y2]));
 	    }
@@ -282,7 +295,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a rectangle creation event is received
 	socket.on('makeRect', function (x, y) {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
         pub.publish(meetingID, JSON.stringify(['makeRect', x, y]));
       }
@@ -292,7 +305,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a rectangle update event is received
 	socket.on('updRect', function (x, y, w, h) {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
         pub.publish(meetingID, JSON.stringify(['updRect', x, y, w, h]));
       }
@@ -302,7 +315,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a cursor move event is received
 	socket.on('mvCur', function (x, y) {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
 	      pub.publish(meetingID, JSON.stringify(['mvCur', x, y]));
       }
@@ -312,7 +325,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a clear Paper event is received
 	socket.on('clrPaper', function () {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
 	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
@@ -330,11 +343,21 @@ exports.SocketOnConnection = function(socket) {
   	  }
 	  });
 	});
+
+	socket.on('setPresenter', function (publicID) {
+	  console.log('setting presenter to' + publicID);
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.setPresenterFromPublicID(meetingID, publicID, function(success) {
+	    if(success) {
+	      pub.publish(meetingID, JSON.stringify(['setPresenter', publicID]));
+	    }
+	  });
+	});
 	
 	// When a user is updating the viewBox of the paper
 	socket.on('viewBox', function (xperc, yperc, wperc, hperc) {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
 	      pub.publish(socket.handshake.meetingID, JSON.stringify(['viewBox', xperc, yperc, wperc, hperc]));
         redisAction.setViewBox(socket.handshake.meetingID, JSON.stringify([xperc, yperc, wperc, hperc]));
@@ -345,7 +368,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a user is zooming
 	socket.on('zoom', function(delta) {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
 	      pub.publish(meetingID, JSON.stringify(['zoom', delta]));
       }
@@ -355,7 +378,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a user finishes panning
 	socket.on('panStop', function() {
 	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenter(meetingID, function(presenterID) {
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
 	      pub.publish(meetingID, JSON.stringify(['panStop']));
       }
@@ -365,7 +388,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('savePath', function(path) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
-		redisAction.getPresenter(meetingID, function(presenterID) {
+		redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
         var pathID = rack(); //get a randomly generated id for the message
     	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
@@ -382,7 +405,7 @@ exports.SocketOnConnection = function(socket) {
 	socket.on('saveRect', function(x, y, w, h) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
-		redisAction.getPresenter(meetingID, function(presenterID) {
+		redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
         var rectID = rack(); //get a randomly generated id for the message
     	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
@@ -399,7 +422,7 @@ exports.SocketOnConnection = function(socket) {
   socket.on('changeTool', function (tool) {
      var handshake = socket.handshake;
   	 var meetingID = handshake.meetingID;
-  	 redisAction.getPresenter(meetingID, function(presenterID) {
+  	 redisAction.getPresenterSessionID(meetingID, function(presenterID) {
   	   if(presenterID == socket.handshake.sessionID) {
 	        redisAction.setCurrentTool(meetingID, tool, function(success) {
 	          if(success) {

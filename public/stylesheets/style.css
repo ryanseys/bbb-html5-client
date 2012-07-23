@@ -26,6 +26,10 @@ a {
   overflow: auto; /* so they don't overlap */
 }
 
+.presenter {
+  border: 3px solid red;
+}
+
 .clickable {
   cursor:pointer;
 }

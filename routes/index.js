@@ -21,6 +21,7 @@ exports.post_index = function(req, res) {
   var meetingID = sanitizer.escape(req.body.meeting.id);
   if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length) && (meetingID.split(' ').length == 1)) {
 	  var sessionID = req.sessionID;
+	  var publicID = rack();
 	  redisAction.isMeetingRunning(meetingID, function(isRunning) {
 	    if(isRunning) {
 	      console.log("Meeting " + meetingID + " is already running.");
@@ -29,7 +30,7 @@ exports.post_index = function(req, res) {
 	      console.log("Meeting " + meetingID + " is NOT already running, creating meeting...");
 	      redisAction.createMeeting(meetingID, function() {
 	        redisAction.setCurrentTool(meetingID, 'line');
-	        redisAction.setPresenter(meetingID, sessionID, function(){
+	        redisAction.setPresenter(meetingID, sessionID, publicID, function(){
 	          console.log("Set a presenter");
 	        });
 	      });
@@ -52,11 +53,13 @@ exports.post_index = function(req, res) {
 	      });
 	    }
 	  });
-	  redisAction.updateUserProperties(meetingID, sessionID, ["username", username,
-	          "meetingID", meetingID, "refreshing", false, "dupSess", false, "sockets", 0]);
-	  res.cookie('sessionid', sessionID); //save the id so socketio can get the username
-	  res.cookie('meetingid', meetingID);
-	  res.redirect('/chat');
+    redisAction.setIDs(meetingID, sessionID, publicID, function() {
+	    redisAction.updateUserProperties(meetingID, sessionID, ["username", username,
+  	          "meetingID", meetingID, "refreshing", false, "dupSess", false, "sockets", 0, 'pubID', publicID]);
+  	  res.cookie('sessionid', sessionID); //save the id so socketio can get the username
+      res.cookie('meetingid', meetingID);
+      res.redirect('/chat');
+    });
   }
   else res.redirect('/');
 };
@@ -116,14 +119,6 @@ exports.post_chat = function(req, res, next) {
                     console.log("Deleted invalid presentation folder");
                   });
                   console.log("CONVERT ERROR: " + err);
-                  //go back to previous presentation
-                  /*
-                  redisAction.setCurrentPresentation(meetingID, prevPresID, function() {
-                    redisAction.setCurrentPage(meetingID, prevPresID, prevPageID, function() {
-                      socketAction.publishSlides(meetingID);
-                    });
-                  });
-                  */
                 }
               });
             });

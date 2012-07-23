@@ -34,7 +34,7 @@ socket.on('connect', function () {
 	  var currusers = document.getElementById('current_users');
 	  currusers.innerHTML = ''; //clear it first
 	  for (var i = names.length - 1; i >= 0; i--) {
-	    currusers.innerHTML += '<div class="user clickable" onclick="'+clickFunc+'" id= "'+i+'"><b>' + names[i] + '</b></div>';
+	    currusers.innerHTML += '<div class="user clickable" onclick="'+clickFunc+'" id= "'+names[i].id+'"><b>' + names[i].name + '</b></div>';
 	  }
 	});
 	
@@ -156,6 +156,11 @@ socket.on('connect', function () {
 	
 	socket.on('toolChanged', function(tool) {
 	  turnOn(tool);
+	});
+	
+	socket.on('setPresenter', function(publicID) {
+	  $('.presenter').removeClass('presenter');
+	  $('#' + publicID).addClass('presenter');
 	});
 	
 	socket.on('all_slides', function(slides) {
@@ -285,7 +290,7 @@ function choosePanZoom() {
 }
 
 function switchPresenter() {
-  console.log($('.selected').attr('id'));
+  socket.emit('setPresenter', $('.selected').attr('id'));
 }
 
 // Update the character count in the chat box

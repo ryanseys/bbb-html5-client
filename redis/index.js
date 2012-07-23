@@ -130,6 +130,49 @@ exports.getPresenterString = function(meetingID) {
   return "meeting-" + meetingID + "-presenter";
 };
 
+exports.getPublicIDString = function (meetingID, publicID) {
+  return 'meeting-' + meetingID + '-publicID-' + publicID;
+};
+
+exports.getSessionIDString = function (meetingID, sessionID) {
+  return 'meeting-' + meetingID + '-sessionID-' + sessionID;
+};
+
+exports.setIDs = function(meetingID, sessionID, publicID, callback) {
+  store.set(redisAction.getSessionIDString(meetingID, sessionID), publicID, function(err, reply) {
+    store.set(redisAction.getPublicIDString(meetingID, publicID), sessionID, function(err, reply) {
+      if(callback) callback();
+    });
+  });
+};
+
+exports.getSessionIDFromPublicID = function(meetingID, publicID, callback) {
+  store.get(redisAction.getPublicIDString(meetingID, publicID), function(err, sessionID) {
+    callback(sessionID);
+  });
+};
+
+exports.getPublicIDFromSessionID = function(meetingID, sessionID, callback) {
+  store.get(redisAction.getSessionIDString(meetingID, sessionID), function(err, publicID) {
+    callback(publicID);
+  });
+};
+
+exports.setPresenterFromPublicID = function(meetingID, publicID, callback) {
+  redisAction.getSessionIDFromPublicID(meetingID, publicID, function(sessionID) {
+    redisAction.setPresenter(meetingID, sessionID, publicID, function(success) {
+      if(success) {
+        console.log('set presenter to ' + sessionID);
+        if(callback) callback(true);
+      }
+      else {
+        console.log('could not set presenter to ' + sessionID);
+        if(callback) callback(false);
+      }
+    });
+  });
+};
+
 exports.setCurrentTool = function(meetingID, tool, callback) {
   store.set(redisAction.getCurrentToolString(meetingID), tool, function(err, reply) {
     if(reply) {
@@ -142,10 +185,10 @@ exports.setCurrentTool = function(meetingID, tool, callback) {
   });
 };
 
-exports.setPresenter = function(meetingID, sessionID, callback) {
-  store.set(redisAction.getPresenterString(meetingID), sessionID, function(err, reply) {
+exports.setPresenter = function(meetingID, sessionID, publicID, callback) {
+  store.hmset(redisAction.getPresenterString(meetingID), 'sessionID', sessionID, 'publicID', publicID, function(err, reply) {
     if(reply) {
-      if(callback) callback(true);
+      if(callback) callback(publicID);
     }
     else if(err) {
       console.log(err);
@@ -154,8 +197,20 @@ exports.setPresenter = function(meetingID, sessionID, callback) {
   });
 };
 
-exports.getPresenter = function(meetingID, callback) {
-  store.get(redisAction.getPresenterString(meetingID), function(err, reply) {
+exports.getPresenterSessionID = function(meetingID, callback) {
+  store.hget(redisAction.getPresenterString(meetingID), 'sessionID', function(err, reply) {
+    if(reply) {
+      callback(reply);
+    }
+    else if(err) {
+      console.log(err);
+      callback(null);
+    }
+  });
+};
+
+exports.getPresenterPublicID = function(meetingID, callback) {
+  store.hget(redisAction.getPresenterString(meetingID), 'publicID', function(err, reply) {
     if(reply) {
       callback(reply);
     }
@@ -510,105 +565,6 @@ exports.createPage = function(meetingID, presentationID, imageName, setCurrent, 
     store.rpush(redisAction.getPagesString(meetingID, presentationID), pageID, afterPush);
   }
 };
-
-/*
-
-
-exports.getCurrentPageNumber = function(meetingID, presentationID, callback) {
-  store.get(redisAction.getCurrentPageNumberString(meetingID, presentationID), function(err, pageNumber) {
-    if(err) console.log(err);
-    callback(pageNumber);
-  });
-};
-
-exports.setCurrentPageNumber = function(meetingID, presentationID, pageNumber, callback) {
-  redisAction.getPageIDs(meetingID, presentationID, function(pageIDs) {
-    var length = pageIDs.length;
-    if(!pageNumber || (pageNumber >= length) || (pageNumber < 0)){
-      callback(null);
-    }
-    else {
-      store.set(redisAction.getCurrentPageNumberString(meetingID, presentationID), pageNumber, function(err, reply) {
-        console.log("Set current page number to " + pageNumber);
-        callback(pageNumber);
-      });
-    }
-  });
-};
-
-exports.getCurrentPageNumber = function(meetingID, presentationID, callback) {
-  store.get(redisAction.getCurrentPageNumString(meetingID, presentationID), function (err, reply) {
-    if(!err && reply) callback(reply);
-    else {
-      console.log("REDIS ERROR: Couldn't get current page number");
-      callback(null);
-    }
-  });
-};
-
-exports.getLowestHops = function(from, to, length) {
-  var f_hops = to - from; // from 0 to 1, it's 1 - 0 = 1 forward hop.
-  if(f_hops == 0) {
-    return 0;
-  }
-  var possible_hops1 = Math.abs(f_hops) - length; // 0 to 60 with max 100 is 60f - 100 = -40
-  var possible_hops2 = f_hops;
-  if(Math.abs(possible_hops1) < Math.abs(possible_hops2)) {
-    return possible_hops1;
-  }
-  else return possible_hops2;
-};
-
-exports.setCurrentPageNumber = function(meetingID, presentationID, pageNumber, callback) {
-  redisAction.getCurrentPageNumber(meetingID, presentationID, function(currentNum) {
-    if(currentNum) {
-     redisAction.getPageIDs(meetingID, presentationID, function(pageIDs) {
-       var length = pageIDs.length;
-       if((pageNumber >= length) ||(pageNumber < 0)) {
-         callback(null);
-         return;
-       }
-       var hops = redisAction.getLowestHops(parseInt(currentNum, 10), pageNumber, length);
-       if(hops == 0) {
-         console.log("You are on that page");
-       }
-       else {
-         if(hops < 0) {
-           var index = -1;
-         }
-         else var index = 0;
-         store.lrange(redisAction.getPagesString(meetingID, presentationID), index, hops, function(err, reply) {
-           if(reply) {
-              console.log("replied with: " +  reply);
-              if(hops < 0) reply.reverse();
-              reply.unshift(redisAction.getPagesString(meetingID, presentationID));
-              reply.push(function() {
-                console.log("Rearranged pages");
-                store.ltrim(redisAction.getPagesString(meetingID, presentationID), index, hops, function(err, reply) {
-                  if(reply) console.log("Deleted old values");
-                  store.set(redisAction.getCurrentPageNumString(meetingID, presentationID), pageNumber, function(err, reply) {
-                    if(reply) console.log("Successfully set page number to " + pageNumber);
-                    callback(true);
-                  });
-                });
-              });
-              if(hops < 0) store.lpush.apply(store, reply);
-              else if(hops > 0) store.rpush.apply(store, reply);
-            }
-          });
-        }
-     });
-    }
-    else {
-      store.set(redisAction.getCurrentPageNumString(meetingID, presentationID), pageNumber, function(err, reply) {
-        if(reply) console.log("Successfully set page number to " + pageNumber);
-        callback(true);
-      });
-    }
-  });
-};
-
-*/
 
 exports.setPageImage = function(meetingID, presentationID, pageID, imageName, callback) {
   store.set(redisAction.getPageImageString(meetingID, presentationID, pageID), imageName, function (err, reply) {
