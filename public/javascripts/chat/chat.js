@@ -47,8 +47,40 @@ socket.on('connect', function () {
 	  msgbox.scrollTop = msgbox.scrollHeight;
 	});
 	
+	socket.on('all_shapes', function (shapes) {
+	  for (var i = shapes.length - 1; i >= 0; i--) {
+	    var shape_type = shapes[i].shape;
+	    if(shape_type == 'path') {
+	      var pathArray = shapes[i].points.split(',');
+  	    var firstValuesArray = pathArray[0].split(' ');
+  	    for (var j = 0; j < 2; j++) {
+          if(j == 0) {
+            firstValuesArray[j] *= global_box_w; //put width
+          }
+          else firstValuesArray[j] *= global_box_h; //put height
+        }
+  	    var pathString = "M" + firstValuesArray.join(' ');
+  	    var len = pathArray.length;
+  	    for (var k = 1; k < len; k++) {
+  	      var pairOfPoints = pathArray[k].split(' ');
+  	      for (var m = 0; m < 2; m++) {
+  	        if(m == 0) {
+  	          pairOfPoints[m] *= global_box_w; //put width
+  	        }
+  	        else pairOfPoints[m] *= global_box_h; //put height
+          }
+  	      pathString += "L" + pairOfPoints.join(' ');
+        }
+  	    setPath(pathString);
+	    }
+	    else if(shape_type == 'rect') {
+	      var r = shapes[i].points.split(',');
+  	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]));
+	    }
+    }
+	});
+	
 	socket.on('all_paths', function (paths) {
-	  clearPaper();
 	  for (var i = paths.length - 1; i >= 0; i--) {
 	    var pathArray = paths[i].path.split(',');
 	    var firstValuesArray = pathArray[0].split(' ');
@@ -268,11 +300,13 @@ function emPanStop() {
 }
 
 function emPublishPath(path) {
-  socket.emit('savePath', path);
+  //socket.emit('savePath', path);
+  socket.emit('saveShape', 'path', path);
 }
 
 function emPublishRect(x, y, w, h) {
-  socket.emit('saveRect', x, y, w, h);
+  //socket.emit('saveRect', x, y, w, h);
+  socket.emit('saveShape', 'rect', [x, y, w, h].join(','));
 }
 
 // Set the drawing type to "line"
