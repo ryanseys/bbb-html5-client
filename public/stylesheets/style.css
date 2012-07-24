@@ -84,6 +84,16 @@ a {
   display: inline;
 }
 
+#colourText {
+  width: 50px;
+  margin-left: 5px;
+}
+
+#colourView {
+  margin-left: 5px;
+  cursor:pointer;
+}
+
 .canvas {
   border: 1px solid blue;
   position: absolute;

@@ -77,8 +77,42 @@ function getLineOn() {
   return lineOn;
 }
 
+var default_colour = "#FF0000";
+var c = document.getElementById("colourView");
+var cptext = document.getElementById("colourText");
+var ctx = c.getContext("2d");
+ctx.fillStyle=default_colour;
+cptext.value = default_colour;
+ctx.fillRect(0,0,12,12);
+cp = Raphael.colorwheel(625, 450, 75, default_colour); //create colour picker
+cp.raphael.forEach(function(item) { item.hide(); }); //hide it
+var cpVisible = false;
+
+cp.onchange = function() {
+  var colour = cp.color();
+  ctx.fillStyle=colour;
+  cptext.value = colour;
+  ctx.fillRect(0,0,12,12);
+};
+
+cptext.onkeyup = function() {
+  var colour = this.value;
+  ctx.fillStyle=colour;
+  ctx.fillRect(0,0,12,12);
+};
+
+function toggleColourPicker() {
+  if(cpVisible) {
+    cpVisible = false;
+    cp.raphael.forEach(function(i){ i.hide(); });
+  }
+  else {
+    cpVisible = true;
+    cp.raphael.forEach(function(i){ i.show(); });
+  }
+}
+
 function turnOn(tool) {
-  
   // If the user requests to turn on the line too
   if(tool == 'line') {
     if(!lineOn) {

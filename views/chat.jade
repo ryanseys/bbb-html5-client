@@ -41,6 +41,8 @@ div(id='imagecontrols', style="clear:left")
     input(type='submit', value='Undo', onclick='undoShape();return false;')
   form(id="switchPresenter")
     input(type="submit", value="Switch presenter", onclick="switchPresenter();return false;")
+  canvas(id="colourView", width="12", height="12", onclick='toggleColourPicker()')
+  input(id='colourText', maxlength='7', type='text')
   
   // Upload controls
   div(id="uploadcontrols")
@@ -53,6 +55,7 @@ div(id='imagecontrols', style="clear:left")
 
 // External scripts here
 script(src='/javascripts/lib/raphael-min.js')
+script(src='/javascripts/lib/colorwheel.js')
 script(src="/javascripts/lib/jquery-1.7.2.min.js")
 script(src="/javascripts/lib/jquery.mousewheel.min.js")
 script(src="/socket.io/socket.io.js")
