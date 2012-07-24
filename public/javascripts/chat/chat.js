@@ -50,6 +50,7 @@ socket.on('connect', function () {
 	socket.on('all_shapes', function (shapes) {
 	  for (var i = shapes.length - 1; i >= 0; i--) {
 	    var shape_type = shapes[i].shape;
+	    var colour = shapes[i].colour;
 	    if(shape_type == 'path') {
 	      var pathArray = shapes[i].points.split(',');
   	    var firstValuesArray = pathArray[0].split(' ');
@@ -71,11 +72,11 @@ socket.on('connect', function () {
           }
   	      pathString += "L" + pairOfPoints.join(' ');
         }
-  	    setPath(pathString);
+  	    setPath(pathString, colour);
 	    }
 	    else if(shape_type == 'rect') {
 	      var r = shapes[i].points.split(',');
-  	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]));
+  	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour);
 	    }
     }
 	});
@@ -140,13 +141,13 @@ socket.on('connect', function () {
 	});
 	
 	//when a line is drawn
-	socket.on('li', function(x1, y1, x2, y2){
-	  dPath(x1, y1, x2, y2);
+	socket.on('li', function(x1, y1, x2, y2, colour){
+	  dPath(x1, y1, x2, y2, colour);
 	});
 	
 	//when a new rectangle is created/drawn
-	socket.on('makeRect', function(x, y) {
-	  makeRect(x, y, 0, 0);
+	socket.on('makeRect', function(x, y, colour) {
+	  makeRect(x, y, colour);
 	});
 	
 	//when the rectangle being drawn is updated
@@ -250,13 +251,13 @@ function clearCanvas() {
 }
 
 // Drawing a line on the canvas
-function emLi(x1, y1, x2, y2) {
-  socket.emit("li", x1, y1, x2, y2);
+function emLi(x1, y1, x2, y2, colour) {
+  socket.emit("li", x1, y1, x2, y2, colour);
 }
 
 // Creating a rectangle on the canvas
-function emMakeRect(x, y) {
-  socket.emit('makeRect', x, y);
+function emMakeRect(x, y, colour) {
+  socket.emit('makeRect', x, y, colour);
 }
 
 // Updating the size of the rectangle being drawn
@@ -299,14 +300,14 @@ function emPanStop() {
   socket.emit('panStop');
 }
 
-function emPublishPath(path) {
+function emPublishPath(path, colour) {
   //socket.emit('savePath', path);
-  socket.emit('saveShape', 'path', path);
+  socket.emit('saveShape', 'path', path, colour);
 }
 
-function emPublishRect(x, y, w, h) {
+function emPublishRect(x, y, w, h, colour) {
   //socket.emit('saveRect', x, y, w, h);
-  socket.emit('saveShape', 'rect', [x, y, w, h].join(','));
+  socket.emit('saveShape', 'rect', [x, y, w, h].join(','), colour);
 }
 
 // Set the drawing type to "line"

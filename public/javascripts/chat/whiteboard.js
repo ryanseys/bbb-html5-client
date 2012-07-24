@@ -57,6 +57,7 @@ var step;
 var end;
 var x1;
 var y1;
+var current_colour;
 
 var path_count = 0;
 var path_max = 30; //number of paths to be drawn with a 
@@ -78,6 +79,7 @@ function getLineOn() {
 }
 
 var default_colour = "#FF0000";
+current_colour = default_colour;
 var c = document.getElementById("colourView");
 var cptext = document.getElementById("colourText");
 var ctx = c.getContext("2d");
@@ -89,15 +91,15 @@ cp.raphael.forEach(function(item) { item.hide(); }); //hide it
 var cpVisible = false;
 
 cp.onchange = function() {
-  var colour = cp.color();
-  ctx.fillStyle=colour;
-  cptext.value = colour;
+  current_colour = cp.color();
+  ctx.fillStyle = current_colour;
+  cptext.value = current_colour;
   ctx.fillRect(0,0,12,12);
 };
 
 cptext.onkeyup = function() {
-  var colour = this.value;
-  ctx.fillStyle=colour;
+  current_colour = this.value;
+  ctx.fillStyle=current_colour;
   ctx.fillRect(0,0,12,12);
 };
 
@@ -381,33 +383,34 @@ var curDragStart = function(x, y) {
 var curDragging = function(dx, dy, x, y) {
   cx2 = (x - s_left)/slide_w;
   cy2 = (y - s_top)/slide_h;
-  emLi(cx1, cy1, cx2, cy2); //emit to socket
+  emLi(cx1, cy1, cx2, cy2, current_colour); //emit to socket
   path += "," + (cx2+pan_x)*view_w/slide_w + " " + (cy2+pan_y)*view_h/slide_h;
   cx1 = cx2;
   cy1 = cy2;
   path_count++;
   if(path_count == path_max) {
     path_count = 0;
-    emPublishPath(path);
+    emPublishPath(path, current_colour);
     path = (cx1+pan_x)*view_w/slide_w + " " + (cy1+pan_y)*view_h/slide_h;
   }
 };
 
 // Socket response - Draw the path (line) on the canvas
-function dPath(x1, y1, x2, y2) {
-  paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
+function dPath(x1, y1, x2, y2, colour) {
+  var line = paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
+  if(colour) line.attr({"stroke" : colour});
 };
 
 // Drawing line has ended
 var curDragStop = function(e) {
-  emPublishPath(path);
+  emPublishPath(path, current_colour);
 };
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
   cx2 = (x - s_left)/slide_w;
   cy2 = (y - s_top)/slide_h;
-  emMakeRect(cx2, cy2);
+  emMakeRect(cx2, cy2, current_colour);
 };
 
 // Adjusting rectangle continues
@@ -428,12 +431,15 @@ var curRectDragging = function(dx, dy, x, y, e) {
 };
 
 // Socket response - Make rectangle on canvas
-function makeRect(x, y) {
+function makeRect(x, y, colour) {
   rect = paper.rect(x*slide_w, y*slide_h, 0, 0);
+  console.log(colour);
+  if(colour) rect.attr({ 'stroke' : colour });
 }
 
-function drawRect(x, y, w, h) {
+function drawRect(x, y, w, h, colour) {
   var r = paper.rect(x*slide_w, y*slide_h, w*slide_w, h*slide_h);
+  if(colour) r.attr({ 'stroke' : colour });
 }
 
 // Socket response - Update rectangle drawn
@@ -441,13 +447,15 @@ function updRect(x1, y1, w, h) {
   if(rect) {
     rect.attr({ x: (x1 + pan_x)*view_w, y: (y1 + pan_y)*view_h, width: w*view_w, height: h*view_h });
   }
-  else rect = paper.rect(x1*slide_w, y1*slide_h, w, h);
+  else {
+    rect = paper.rect(x1*slide_w, y1*slide_h, w, h);
+  }
 }
 
 // When rectangle finished being drawn (placeholder for now)
 var curRectDragStop = function(e) {
   if(rect) var r = rect.attrs;
-  if(r) emPublishRect(r.x/slide_w, r.y/slide_h, r.width/slide_w, r.height/slide_h);
+  if(r) emPublishRect(r.x/slide_w, r.y/slide_h, r.width/slide_w, r.height/slide_h, current_colour);
   rect = null;
 };
 
@@ -467,8 +475,9 @@ function clearPaper() {
   initPaper();
 }
 
-function setPath(path) {
-  paper.path(path);
+function setPath(path, colour) {
+  var line = paper.path(path);
+  if(colour) line.attr({'stroke' : colour});
 }
 
 // Update zoom variables on all clients

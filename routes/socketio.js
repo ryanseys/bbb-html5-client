@@ -40,7 +40,7 @@ exports.publishMessages = function(meetingID, sessionID, callback) {
     });
   });
 };
-
+/*
 //Get all paths from Redis and publish to a specific sessionID (user)
 exports.publishPaths = function(meetingID, sessionID, callback) {
   var paths = [];
@@ -54,7 +54,7 @@ exports.publishPaths = function(meetingID, sessionID, callback) {
     });
   });
 };
-
+*/
 exports.publishSlides = function(meetingID, sessionID, callback) {
   var slides = [];
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
@@ -87,7 +87,7 @@ exports.publishShapes = function(meetingID, sessionID, callback) {
     });
   });
 };
-
+/*
 //Get all rectangles from Redis and publish to a specific sessionID (user)
 exports.publishRects = function(meetingID, sessionID, callback) {
   var rects = [];
@@ -101,7 +101,7 @@ exports.publishRects = function(meetingID, sessionID, callback) {
     });
   });
 };
-
+*/
 exports.publishViewBox = function(meetingID, sessionID, callback) {
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     redisAction.getViewBox(meetingID, function(viewBox) {
@@ -181,8 +181,8 @@ exports.SocketOnConnection = function(socket) {
   			  }
   			  socketAction.publishMessages(meetingID, sessionID);
   			  socketAction.publishShapes(meetingID, sessionID);
-  			  socketAction.publishPaths(meetingID, sessionID);
-  			  socketAction.publishRects(meetingID, sessionID);
+  			  //socketAction.publishPaths(meetingID, sessionID);
+  			  //socketAction.publishRects(meetingID, sessionID);
   			  socketAction.publishSlides(meetingID, sessionID, function() {
   			    socketAction.publishViewBox(meetingID, sessionID);
   			    socketAction.publishTool(meetingID, sessionID);
@@ -266,8 +266,9 @@ exports.SocketOnConnection = function(socket) {
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
   	          pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
   	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
-  	          socketAction.publishPaths(meetingID);
-      			  socketAction.publishRects(meetingID);
+  	          //socketAction.publishPaths(meetingID);
+      			  //socketAction.publishRects(meetingID);
+      			  socketAction.publishShapes(meetingID);
   	        });
   	      });
 	      });
@@ -287,8 +288,7 @@ exports.SocketOnConnection = function(socket) {
   	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
   	          pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
   	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
-  	          socketAction.publishPaths(meetingID);
-      			  socketAction.publishRects(meetingID);
+      			  socketAction.publishShapes(meetingID);
   	        });
   	      });
 	      });
@@ -297,21 +297,21 @@ exports.SocketOnConnection = function(socket) {
 	});
 	
 	// When a line creation event is received
-	socket.on('li', function (x1, y1, x2, y2) {
+	socket.on('li', function (x1, y1, x2, y2, colour) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['li', x1, y1, x2, y2]));
+	      pub.publish(meetingID, JSON.stringify(['li', x1, y1, x2, y2, colour]));
 	    }
 	  });
 	});
 	
 	// When a rectangle creation event is received
-	socket.on('makeRect', function (x, y) {
+	socket.on('makeRect', function (x, y, colour) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-        pub.publish(meetingID, JSON.stringify(['makeRect', x, y]));
+        pub.publish(meetingID, JSON.stringify(['makeRect', x, y, colour]));
       }
     });
 	});
@@ -418,7 +418,7 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	socket.on('saveShape', function (shape, points) {
+	socket.on('saveShape', function (shape, points, colour) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
 		redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -427,15 +427,14 @@ exports.SocketOnConnection = function(socket) {
     	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
     	      var shapeID = rack(); //get a randomly generated id for the message
 	          store.rpush(redisAction.getCurrentShapesString(meetingID, presentationID, pageID), shapeID);
-            store.hmset(redisAction.getShapeString(meetingID, presentationID, pageID, shapeID), 'shape', shape, 'points', points, function(err, reply){
-              
+            store.hmset(redisAction.getShapeString(meetingID, presentationID, pageID, shapeID), 'shape', shape, 'points', points, 'colour', colour, function(err, reply){
             });
     	    });
     	  });
   	  }
 	  });
 	});
-	
+/*
 	socket.on('savePath', function(path) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
@@ -469,7 +468,7 @@ exports.SocketOnConnection = function(socket) {
   	  }
 	  });
   });
-  
+*/  
   socket.on('changeTool', function (tool) {
      var handshake = socket.handshake;
   	 var meetingID = handshake.meetingID;
