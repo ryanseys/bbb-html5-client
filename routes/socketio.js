@@ -264,21 +264,21 @@ exports.SocketOnConnection = function(socket) {
 	});
 	
 	// When a line creation event is received
-	socket.on('li', function (x1, y1, x2, y2, colour) {
+	socket.on('li', function (x1, y1, x2, y2, colour, thickness) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['li', x1, y1, x2, y2, colour]));
+	      pub.publish(meetingID, JSON.stringify(['li', x1, y1, x2, y2, colour, thickness]));
 	    }
 	  });
 	});
 	
 	// When a rectangle creation event is received
-	socket.on('makeRect', function (x, y, colour) {
+	socket.on('makeRect', function (x, y, colour, thickness) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-        pub.publish(meetingID, JSON.stringify(['makeRect', x, y, colour]));
+        pub.publish(meetingID, JSON.stringify(['makeRect', x, y, colour, thickness]));
       }
     });
 	});
@@ -377,7 +377,7 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	socket.on('saveShape', function (shape, points, colour) {
+	socket.on('saveShape', function (shape, points, colour, thickness) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
 		redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -386,7 +386,8 @@ exports.SocketOnConnection = function(socket) {
     	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
     	      var shapeID = rack(); //get a randomly generated id for the message
 	          store.rpush(redisAction.getCurrentShapesString(meetingID, presentationID, pageID), shapeID);
-            store.hmset(redisAction.getShapeString(meetingID, presentationID, pageID, shapeID), 'shape', shape, 'points', points, 'colour', colour, function(err, reply){
+            store.hmset(redisAction.getShapeString(meetingID, presentationID, pageID, shapeID), 
+                'shape', shape, 'points', points, 'colour', colour, 'thickness', thickness, function(err, reply) {
             });
     	    });
     	  });

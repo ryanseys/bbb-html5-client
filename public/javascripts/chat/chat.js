@@ -51,6 +51,7 @@ socket.on('connect', function () {
 	  for (var i = shapes.length - 1; i >= 0; i--) {
 	    var shape_type = shapes[i].shape;
 	    var colour = shapes[i].colour;
+	    var thickness = shapes[i].thickness;
 	    if(shape_type == 'path') {
 	      var pathArray = shapes[i].points.split(',');
   	    var firstValuesArray = pathArray[0].split(' ');
@@ -72,45 +73,12 @@ socket.on('connect', function () {
           }
   	      pathString += "L" + pairOfPoints.join(' ');
         }
-  	    setPath(pathString, colour);
+  	    setPath(pathString, colour, thickness);
 	    }
 	    else if(shape_type == 'rect') {
 	      var r = shapes[i].points.split(',');
-  	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour);
+  	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
 	    }
-    }
-	});
-	
-	socket.on('all_paths', function (paths) {
-	  for (var i = paths.length - 1; i >= 0; i--) {
-	    var pathArray = paths[i].path.split(',');
-	    var firstValuesArray = pathArray[0].split(' ');
-	    for (var j = 0; j < 2; j++) {
-        if(j == 0) {
-          firstValuesArray[j] *= global_box_w; //put width
-        }
-        else firstValuesArray[j] *= global_box_h; //put height
-      }
-	    var pathString = "M" + firstValuesArray.join(' ');
-	    var len = pathArray.length;
-	    for (var k = 1; k < len; k++) {
-	      var pairOfPoints = pathArray[k].split(' ');
-	      for (var m = 0; m < 2; m++) {
-	        if(m == 0) {
-	          pairOfPoints[m] *= global_box_w; //put width
-	        }
-	        else pairOfPoints[m] *= global_box_h; //put height
-        }
-	      pathString += "L" + pairOfPoints.join(' ');
-      }
-	    setPath(pathString);
-    }
-	});
-	
-	socket.on('all_rects', function (rects) {
-	  for (var i = rects.length - 1; i >= 0; i--) {
-	    var r = rects[i].rect.split(',');
-	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]));
     }
 	});
   
@@ -140,13 +108,13 @@ socket.on('connect', function () {
 	});
 	
 	//when a line is drawn
-	socket.on('li', function(x1, y1, x2, y2, colour){
-	  dPath(x1, y1, x2, y2, colour);
+	socket.on('li', function(x1, y1, x2, y2, colour, thickness){
+	  dPath(x1, y1, x2, y2, colour, thickness);
 	});
 	
 	//when a new rectangle is created/drawn
-	socket.on('makeRect', function(x, y, colour) {
-	  makeRect(x, y, colour);
+	socket.on('makeRect', function(x, y, colour, thickness) {
+	  makeRect(x, y, colour, thickness);
 	});
 	
 	//when the rectangle being drawn is updated
@@ -249,13 +217,13 @@ function clearCanvas() {
 }
 
 // Drawing a line on the canvas
-function emLi(x1, y1, x2, y2, colour) {
-  socket.emit("li", x1, y1, x2, y2, colour);
+function emLi(x1, y1, x2, y2, colour, thickness) {
+  socket.emit("li", x1, y1, x2, y2, colour, thickness);
 }
 
 // Creating a rectangle on the canvas
-function emMakeRect(x, y, colour) {
-  socket.emit('makeRect', x, y, colour);
+function emMakeRect(x, y, colour, thickness) {
+  socket.emit('makeRect', x, y, colour, thickness);
 }
 
 // Updating the size of the rectangle being drawn
@@ -298,12 +266,12 @@ function emPanStop() {
   socket.emit('panStop');
 }
 
-function emPublishPath(path, colour) {
-  socket.emit('saveShape', 'path', path, colour);
+function emPublishPath(path, colour, thickness) {
+  socket.emit('saveShape', 'path', path, colour, thickness);
 }
 
-function emPublishRect(x, y, w, h, colour) {
-  socket.emit('saveShape', 'rect', [x, y, w, h].join(','), colour);
+function emPublishRect(x, y, w, h, colour, thickness) {
+  socket.emit('saveShape', 'rect', [x, y, w, h].join(','), colour, thickness);
 }
 
 // Set the drawing type to "line"

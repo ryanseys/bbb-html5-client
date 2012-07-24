@@ -47,9 +47,9 @@ var cy2;
 var cx1;
 var cy1;
 
-var rectOn;
-var lineOn;
-var panZoomOn;
+var rectOn = false;
+var lineOn = false;
+var panZoomOn = false;
 
 //for lines
 var path;
@@ -107,7 +107,6 @@ function drawColourView(colour) {
 }
 
 drawThicknessView(default_thickness, default_colour);
-
 drawColourView(default_colour);
 
 cp = Raphael.colorwheel(625, 450, 75, default_colour); //create colour picker
@@ -258,9 +257,7 @@ function initDefaults() {
     pan_y = 0;
   }
 
-  lineOn = false;
-  rectOn = false;
-  panZoomOn = false;
+
 
   // Firefox fix
   if (navigator.userAgent.indexOf("Firefox") != -1) {
@@ -412,34 +409,34 @@ var curDragStart = function(x, y) {
 var curDragging = function(dx, dy, x, y) {
   cx2 = (x - s_left)/slide_w;
   cy2 = (y - s_top)/slide_h;
-  emLi(cx1, cy1, cx2, cy2, current_colour); //emit to socket
+  emLi(cx1, cy1, cx2, cy2, current_colour, current_thickness); //emit to socket
   path += "," + (cx2+pan_x)*view_w/slide_w + " " + (cy2+pan_y)*view_h/slide_h;
   cx1 = cx2;
   cy1 = cy2;
   path_count++;
   if(path_count == path_max) {
     path_count = 0;
-    emPublishPath(path, current_colour);
+    emPublishPath(path, current_colour, current_thickness);
     path = (cx1+pan_x)*view_w/slide_w + " " + (cy1+pan_y)*view_h/slide_h;
   }
 };
 
 // Socket response - Draw the path (line) on the canvas
-function dPath(x1, y1, x2, y2, colour) {
+function dPath(x1, y1, x2, y2, colour, thickness) {
   var line = paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
-  if(colour) line.attr({"stroke" : colour});
+  if(colour) line.attr({ "stroke" : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round'});
 };
 
 // Drawing line has ended
 var curDragStop = function(e) {
-  emPublishPath(path, current_colour);
+  emPublishPath(path, current_colour, current_thickness);
 };
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
   cx2 = (x - s_left)/slide_w;
   cy2 = (y - s_top)/slide_h;
-  emMakeRect(cx2, cy2, current_colour);
+  emMakeRect(cx2, cy2, current_colour, current_thickness);
 };
 
 // Adjusting rectangle continues
@@ -460,20 +457,20 @@ var curRectDragging = function(dx, dy, x, y, e) {
 };
 
 // Socket response - Make rectangle on canvas
-function makeRect(x, y, colour) {
-  rect = paper.rect(x*slide_w, y*slide_h, 0, 0);
-  if(colour) rect.attr({ 'stroke' : colour });
+function makeRect(x, y, colour, thickness) {
+  rect = paper.rect(x*slide_w, y*slide_h, 0, 0);//, thickness);
+  if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness });
 }
 
-function drawRect(x, y, w, h, colour) {
-  var r = paper.rect(x*slide_w, y*slide_h, w*slide_w, h*slide_h);
-  if(colour) r.attr({ 'stroke' : colour });
+function drawRect(x, y, w, h, colour, thickness) {
+  var r = paper.rect(x*slide_w, y*slide_h, w*slide_w, h*slide_h);//, thickness);
+  if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness });
 }
 
 // Socket response - Update rectangle drawn
 function updRect(x1, y1, w, h) {
   if(rect) {
-    rect.attr({ x: (x1 + pan_x)*view_w, y: (y1 + pan_y)*view_h, width: w*view_w, height: h*view_h });
+    rect.attr({ x: (x1 + pan_x)*view_w, y: (y1 + pan_y)*view_h, width: w*view_w, height: h*view_h});
   }
   else {
     rect = paper.rect(x1*slide_w, y1*slide_h, w, h);
@@ -483,7 +480,7 @@ function updRect(x1, y1, w, h) {
 // When rectangle finished being drawn (placeholder for now)
 var curRectDragStop = function(e) {
   if(rect) var r = rect.attrs;
-  if(r) emPublishRect(r.x/slide_w, r.y/slide_h, r.width/slide_w, r.height/slide_h, current_colour);
+  if(r) emPublishRect(r.x/slide_w, r.y/slide_h, r.width/slide_w, r.height/slide_h, current_colour, current_thickness);
   rect = null;
 };
 
@@ -503,9 +500,9 @@ function clearPaper() {
   initPaper();
 }
 
-function setPath(path, colour) {
+function setPath(path, colour, thickness) {
   var line = paper.path(path);
-  if(colour) line.attr({'stroke' : colour});
+  if(colour) line.attr({'stroke' : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round'});
 }
 
 // Update zoom variables on all clients
