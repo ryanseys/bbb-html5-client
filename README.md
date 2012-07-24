@@ -15,12 +15,14 @@ cd bbb-html5-client
 npm install
 ```
 
-## 5. Run the Redis server
+## 5. Install [ImageMagick](http://www.imagemagick.org/script/binary-releases.php)
+
+## 6. Run the Redis server
 ```
 redis-server
 ```
 
-## 6. Run the BBB server
+## 7. Run the BBB server
 ```
 cd bbb-html5-client
 node app.js
