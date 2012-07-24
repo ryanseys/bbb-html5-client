@@ -306,6 +306,7 @@ exports.SocketOnConnection = function(socket) {
 	// When a clear Paper event is received
 	socket.on('clrPaper', function () {
 	  var meetingID = socket.handshake.meetingID;
+	  var sessionID = socket.handshake.sessionID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
 	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
@@ -314,6 +315,7 @@ exports.SocketOnConnection = function(socket) {
     	        redisAction.deleteItemList(meetingID, presentationID, pageID, itemName, itemIDs);
     	      });
         	  pub.publish(meetingID, JSON.stringify(['clrPaper']));
+        	  socketAction.publishTool(meetingID, sessionID);
     	    });
     	  });
   	  }

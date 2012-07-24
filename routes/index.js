@@ -23,10 +23,7 @@ exports.post_index = function(req, res) {
 	  var sessionID = req.sessionID;
 	  var publicID = rack();
 	  redisAction.isMeetingRunning(meetingID, function(isRunning) {
-	    if(isRunning) {
-	      console.log("Meeting " + meetingID + " is already running.");
-	    }
-	    else {
+	    if(!isRunning) {
 	      console.log("Meeting " + meetingID + " is NOT already running, creating meeting...");
 	      redisAction.createMeeting(meetingID, function() {
 	        redisAction.setCurrentTool(meetingID, 'line');
@@ -95,6 +92,7 @@ exports.post_chat = function(req, res, next) {
             fs.mkdir(folder, 0777 , function (reply) {
               im.convert(['-quality', '50', '-density', '150x150', file, folder + '/slide%d.png'], function (err, reply) {
                 if(!err) {
+                  
                   //counts how many files are in the folder for the presentation to get the slide count.
                   exec("ls -1 " + folder + "/ | wc -l", function (error, stdout, stdouterr) {
                     var numOfPages = parseInt(stdout, 10);
@@ -107,7 +105,9 @@ exports.post_chat = function(req, res, next) {
                         numComplete++;
                         if(numComplete == numOfPages) {
                           redisAction.setCurrentPresentation(meetingID, presentationID, function() {
-                            socketAction.publishSlides(meetingID);
+                            socketAction.publishSlides(meetingID, null, function() {
+                              pub.publish(meetingID, JSON.stringify(['clrPaper']));
+                            });
                           });
                         }
                       });

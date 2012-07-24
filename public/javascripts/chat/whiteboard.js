@@ -144,56 +144,50 @@ function toggleColourPicker() {
 function turnOn(tool) {
   // If the user requests to turn on the line too
   if(tool == 'line') {
-    if(!lineOn) {
-      rectOn = false;
-      panZoomOn = false;
-      lineOn = true;
-      cur.undrag();
-      $('#slide').unbind('mousewheel');
-      cur.drag(curDragging, curDragStart, curDragStop);
-      for(url in slides) {
-        if(slides.hasOwnProperty(url)) {
-          paper.getById(slides[url].id).undrag();
-          paper.getById(slides[url].id).drag(curDragging, curDragStart, curDragStop);
-          paper.getById(slides[url].id).mousemove(mvingCur);
-        }
+    rectOn = false;
+    panZoomOn = false;
+    lineOn = true;
+    cur.undrag();
+    $('#slide').unbind('mousewheel');
+    cur.drag(curDragging, curDragStart, curDragStop);
+    for(url in slides) {
+      if(slides.hasOwnProperty(url)) {
+        paper.getById(slides[url].id).undrag();
+        paper.getById(slides[url].id).drag(curDragging, curDragStart, curDragStop);
+        paper.getById(slides[url].id).mousemove(mvingCur);
       }
     }
   }
   // If the user requests to turn on the rectangle tool
   else if(tool == 'rect') {
-    if(!rectOn) {
-      lineOn = false;
-      panZoomOn = false;
-      rectOn = true;
-      cur.undrag();
-      $('#slide').unbind('mousewheel');
-      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
-      for(url in slides) {
-        if(slides.hasOwnProperty(url)) {
-          paper.getById(slides[url].id).undrag();
-          paper.getById(slides[url].id).drag(curRectDragging, curRectDragStart, curRectDragStop);
-          paper.getById(slides[url].id).mousemove(mvingCur);
-        }
+    lineOn = false;
+    panZoomOn = false;
+    rectOn = true;
+    cur.undrag();
+    $('#slide').unbind('mousewheel');
+    cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+    for(url in slides) {
+      if(slides.hasOwnProperty(url)) {
+        paper.getById(slides[url].id).undrag();
+        paper.getById(slides[url].id).drag(curRectDragging, curRectDragStart, curRectDragStop);
+        paper.getById(slides[url].id).mousemove(mvingCur);
       }
     }
   }
 
   // If the user requests to turn on the pan & zoom tool
   else if(tool == 'panzoom') {
-    if(!panZoomOn) {
-      rectOn = false;
-      lineOn = false;
-      panZoomOn = true;
-      cur.undrag();
-      $('#slide').bind('mousewheel', zoomSlide);
-      cur.drag(panDragging, panGo, panStop);
-      for(url in slides) {
-        if(slides.hasOwnProperty(url)) {
-          paper.getById(slides[url].id).undrag();
-          paper.getById(slides[url].id).drag(panDragging, panGo, panStop);
-          paper.getById(slides[url].id).mousemove(mvingCur);
-        }
+    rectOn = false;
+    lineOn = false;
+    panZoomOn = true;
+    cur.undrag();
+    $('#slide').bind('mousewheel', zoomSlide);
+    cur.drag(panDragging, panGo, panStop);
+    for(url in slides) {
+      if(slides.hasOwnProperty(url)) {
+        paper.getById(slides[url].id).undrag();
+        paper.getById(slides[url].id).drag(panDragging, panGo, panStop);
+        paper.getById(slides[url].id).mousemove(mvingCur);
       }
     }
   }
@@ -256,9 +250,6 @@ function initDefaults() {
     pan_x = 0;
     pan_y = 0;
   }
-
-
-
   // Firefox fix
   if (navigator.userAgent.indexOf("Firefox") != -1) {
     onFirefox = true;
@@ -423,8 +414,7 @@ var curDragging = function(dx, dy, x, y) {
 
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2, colour, thickness) {
-  var line = paper.path("M" + (x1+pan_x)*view_w +" " + (y1+pan_y)*view_h + "L" + (x2+pan_x)*view_w + " " + (y2+pan_y)*view_h);
-  if(colour) line.attr({ "stroke" : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round'});
+  setPath("M"+(x1+pan_x)*view_w+" "+(y1+pan_y)*view_h+"L"+(x2+pan_x)*view_w+" "+(y2+pan_y)*view_h,colour,thickness);
 };
 
 // Drawing line has ended
@@ -459,12 +449,12 @@ var curRectDragging = function(dx, dy, x, y, e) {
 // Socket response - Make rectangle on canvas
 function makeRect(x, y, colour, thickness) {
   rect = paper.rect(x*slide_w, y*slide_h, 0, 0);//, thickness);
-  if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness, 'stroke-opacity' : 0.6 });
 }
 
 function drawRect(x, y, w, h, colour, thickness) {
   var r = paper.rect(x*slide_w, y*slide_h, w*slide_w, h*slide_h);//, thickness);
-  if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness, 'stroke-opacity' : 0.6 });
 }
 
 // Socket response - Update rectangle drawn
@@ -502,7 +492,7 @@ function clearPaper() {
 
 function setPath(path, colour, thickness) {
   var line = paper.path(path);
-  if(colour) line.attr({'stroke' : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round'});
+  if(colour) line.attr({'stroke' : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round', 'stroke-opacity' : 0.6});
 }
 
 // Update zoom variables on all clients
