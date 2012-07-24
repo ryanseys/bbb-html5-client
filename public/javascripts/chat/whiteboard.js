@@ -58,6 +58,7 @@ var end;
 var x1;
 var y1;
 var current_colour;
+var current_thickness;
 
 var path_count = 0;
 var path_max = 30; //number of paths to be drawn with a 
@@ -79,28 +80,55 @@ function getLineOn() {
 }
 
 var default_colour = "#FF0000";
+var default_thickness = 1;
 current_colour = default_colour;
+
 var c = document.getElementById("colourView");
+var tc = document.getElementById('thicknessView');
 var cptext = document.getElementById("colourText");
 var ctx = c.getContext("2d");
-ctx.fillStyle=default_colour;
-cptext.value = default_colour;
-ctx.fillRect(0,0,12,12);
+var tctx = tc.getContext('2d');
+
+
+function drawThicknessView(thickness, colour) {
+  current_thickness = thickness;
+  tctx.fillStyle='#FFFFFF';
+  tctx.fillRect(0,0,20,20);
+  var center = Math.round((20-thickness+1)/2);
+  tctx.fillStyle=colour;
+  tctx.fillRect(center,center,thickness+1,thickness+1);
+}
+
+function drawColourView(colour) {
+  current_colour = colour;
+  ctx.fillStyle = colour;
+  cptext.value = colour;
+  ctx.fillRect(0,0,12,12);
+}
+
+drawThicknessView(default_thickness, default_colour);
+
+drawColourView(default_colour);
+
 cp = Raphael.colorwheel(625, 450, 75, default_colour); //create colour picker
 cp.raphael.forEach(function(item) { item.hide(); }); //hide it
 var cpVisible = false;
 
+$(function() {
+  $("#thickness").slider({ value: 1, min: 1, max: 20 });
+  $("#thickness").bind("slide", function(event, ui) {
+    drawThicknessView(ui.value, current_colour);
+  });
+});
+
 cp.onchange = function() {
-  current_colour = cp.color();
-  ctx.fillStyle = current_colour;
-  cptext.value = current_colour;
-  ctx.fillRect(0,0,12,12);
+  drawColourView(this.color());
+  drawThicknessView(current_thickness, this.color());
 };
 
 cptext.onkeyup = function() {
-  current_colour = this.value;
-  ctx.fillStyle=current_colour;
-  ctx.fillRect(0,0,12,12);
+  drawColourView(this.value);
+  drawThicknessView(current_thickness, this.value);
 };
 
 function toggleColourPicker() {
@@ -121,14 +149,14 @@ function turnOn(tool) {
       rectOn = false;
       panZoomOn = false;
       lineOn = true;
-      //cur.undrag();
+      cur.undrag();
       $('#slide').unbind('mousewheel');
-      //cur.drag(curDragging, curDragStart, curDragStop);
+      cur.drag(curDragging, curDragStart, curDragStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
           paper.getById(slides[url].id).undrag();
           paper.getById(slides[url].id).drag(curDragging, curDragStart, curDragStop);
-          //paper.getById(slides[url]).mousemove(mvingCur);
+          paper.getById(slides[url].id).mousemove(mvingCur);
         }
       }
     }
@@ -139,14 +167,14 @@ function turnOn(tool) {
       lineOn = false;
       panZoomOn = false;
       rectOn = true;
-      //cur.undrag();
+      cur.undrag();
       $('#slide').unbind('mousewheel');
-      //cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
           paper.getById(slides[url].id).undrag();
           paper.getById(slides[url].id).drag(curRectDragging, curRectDragStart, curRectDragStop);
-          //paper.getById(slides[url]).mousemove(mvingCur);
+          paper.getById(slides[url].id).mousemove(mvingCur);
         }
       }
     }
@@ -158,14 +186,14 @@ function turnOn(tool) {
       rectOn = false;
       lineOn = false;
       panZoomOn = true;
-      //cur.undrag();
+      cur.undrag();
       $('#slide').bind('mousewheel', zoomSlide);
-      //cur.drag(panDragging, panGo, panStop);
+      cur.drag(panDragging, panGo, panStop);
       for(url in slides) {
         if(slides.hasOwnProperty(url)) {
           paper.getById(slides[url].id).undrag();
           paper.getById(slides[url].id).drag(panDragging, panGo, panStop);
-          //paper.getById(slides[url]).mousemove(mvingCur);
+          paper.getById(slides[url].id).mousemove(mvingCur);
         }
       }
     }
@@ -275,6 +303,7 @@ function addImageToPaper(url) {
   newimg.onload = function() {
     slides[url].height = newimg.height;
     slides[url].width = newimg.width;
+    cur.toFront();
   };
   
   newimg.src = url;
@@ -433,7 +462,6 @@ var curRectDragging = function(dx, dy, x, y, e) {
 // Socket response - Make rectangle on canvas
 function makeRect(x, y, colour) {
   rect = paper.rect(x*slide_w, y*slide_h, 0, 0);
-  console.log(colour);
   if(colour) rect.attr({ 'stroke' : colour });
 }
 

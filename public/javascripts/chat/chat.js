@@ -136,7 +136,6 @@ socket.on('connect', function () {
 	
 	// WHITEBOARD EVENTS //
 	socket.on('clrPaper', function () {
-	  console.log("clearing");
 	  clearPaper();
 	});
 	
@@ -185,7 +184,6 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('processing', function() {
-	  console.log("processing");
 	});
 	
 	socket.on('toolChanged', function(tool) {
@@ -301,12 +299,10 @@ function emPanStop() {
 }
 
 function emPublishPath(path, colour) {
-  //socket.emit('savePath', path);
   socket.emit('saveShape', 'path', path, colour);
 }
 
 function emPublishRect(x, y, w, h, colour) {
-  //socket.emit('saveRect', x, y, w, h);
   socket.emit('saveShape', 'rect', [x, y, w, h].join(','), colour);
 }
 

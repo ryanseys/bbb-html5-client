@@ -43,7 +43,8 @@ div(id='imagecontrols', style="clear:left")
     input(type="submit", value="Switch presenter", onclick="switchPresenter();return false;")
   canvas(id="colourView", width="12", height="12", onclick='toggleColourPicker()')
   input(id='colourText', maxlength='7', type='text')
-  
+  canvas(id="thicknessView", width="20", height="20")
+  div(id='thickness')
   // Upload controls
   div(id="uploadcontrols")
     p Upload custom slides
@@ -51,13 +52,12 @@ div(id='imagecontrols', style="clear:left")
         input(type="file", name="image")
         input(type="submit", value="Upload")
 
-
-
 // External scripts here
 script(src='/javascripts/lib/raphael-min.js')
 script(src='/javascripts/lib/colorwheel.js')
 script(src="/javascripts/lib/jquery-1.7.2.min.js")
 script(src="/javascripts/lib/jquery.mousewheel.min.js")
+script(src='/javascripts/lib/jq-ui.js')
 script(src="/socket.io/socket.io.js")
 script(src='/javascripts/chat/whiteboard.js')
 script(src='/javascripts/chat/chat.js') //all socket interactions javascript
