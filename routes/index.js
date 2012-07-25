@@ -71,8 +71,9 @@ exports.logout = function(req, res) {
 // When we return to the chat page (or open a new tab when already logged in)
 exports.get_chat = function(req, res) {
 	//requiresLogin before this verifies that a user is logged in...
-	redisAction.getUserProperty(req.cookies['meetingid'], req.cookies['sessionid'], "username", function (username) {
-	  res.render('chat', { title: 'BigBlueButton HTML5 Client', user: username, max_chat_length: max_chat_length });
+	var meetingID = req.cookies['meetingid'];
+	redisAction.getUserProperty(meetingID, req.cookies['sessionid'], "username", function (username) {
+	  res.render('chat', { title: 'BigBlueButton HTML5 Client', user: username, max_chat_length: max_chat_length, meetingID : meetingID });
 	});
 };
 

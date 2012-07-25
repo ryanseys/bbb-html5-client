@@ -40,7 +40,7 @@ socket.on('connect', function () {
 	
 	//Update all the messages in the chat box (e.g. received after first signing in)
 	socket.on('all_messages', function (messages) {
-	  msgbox.innerHTML = '';
+	  //msgbox.innerHTML = '';
 	  for (var i = messages.length - 1; i >= 0; i--){
       msgbox.innerHTML += '<div>' + messages[i].username + ": " + messages[i].message + '</div>';
 	  };
@@ -80,6 +80,7 @@ socket.on('connect', function () {
   	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
 	    }
     }
+    console.log('shapes drawn');
 	});
   
   // If the server is reconnected to the client
@@ -163,15 +164,15 @@ socket.on('connect', function () {
 	  $('#' + publicID).addClass('presenter');
 	});
 	
-	socket.on('all_slides', function(slides) {
-	  var img;
+	socket.on('all_slides', function(urls) {
 	  removeAllImagesFromPaper();
-	  for (var i = slides.length - 1; i >= 0; i--) {
-	    img = addImageToPaper(slides[i]);
-	    //this simply stores the image in the dom so it can be fetched quickly during switching slides
-	    $('#slide').append('<img id="preload'+img.id+'"src="'+slides[i]+'" style="display:none;" alt=""/>'); //preload images
+	  var count = 0;
+	  var numOfSlides = urls.length;
+	  for (var i = urls.length - 1; i >= 0; i--) {
+	    addImageToPaper(urls[i], function(img) {
+  	    $('#slide').append('<img id="preload'+img.id+'"src="'+img.attr('src')+'" style="display:none;" alt=""/>'); //preload images
+	    });
 	  };
-	  showImageFromPaper(slides[0]);
 	});
 });
 

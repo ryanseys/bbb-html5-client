@@ -152,10 +152,10 @@ exports.SocketOnConnection = function(socket) {
     			  });
   			  }
   			  socketAction.publishMessages(meetingID, sessionID);
-  			  socketAction.publishShapes(meetingID, sessionID);
   			  socketAction.publishSlides(meetingID, sessionID, function() {
   			    socketAction.publishViewBox(meetingID, sessionID);
   			    socketAction.publishTool(meetingID, sessionID);
+  			    socketAction.publishShapes(meetingID, sessionID);
   			  });
     		});
   		}

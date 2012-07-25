@@ -28,6 +28,8 @@ var paper;
 var cur;
 var current_url;
 var defaults;
+var fitToPage = false;
+var first_image_displayed = false;
 
 var global_box_w = 600;
 var global_box_h = 400;
@@ -53,19 +55,11 @@ var panZoomOn = false;
 
 //for lines
 var path;
-var step;
-var end;
-var x1;
-var y1;
 var current_colour;
 var current_thickness;
 
 var path_count = 0;
 var path_max = 30; //number of paths to be drawn with a 
-
-var shapes;
-
-//
 var resizing = false;
 
 //for rectangles
@@ -77,6 +71,10 @@ function getRectOn() {
 
 function getLineOn() {
   return lineOn;
+}
+
+function setCurrentTool(tool) {
+  current_tool = tool;
 }
 
 var default_colour = "#FF0000";
@@ -150,6 +148,7 @@ function turnOn(tool) {
     cur.undrag();
     $('#slide').unbind('mousewheel');
     cur.drag(curDragging, curDragStart, curDragStop);
+    /*
     for(url in slides) {
       if(slides.hasOwnProperty(url)) {
         paper.getById(slides[url].id).undrag();
@@ -157,6 +156,7 @@ function turnOn(tool) {
         paper.getById(slides[url].id).mousemove(mvingCur);
       }
     }
+    */
   }
   // If the user requests to turn on the rectangle tool
   else if(tool == 'rect') {
@@ -166,6 +166,7 @@ function turnOn(tool) {
     cur.undrag();
     $('#slide').unbind('mousewheel');
     cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+    /*
     for(url in slides) {
       if(slides.hasOwnProperty(url)) {
         paper.getById(slides[url].id).undrag();
@@ -173,6 +174,7 @@ function turnOn(tool) {
         paper.getById(slides[url].id).mousemove(mvingCur);
       }
     }
+    */
   }
 
   // If the user requests to turn on the pan & zoom tool
@@ -183,6 +185,7 @@ function turnOn(tool) {
     cur.undrag();
     $('#slide').bind('mousewheel', zoomSlide);
     cur.drag(panDragging, panGo, panStop);
+    /*
     for(url in slides) {
       if(slides.hasOwnProperty(url)) {
         paper.getById(slides[url].id).undrag();
@@ -190,6 +193,7 @@ function turnOn(tool) {
         paper.getById(slides[url].id).mousemove(mvingCur);
       }
     }
+    */
   }
   else {
     console.log("ERROR: Cannot turn on tool, invalid tool: " + tool);
@@ -210,7 +214,6 @@ function initDefaults() {
   if(!resizing) {
     ZOOM_MAX = 4;
     default_cur_r = 3;
-    shapes = paper.set();
     defaults = paper.add([
       {
         type: "circle",
@@ -232,7 +235,10 @@ function initDefaults() {
   }
   
   // Set defaults for variables
-  if(slides && !resizing) rebuildPaper();
+  if(slides && !resizing) {
+    console.log('rebuilding paper');
+    rebuildPaper();
+  }
   else slides = {}; //if previously loaded
   
   cur = defaults[0];
@@ -281,22 +287,42 @@ function initPaper() {
   initDefaults();
 }
 
-function addImageToPaper(url) {
-  var img = paper.image(url, 0, 0, slide_w, slide_h);
-  img.node.setAttribute('preserveAspectRatio', 'XMidYMid');
-  img.hide();
-  slides[url] = { 'id' : img.id };
-  img.drag(curDragging, curDragStart, curDragStop);
+function addImageToPaper(url, callback) {
   var newimg = new Image();
   newimg.onload = function() {
-    slides[url].height = newimg.height;
-    slides[url].width = newimg.width;
-    cur.toFront();
+    var w = newimg.width;
+    var h = newimg.height;
+    if(fitToPage) {
+      console.log('fit to page');
+      var img = paper.image(url, 0, 0, 600, 400);
+      img.node.setAttribute('preserveAspectRatio', 'XMidYMid');
+    }
+    else {
+      console.log('fit to width');
+      var ratio_w = 600/w;
+      var ratio_h = 400/h;
+      var max = Math.max(ratio_w, ratio_h);
+      slide_w = max*w;
+      slide_h = max*h;
+      view_w = 600;
+      view_h = 400;
+      var img = paper.image(url, 0, 0, max*w, max*h);
+      img.node.setAttribute('preserveAspectRatio', 'XMidYMid slice');
+    }
+    slides[url] = { 'id' : img.id, 'height' : h, 'width' : w };
+    if(!first_image_displayed) {
+      img.toBack();
+      first_image_displayed = true;
+      current_url = url;
+    }
+    else {
+      img.hide();
+    }
+    //img.drag(curDragging, curDragStart, curDragStop);
+    img.mousemove(mvingCur);
+    callback(img);
   };
-  
   newimg.src = url;
-  img.mousemove(mvingCur);
-  return img;
 }
 
 function removeAllImagesFromPaper() {
@@ -311,12 +337,13 @@ function removeAllImagesFromPaper() {
 }
 
 function rebuildPaper() {
+  first_image_displayed = false;
   for(url in slides) {
     if(slides.hasOwnProperty(url)) {
-      addImageToPaper(url);
+      addImageToPaper(url, function(img) {
+      });
     }
   }
-  showImageFromPaper(current_url);
 }
 
 function showImageFromPaper(url) {
@@ -333,13 +360,23 @@ function getImageFromPaper(url) {
     if(id) {
       return paper.getById(id);
     }
+    else return null;
   }
-  return null;
+  else return null;
 }
 
 function hideImageFromPaper(url) {
   var img = getImageFromPaper(url);
   if(img) img.hide();
+}
+
+function sendImageToBack(url) {
+  var img = getImageFromPaper(url);
+  if(img) img.toBack();
+}
+
+function bringCursorToFront() {
+  cur.toFront();
 }
 
 // When the user is dragging the cursor (click + move)
@@ -351,16 +388,16 @@ var panDragging = function(dx, dy, x, y) {
   if(pan_y < 0) pan_y = 0;
   if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
   if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
-  emViewBox(pan_x, pan_y, view_w/slide_w, view_h/slide_h);
+  emViewBox(pan_x, pan_y, view_w/global_box_w, view_h/global_box_h);
 };
 
 // Socket response - Set the ViewBox of the paper
 function setViewBox(xperc, yperc, wperc, hperc) {
   pan_x = xperc;
   pan_y = yperc;
-  view_w = wperc*slide_w;
-  view_h = hperc*slide_h;
-  paper.setViewBox(xperc*view_w, yperc*view_h, wperc*slide_w, hperc*slide_h);
+  view_w = wperc*global_box_w;
+  view_h = hperc*global_box_h;
+  paper.setViewBox(xperc*view_w, yperc*view_h, wperc*global_box_w, hperc*global_box_h);
   if((panning == 0) || (panning == 1)) {
     cornerx = xperc*view_w;
     cornery = yperc*view_h;
@@ -391,24 +428,24 @@ function panDone() {
 
 // When dragging for drawing lines starts
 var curDragStart = function(x, y) {
-  cx1 = (x - s_left)/slide_w;
-  cy1 = (y - s_top)/slide_h;
-  path = (cx1+pan_x)*view_w/slide_w + " " + (cy1+pan_y)*view_h/slide_h;
+  cx1 = (x - s_left)/global_box_w;
+  cy1 = (y - s_top)/global_box_h;
+  path = (cx1+pan_x)*view_w/global_box_w + " " + (cy1+pan_y)*view_h/global_box_h;
 };
 
 // As line drawing drag continues
 var curDragging = function(dx, dy, x, y) {
-  cx2 = (x - s_left)/slide_w;
-  cy2 = (y - s_top)/slide_h;
+  cx2 = (x - s_left)/global_box_w;
+  cy2 = (y - s_top)/global_box_h;
   emLi(cx1, cy1, cx2, cy2, current_colour, current_thickness); //emit to socket
-  path += "," + (cx2+pan_x)*view_w/slide_w + " " + (cy2+pan_y)*view_h/slide_h;
+  path += "," + (cx2+pan_x)*view_w/global_box_w + " " + (cy2+pan_y)*view_h/global_box_h;
   cx1 = cx2;
   cy1 = cy2;
   path_count++;
   if(path_count == path_max) {
     path_count = 0;
     emPublishPath(path, current_colour, current_thickness);
-    path = (cx1+pan_x)*view_w/slide_w + " " + (cy1+pan_y)*view_h/slide_h;
+    path = (cx1+pan_x)*view_w/global_box_w + " " + (cy1+pan_y)*view_h/global_box_h;
   }
 };
 
@@ -424,15 +461,17 @@ var curDragStop = function(e) {
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
-  cx2 = (x - s_left)/slide_w;
-  cy2 = (y - s_top)/slide_h;
+  cx2 = (x - s_left)/global_box_w;
+  cy2 = (y - s_top)/global_box_h;
   emMakeRect(cx2, cy2, current_colour, current_thickness);
 };
 
 // Adjusting rectangle continues
 var curRectDragging = function(dx, dy, x, y, e) {
-  dx = dx/slide_w;
-  dy = dy/slide_h;
+  var x1;
+  var y1;
+  dx = dx/global_box_w;
+  dy = dy/global_box_h;
   if(dx >= 0) x1 = cx2;
   else {
     x1 = cx2 + dx;
@@ -449,12 +488,12 @@ var curRectDragging = function(dx, dy, x, y, e) {
 // Socket response - Make rectangle on canvas
 function makeRect(x, y, colour, thickness) {
   rect = paper.rect(x*slide_w, y*slide_h, 0, 0);//, thickness);
-  if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness, 'stroke-opacity' : 0.6 });
+  if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness });
 }
 
 function drawRect(x, y, w, h, colour, thickness) {
   var r = paper.rect(x*slide_w, y*slide_h, w*slide_w, h*slide_h);//, thickness);
-  if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness, 'stroke-opacity' : 0.6 });
+  if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness });
 }
 
 // Socket response - Update rectangle drawn
@@ -470,13 +509,13 @@ function updRect(x1, y1, w, h) {
 // When rectangle finished being drawn (placeholder for now)
 var curRectDragStop = function(e) {
   if(rect) var r = rect.attrs;
-  if(r) emPublishRect(r.x/slide_w, r.y/slide_h, r.width/slide_w, r.height/slide_h, current_colour, current_thickness);
+  if(r) emPublishRect(r.x/global_box_w, r.y/global_box_h, r.width/global_box_w, r.height/global_box_h, current_colour, current_thickness);
   rect = null;
 };
 
 // Send cursor moving event to server
 var mvingCur = function(e, x, y) {
-  emMvCur((x - s_left)/slide_w, (y - s_top)/slide_h);
+  emMvCur((x - s_left)/global_box_w, (y - s_top)/global_box_h);
 };
 
 // Socket response - Update the cursor position on screen
@@ -492,7 +531,7 @@ function clearPaper() {
 
 function setPath(path, colour, thickness) {
   var line = paper.path(path);
-  if(colour) line.attr({'stroke' : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round', 'stroke-opacity' : 0.6});
+  if(colour) line.attr({'stroke' : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round'});
 }
 
 // Update zoom variables on all clients
@@ -517,23 +556,25 @@ function setZoom(delta) {
       cur.attr({ 'r' : cur.attrs.r*0.95 });
     }
   }
+  
   //handle left side collision
-  if(view_w > slide_w) {
-    view_w = slide_w;
+  if(view_w > global_box_w) {
+    view_w = global_box_w;
     pan_x = 0;
     cur.attr({ 'r' : default_cur_r });
   }
   //handle top collision
-  if(view_h > slide_h) {
-    view_h = slide_h;
+  if(view_h > global_box_h) {
+    view_h = global_box_h;
     pan_y = 0;
     cur.attr({ 'r' : default_cur_r });
   }
+  
   //handle right wall collisions
-  if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
+  if(pan_x*view_w + view_w > global_box_w) pan_x = (global_box_w - view_w)/view_w;
   //handle left wall collisions
-  if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
-  emViewBox(pan_x, pan_y, view_w/slide_w, view_h/slide_h);
+  if(pan_y*view_h + view_h > global_box_h) pan_y = (global_box_h - view_h)/view_h;
+  emViewBox(pan_x, pan_y, view_w/global_box_w, view_h/global_box_h);
 }
 
 initPaper();
