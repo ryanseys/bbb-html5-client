@@ -57,9 +57,9 @@ socket.on('connect', function () {
   	    var firstValuesArray = pathArray[0].split(' ');
   	    for (var j = 0; j < 2; j++) {
           if(j == 0) {
-            firstValuesArray[j] *= global_box_w; //put width
+            firstValuesArray[j] *= g_w; //put width
           }
-          else firstValuesArray[j] *= global_box_h; //put height
+          else firstValuesArray[j] *= g_h; //put height
         }
   	    var pathString = "M" + firstValuesArray.join(' ');
   	    var len = pathArray.length;
@@ -67,9 +67,9 @@ socket.on('connect', function () {
   	      var pairOfPoints = pathArray[k].split(' ');
   	      for (var m = 0; m < 2; m++) {
   	        if(m == 0) {
-  	          pairOfPoints[m] *= global_box_w; //put width
+  	          pairOfPoints[m] *= g_w; //put width
   	        }
-  	        else pairOfPoints[m] *= global_box_h; //put height
+  	        else pairOfPoints[m] *= g_h; //put height
           }
   	      pathString += "L" + pairOfPoints.join(' ');
         }

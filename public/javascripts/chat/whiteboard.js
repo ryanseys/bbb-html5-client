@@ -30,9 +30,10 @@ var current_url;
 var defaults;
 var fitToPage = false;
 var first_image_displayed = false;
-
-var global_box_w = 600;
-var global_box_h = 400;
+var centerxcorner;
+var centerycorner;
+var g_w = 600;
+var g_h = 400;
 
 //number of pixels to the left the corner of the view is
 var cornerx;
@@ -204,11 +205,11 @@ function turnOn(tool) {
 function initDefaults() {
   // Do not touch unless you know what you're doing
   
-  slide_w = global_box_w;
-  slide_h = global_box_h;
+  slide_w = g_w;
+  slide_h = g_h;
   
   // Create a slide if not already created
-  paper = paper || Raphael("slide", global_box_w, global_box_h);
+  paper = paper || Raphael("slide", g_w, g_h);
   
   //Default objects in paper (canvas)
   if(!resizing) {
@@ -272,8 +273,8 @@ function recalculateView() {
   
   paper.setSize(w, h);
 
-  global_box_w = w;
-  global_box_h = h;
+  g_w = w;
+  g_h = h;
   resizing = true;
   document.getElementsByTagName('svg')[0].setAttribute('preserveAspectRatio', 'XMidYMid');
   initDefaults();
@@ -294,19 +295,32 @@ function addImageToPaper(url, callback) {
     var h = newimg.height;
     if(fitToPage) {
       console.log('fit to page');
-      var img = paper.image(url, 0, 0, 600, 400);
+      cornerx = 0;
+      cornery = 0;
+      var img = paper.image(url, 0, 0, g_w, g_h);
       img.node.setAttribute('preserveAspectRatio', 'XMidYMid');
     }
     else {
       console.log('fit to width');
-      var ratio_w = 600/w;
-      var ratio_h = 400/h;
+      var ratio_w = g_w/w;
+      var ratio_h = g_h/h;
       var max = Math.max(ratio_w, ratio_h);
-      slide_w = max*w;
-      slide_h = max*h;
-      view_w = 600;
-      view_h = 400;
-      var img = paper.image(url, 0, 0, max*w, max*h);
+      //for images more long than tall
+      if(max*w > g_w) {
+        slide_w = g_w;
+        slide_h = h*ratio_w;
+      }
+      else {
+        slide_w = max*w;
+        slide_h = max*h;
+      }
+      centerxcorner = (g_w - slide_w)/2;
+      centerycorner = (g_h - slide_h)/2;
+      if(centerxcorner < 0) centerxcorner = 0;
+      if(centerycorner < 0) centerycorner = 0;
+      var img = paper.image(url, centerxcorner, centerycorner, slide_w, slide_h);
+      view_w = g_w;
+      view_h = g_h;
       img.node.setAttribute('preserveAspectRatio', 'XMidYMid slice');
     }
     slides[url] = { 'id' : img.id, 'height' : h, 'width' : w };
@@ -318,7 +332,6 @@ function addImageToPaper(url, callback) {
     else {
       img.hide();
     }
-    //img.drag(curDragging, curDragStart, curDragStop);
     img.mousemove(mvingCur);
     callback(img);
   };
@@ -384,20 +397,21 @@ var panDragging = function(dx, dy, x, y) {
   pan_x = (cornerx - dx)/view_w;
   pan_y = (cornery - dy)/view_h;
   //check to make sure not out of boundary
+  if(pan_x*view_w + view_w > slide_w + centerxcorner) pan_x = (slide_w - view_w + centerxcorner)/view_w;
+  if(pan_y*view_h + view_h > slide_h + centerycorner) pan_y = (slide_h - view_h + centerycorner)/view_h;
   if(pan_x < 0) pan_x = 0;
   if(pan_y < 0) pan_y = 0;
-  if(pan_x*view_w + view_w > slide_w) pan_x = (slide_w - view_w)/view_w;
-  if(pan_y*view_h + view_h > slide_h) pan_y = (slide_h - view_h)/view_h;
-  emViewBox(pan_x, pan_y, view_w/global_box_w, view_h/global_box_h);
+
+  emViewBox(pan_x, pan_y, view_w/g_w, view_h/g_h);
 };
 
 // Socket response - Set the ViewBox of the paper
 function setViewBox(xperc, yperc, wperc, hperc) {
   pan_x = xperc;
   pan_y = yperc;
-  view_w = wperc*global_box_w;
-  view_h = hperc*global_box_h;
-  paper.setViewBox(xperc*view_w, yperc*view_h, wperc*global_box_w, hperc*global_box_h);
+  view_w = wperc*g_w;
+  view_h = hperc*g_h;
+  paper.setViewBox(xperc*view_w, yperc*view_h, wperc*g_w, hperc*g_h);
   if((panning == 0) || (panning == 1)) {
     cornerx = xperc*view_w;
     cornery = yperc*view_h;
@@ -428,24 +442,24 @@ function panDone() {
 
 // When dragging for drawing lines starts
 var curDragStart = function(x, y) {
-  cx1 = (x - s_left)/global_box_w;
-  cy1 = (y - s_top)/global_box_h;
-  path = (cx1+pan_x)*view_w/global_box_w + " " + (cy1+pan_y)*view_h/global_box_h;
+  cx1 = (x - s_left)/g_w;
+  cy1 = (y - s_top)/g_h;
+  path = (cx1+pan_x)*view_w/g_w + " " + (cy1+pan_y)*view_h/g_h;
 };
 
 // As line drawing drag continues
 var curDragging = function(dx, dy, x, y) {
-  cx2 = (x - s_left)/global_box_w;
-  cy2 = (y - s_top)/global_box_h;
+  cx2 = (x - s_left)/g_w;
+  cy2 = (y - s_top)/g_h;
   emLi(cx1, cy1, cx2, cy2, current_colour, current_thickness); //emit to socket
-  path += "," + (cx2+pan_x)*view_w/global_box_w + " " + (cy2+pan_y)*view_h/global_box_h;
+  path += "," + (cx2+pan_x)*view_w/g_w + " " + (cy2+pan_y)*view_h/g_h;
   cx1 = cx2;
   cy1 = cy2;
   path_count++;
   if(path_count == path_max) {
     path_count = 0;
     emPublishPath(path, current_colour, current_thickness);
-    path = (cx1+pan_x)*view_w/global_box_w + " " + (cy1+pan_y)*view_h/global_box_h;
+    path = (cx1+pan_x)*view_w/g_w + " " + (cy1+pan_y)*view_h/g_h;
   }
 };
 
@@ -461,8 +475,8 @@ var curDragStop = function(e) {
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
-  cx2 = (x - s_left)/global_box_w;
-  cy2 = (y - s_top)/global_box_h;
+  cx2 = (x - s_left)/g_w;
+  cy2 = (y - s_top)/g_h;
   emMakeRect(cx2, cy2, current_colour, current_thickness);
 };
 
@@ -470,8 +484,8 @@ var curRectDragStart = function(x, y) {
 var curRectDragging = function(dx, dy, x, y, e) {
   var x1;
   var y1;
-  dx = dx/global_box_w;
-  dy = dy/global_box_h;
+  dx = dx/g_w;
+  dy = dy/g_h;
   if(dx >= 0) x1 = cx2;
   else {
     x1 = cx2 + dx;
@@ -509,13 +523,13 @@ function updRect(x1, y1, w, h) {
 // When rectangle finished being drawn (placeholder for now)
 var curRectDragStop = function(e) {
   if(rect) var r = rect.attrs;
-  if(r) emPublishRect(r.x/global_box_w, r.y/global_box_h, r.width/global_box_w, r.height/global_box_h, current_colour, current_thickness);
+  if(r) emPublishRect(r.x/g_w, r.y/g_h, r.width/g_w, r.height/g_h, current_colour, current_thickness);
   rect = null;
 };
 
 // Send cursor moving event to server
 var mvingCur = function(e, x, y) {
-  emMvCur((x - s_left)/global_box_w, (y - s_top)/global_box_h);
+  emMvCur((x - s_left)/g_w, (y - s_top)/g_h);
 };
 
 // Socket response - Update the cursor position on screen
@@ -558,23 +572,23 @@ function setZoom(delta) {
   }
   
   //handle left side collision
-  if(view_w > global_box_w) {
-    view_w = global_box_w;
+  if(view_w > g_w) {
+    view_w = g_w;
     pan_x = 0;
     cur.attr({ 'r' : default_cur_r });
   }
   //handle top collision
-  if(view_h > global_box_h) {
-    view_h = global_box_h;
+  if(view_h > g_h) {
+    view_h = g_h;
     pan_y = 0;
     cur.attr({ 'r' : default_cur_r });
   }
   
   //handle right wall collisions
-  if(pan_x*view_w + view_w > global_box_w) pan_x = (global_box_w - view_w)/view_w;
+  if(pan_x*view_w + view_w > g_w) pan_x = (g_w - view_w)/view_w;
   //handle left wall collisions
-  if(pan_y*view_h + view_h > global_box_h) pan_y = (global_box_h - view_h)/view_h;
-  emViewBox(pan_x, pan_y, view_w/global_box_w, view_h/global_box_h);
+  if(pan_y*view_h + view_h > g_h) pan_y = (g_h - view_h)/view_h;
+  emViewBox(pan_x, pan_y, view_w/g_w, view_h/g_h);
 }
 
 initPaper();
