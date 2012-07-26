@@ -283,6 +283,15 @@ exports.deleteMeeting = function(meetingID, callback) {
 // Process of the meeting once all the users have left
 // For now, this simply deletes everything associated with the meeting from redis
 exports.processMeeting = function(meetingID) {
+  store.del(redisAction.getPresenterString(meetingID), function(err, reply) {
+    console.log('deleted presenter');
+  });
+  store.del(redisAction.getCurrentViewBoxString(meetingID), function(err, reply) {
+    console.log('deleted viewbox');
+  });
+  store.del(redisAction.getCurrentToolString(meetingID), function(err, reply) {
+    console.log('deleted current tool');
+  });
   redisAction.deleteMeeting(meetingID);
   redisAction.getPresentationIDs(meetingID, function(presIDs) {
     for(var k = presIDs.length - 1; k >=0; k--) {
