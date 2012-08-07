@@ -1,93 +1,15 @@
 //object references
 slide_obj = document.getElementById("slide");
 
-// initialize variables
-var slide_w; //the width of the slide div (container for the svg) (in pixels)
-var slide_h; //the height of the slide div (container for the svg) (in pixels)
+var cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
+    paper, cur, defaults, onFirefox, s_top, s_left, current_url, 
+    current_colour, current_thickness, path, rect;
+var gw = 600, gh = 400, rectOn = false, lineOn = false, panZoomOn = false, 
+    zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
+    path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
+    dcr = 3;
 
-//the number of pixels from left to right shown in the slide div (more zoom = less pixels, max pixels = slide_w)
-var view_w;
-//the number of pixels from top to bottom shown in the slide div (more zoom = less pixels, max pixels = slide_h)
-var view_h;
-
-//svg offset is from the corner of the document to the slide div
-var s_left; //fixed - DO NOT MODIFY
-var s_top; //fixed - DO NOT MODIFY
-
-var ZOOM_MAX; //static
-//percentage as a decimal of the pan from the top left corner of the *view* to the top left corner of the svg.
-//this is a weird number
-var pan_x;
-var pan_y;
-
-//whether person is on firefox browser or not
-var onFirefox;
-var panning; // 0 is off, 1 is started, 2 is in progress
-// slide variables
-var paper;
-var cur;
-var current_url;
-var defaults;
-var fitToPage = false;
-var first_image_displayed = false;
-var centerxcorner;
-var centerycorner;
-var g_w = 600;
-var g_h = 400;
-
-//number of pixels to the left the corner of the view is
-var cornerx;
-// number of pixels down from the top corner of the view
-var cornery;
-
-var slides;
-
-var default_cur_r;
-
-// cursor variables
-var cx2;
-var cy2;
-var cx1;
-var cy1;
-
-var rectOn = false;
-var lineOn = false;
-var panZoomOn = false;
-
-//for lines
-var path;
-var current_colour;
-var current_thickness;
-
-var path_count = 0;
-var path_max = 30; //number of paths to be drawn with a 
-var resizing = false;
-
-//for rectangles
-var rect;
-
-function getRectOn() {
-  return rectOn;
-}
-
-function getLineOn() {
-  return lineOn;
-}
-
-function setCurrentTool(tool) {
-  current_tool = tool;
-}
-
-var default_colour = "#FF0000";
-var default_thickness = 1;
 current_colour = default_colour;
-
-var c = document.getElementById("colourView");
-var tc = document.getElementById('thicknessView');
-var cptext = document.getElementById("colourText");
-var ctx = c.getContext("2d");
-var tctx = tc.getContext('2d');
-
 
 function drawThicknessView(thickness, colour) {
   current_thickness = thickness;
@@ -104,30 +26,17 @@ function drawColourView(colour) {
   cptext.value = colour;
   ctx.fillRect(0,0,12,12);
 }
+function getRectOn() {
+  return rectOn;
+}
 
-drawThicknessView(default_thickness, default_colour);
-drawColourView(default_colour);
+function getLineOn() {
+  return lineOn;
+}
 
-cp = Raphael.colorwheel(625, 450, 75, default_colour); //create colour picker
-cp.raphael.forEach(function(item) { item.hide(); }); //hide it
-var cpVisible = false;
-
-$(function() {
-  $("#thickness").slider({ value: 1, min: 1, max: 20 });
-  $("#thickness").bind("slide", function(event, ui) {
-    drawThicknessView(ui.value, current_colour);
-  });
-});
-
-cp.onchange = function() {
-  drawColourView(this.color());
-  drawThicknessView(current_thickness, this.color());
-};
-
-cptext.onkeyup = function() {
-  drawColourView(this.value);
-  drawThicknessView(current_thickness, this.value);
-};
+function setCurrentTool(tool) {
+  current_tool = tool;
+}
 
 function toggleColourPicker() {
   if(cpVisible) {
@@ -149,15 +58,6 @@ function turnOn(tool) {
     cur.undrag();
     $('#slide').unbind('mousewheel');
     cur.drag(curDragging, curDragStart, curDragStop);
-    /*
-    for(url in slides) {
-      if(slides.hasOwnProperty(url)) {
-        paper.getById(slides[url].id).undrag();
-        paper.getById(slides[url].id).drag(curDragging, curDragStart, curDragStop);
-        paper.getById(slides[url].id).mousemove(mvingCur);
-      }
-    }
-    */
   }
   // If the user requests to turn on the rectangle tool
   else if(tool == 'rect') {
@@ -167,15 +67,6 @@ function turnOn(tool) {
     cur.undrag();
     $('#slide').unbind('mousewheel');
     cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
-    /*
-    for(url in slides) {
-      if(slides.hasOwnProperty(url)) {
-        paper.getById(slides[url].id).undrag();
-        paper.getById(slides[url].id).drag(curRectDragging, curRectDragStart, curRectDragStop);
-        paper.getById(slides[url].id).mousemove(mvingCur);
-      }
-    }
-    */
   }
 
   // If the user requests to turn on the pan & zoom tool
@@ -186,15 +77,6 @@ function turnOn(tool) {
     cur.undrag();
     $('#slide').bind('mousewheel', zoomSlide);
     cur.drag(panDragging, panGo, panStop);
-    /*
-    for(url in slides) {
-      if(slides.hasOwnProperty(url)) {
-        paper.getById(slides[url].id).undrag();
-        paper.getById(slides[url].id).drag(panDragging, panGo, panStop);
-        paper.getById(slides[url].id).mousemove(mvingCur);
-      }
-    }
-    */
   }
   else {
     console.log("ERROR: Cannot turn on tool, invalid tool: " + tool);
@@ -203,85 +85,32 @@ function turnOn(tool) {
 
 // Initialize default values
 function initDefaults() {
-  // Do not touch unless you know what you're doing
-  
-  slide_w = g_w;
-  slide_h = g_h;
-  
-  // Create a slide if not already created
-  paper = paper || Raphael("slide", g_w, g_h);
-  
-  //Default objects in paper (canvas)
-  if(!resizing) {
-    ZOOM_MAX = 4;
-    default_cur_r = 3;
-    defaults = paper.add([
-      {
-        type: "circle",
-        cx: 0,
-        cy: 0,
-        r: default_cur_r,
-        fill: "red"
-      }
-    ]);
-  }
-  
-  if (paper._viewBox) {
-    view_w = paper._viewBox[2];
-    view_h = paper._viewBox[3];
-  }
-  else {
-    view_w = slide_w;
-    view_h = slide_h;
-  }
-  
+  paper = paper || Raphael("slide", gw, gh);
+  cur = paper.circle(0, 0, dcr);
+  cur.attr('fill', 'red');
   // Set defaults for variables
-  if(slides && !resizing) {
-    console.log('rebuilding paper');
+  if(slides) {
     rebuildPaper();
   }
   else slides = {}; //if previously loaded
   
-  cur = defaults[0];
-  s_left = slide_obj.offsetLeft;
-  s_top = slide_obj.offsetTop;
-  cornerx = 0;
-  cornery = 0;
-  panning = 0;
-  
-  if(paper._viewBox) {
-    pan_x = paper._viewBox[0]/view_w;
-    pan_y = paper._viewBox[1]/view_h;
-  }
-  else {
-    pan_x = 0;
-    pan_y = 0;
-  }
-  // Firefox fix
   if (navigator.userAgent.indexOf("Firefox") != -1) {
-    onFirefox = true;
     paper.renderfix();
   }
 }
 
-/*
+function updatePaperFromServer(cx_, cy_, sw_, sh_) {
+  if(panning != 1) {
+    paper.setViewBox(cx = cx_*gw, cy = cy_*gh, sw = sw_*gw || sw, sh = sh_*gh || sh);
+  }
+  else paper.setViewBox(cx_*gw, cy_*gh, sw = sw_*gw || sw, sh = sh_*gh || sh);
+  //paper.setSize(sw, sh);
+}
+
 function recalculateView() {
   var w = parseInt($('#wslider').val(), 10);
   var h = parseInt($('#hslider').val(), 10);
-  $('#slide').height(h);
-  $('#slide').width(w);
-  
-  paper.setSize(w, h);
-
-  g_w = w;
-  g_h = h;
-  resizing = true;
-  document.getElementsByTagName('svg')[0].setAttribute('preserveAspectRatio', 'XMidYMid');
-  initDefaults();
-  resizing = false;
-  document.getElementsByTagName('svg')[0].forceRedraw();
 }
-*/
 
 // Initialize the paper
 function initPaper() {
@@ -294,34 +123,21 @@ function addImageToPaper(url, callback) {
     var w = newimg.width;
     var h = newimg.height;
     if(fitToPage) {
-      console.log('fit to page');
-      cornerx = 0;
-      cornery = 0;
-      var img = paper.image(url, 0, 0, g_w, g_h);
-      img.node.setAttribute('preserveAspectRatio', 'XMidYMid');
-    }
-    else {
-      console.log('fit to width');
-      var ratio_w = g_w/w;
-      var ratio_h = g_h/h;
-      var max = Math.max(ratio_w, ratio_h);
-      //for images more long than tall
-      if(max*w > g_w) {
-        slide_w = g_w;
-        slide_h = h*ratio_w;
+      //fit to page
+      var gr = gw/gh;
+      var ir = w/h;
+      if(ir < gr) {
+        sw = w/gr;
+        var img = paper.image(url, cx = (gw-sw)/2, cy = 0, sw, sh = gh);
       }
       else {
-        slide_w = max*w;
-        slide_h = max*h;
+        sh = gw/w*h;
+        var img = paper.image(url, cx = 0, cy = (gh-sh)/2, sw = gw, sh);
       }
-      centerxcorner = (g_w - slide_w)/2;
-      centerycorner = (g_h - slide_h)/2;
-      if(centerxcorner < 0) centerxcorner = 0;
-      if(centerycorner < 0) centerycorner = 0;
-      var img = paper.image(url, centerxcorner, centerycorner, slide_w, slide_h);
-      view_w = g_w;
-      view_h = g_h;
-      img.node.setAttribute('preserveAspectRatio', 'XMidYMid slice');
+      sendPaperUpdate(0, 0, 1, 1);
+    }
+    else {
+      //fit to width
     }
     slides[url] = { 'id' : img.id, 'height' : h, 'width' : w };
     if(!first_image_displayed) {
@@ -392,80 +208,53 @@ function bringCursorToFront() {
   cur.toFront();
 }
 
-// When the user is dragging the cursor (click + move)
-var panDragging = function(dx, dy, x, y) {
-  pan_x = (cornerx - dx)/view_w;
-  pan_y = (cornery - dy)/view_h;
-  //check to make sure not out of boundary
-  if(pan_x*view_w + view_w > slide_w + centerxcorner) pan_x = (slide_w - view_w + centerxcorner)/view_w;
-  if(pan_y*view_h + view_h > slide_h + centerycorner) pan_y = (slide_h - view_h + centerycorner)/view_h;
-  if(pan_x < 0) pan_x = 0;
-  if(pan_y < 0) pan_y = 0;
-
-  emViewBox(pan_x, pan_y, view_w/g_w, view_h/g_h);
-};
-
-// Socket response - Set the ViewBox of the paper
-function setViewBox(xperc, yperc, wperc, hperc) {
-  pan_x = xperc;
-  pan_y = yperc;
-  view_w = wperc*g_w;
-  view_h = hperc*g_h;
-  paper.setViewBox(xperc*view_w, yperc*view_h, wperc*g_w, hperc*g_h);
-  if((panning == 0) || (panning == 1)) {
-    cornerx = xperc*view_w;
-    cornery = yperc*view_h;
-    if(panning == 1) {
-     panning = 2;
-    }
-  }
-}
-
 //When panning starts (placeholder for now)
 var panGo = function(x, y) {
-  cur.hide();
-  panning = 1;
+  px = cx;
+  py = cy;
+  console.log('px:' + px + " py: " + py);
+};
+
+// When the user is dragging the cursor (click + move)
+var panDragging = function(dx, dy, x, y) {
+  sendPaperUpdate((px - dx)/gw, (py - dy)/gh, null, null);
 };
 
 // When panning finishes
 var panStop = function(e) {
-  cornerx = paper._viewBox[0];
-  cornery = paper._viewBox[1];
-  emPanStop();
+  //nothing to do
 };
-
-// Socket response - panStop occurred
-function panDone() {
-  cur.show();
-  panning = 0;
-}
 
 // When dragging for drawing lines starts
 var curDragStart = function(x, y) {
-  cx1 = (x - s_left)/g_w;
-  cy1 = (y - s_top)/g_h;
-  path = (cx1+pan_x)*view_w/g_w + " " + (cy1+pan_y)*view_h/g_h;
+  var img = getImageFromPaper(current_url);
+  var attrs = img.attrs;
+  var w = attrs.width;
+  var h = attrs.height;
+  cx1 = (x - s_left) + cx;
+  cy1 = (y - s_top) + cy;
+  path = cx1/gw + " " + cy1/gh;
 };
 
 // As line drawing drag continues
 var curDragging = function(dx, dy, x, y) {
-  cx2 = (x - s_left)/g_w;
-  cy2 = (y - s_top)/g_h;
-  emLi(cx1, cy1, cx2, cy2, current_colour, current_thickness); //emit to socket
-  path += "," + (cx2+pan_x)*view_w/g_w + " " + (cy2+pan_y)*view_h/g_h;
+  cx2 = (x - s_left) + cx;
+  cy2 = (y - s_top) + cy;
+  emLi(cx1/gw, cy1/gh, cx2/gw, cy2/gh, current_colour, current_thickness); //emit to socket
+  path += "," + cx2/gw + " " + cy2/gh;
   cx1 = cx2;
   cy1 = cy2;
   path_count++;
   if(path_count == path_max) {
     path_count = 0;
     emPublishPath(path, current_colour, current_thickness);
-    path = (cx1+pan_x)*view_w/g_w + " " + (cy1+pan_y)*view_h/g_h;
+    path = cx1/gw + " " + cy1/gh;
   }
 };
 
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2, colour, thickness) {
-  setPath("M"+(x1+pan_x)*view_w+" "+(y1+pan_y)*view_h+"L"+(x2+pan_x)*view_w+" "+(y2+pan_y)*view_h,colour,thickness);
+  setPath("M"+(x1)*gw+" "+(y1)*gh+"L"+(x2)*gw+" "+(y2)*gh,colour,thickness);
 };
 
 // Drawing line has ended
@@ -475,8 +264,8 @@ var curDragStop = function(e) {
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
-  cx2 = (x - s_left)/g_w;
-  cy2 = (y - s_top)/g_h;
+  cx2 = (x - s_left)/gw;
+  cy2 = (y - s_top)/gh;
   emMakeRect(cx2, cy2, current_colour, current_thickness);
 };
 
@@ -484,8 +273,8 @@ var curRectDragStart = function(x, y) {
 var curRectDragging = function(dx, dy, x, y, e) {
   var x1;
   var y1;
-  dx = dx/g_w;
-  dy = dy/g_h;
+  dx = dx/gw;
+  dy = dy/gh;
   if(dx >= 0) x1 = cx2;
   else {
     x1 = cx2 + dx;
@@ -501,40 +290,40 @@ var curRectDragging = function(dx, dy, x, y, e) {
 
 // Socket response - Make rectangle on canvas
 function makeRect(x, y, colour, thickness) {
-  rect = paper.rect(x*slide_w, y*slide_h, 0, 0);//, thickness);
+  rect = paper.rect(x*gw, y*gh, 0, 0);//, thickness);
   if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness });
 }
 
 function drawRect(x, y, w, h, colour, thickness) {
-  var r = paper.rect(x*slide_w, y*slide_h, w*slide_w, h*slide_h);//, thickness);
+  var r = paper.rect(x*gw, y*gh, w*gw, h*gh);//, thickness);
   if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness });
 }
 
 // Socket response - Update rectangle drawn
 function updRect(x1, y1, w, h) {
   if(rect) {
-    rect.attr({ x: (x1 + pan_x)*view_w, y: (y1 + pan_y)*view_h, width: w*view_w, height: h*view_h});
+    rect.attr({ x: (x1)*gw, y: (y1)*gh, width: w*gw, height: h*gh});
   }
   else {
-    rect = paper.rect(x1*slide_w, y1*slide_h, w, h);
+    rect = paper.rect(x1*gw, y1*gh, w, h);
   }
 }
 
 // When rectangle finished being drawn (placeholder for now)
 var curRectDragStop = function(e) {
   if(rect) var r = rect.attrs;
-  if(r) emPublishRect(r.x/g_w, r.y/g_h, r.width/g_w, r.height/g_h, current_colour, current_thickness);
+  if(r) emPublishRect(r.x/gw, r.y/gh, r.width/gw, r.height/gh, current_colour, current_thickness);
   rect = null;
 };
 
 // Send cursor moving event to server
 var mvingCur = function(e, x, y) {
-  emMvCur((x - s_left)/g_w, (y - s_top)/g_h);
+  emMvCur((x - s_left)/gw, (y - s_top)/gh);
 };
 
 // Socket response - Update the cursor position on screen
 function mvCur(x, y) {
-  cur.attr({ cx: (x + pan_x)*view_w, cy: (y + pan_y)*view_h });
+  cur.attr({ cx: (x*sw) + cx, cy: (y*sh) + cy });
 };
 
 // Socket response - Clear canvas
@@ -554,23 +343,22 @@ var zoomSlide = function(event, delta) {
 };
 
 // Socket response - Update zoom variables and viewbox
-function setZoom(delta) {
-  //zooming out
-  if(delta < 0) {
-      view_w *= 1.05;
-      view_h *= 1.05;
-      cur.attr({ 'r' : cur.attrs.r*1.05 });
-  }
-  //zooming in
-  else {
-    //cannot zoom in too much
-    if(slide_h/view_h < ZOOM_MAX) {
-      view_w *= 0.95;
-      view_h *= 0.95;
-      cur.attr({ 'r' : cur.attrs.r*0.95 });
-    }
-  }
+function setZoom(d) {
+  var step = 0.05; //step size
   
+  if(d < 0) zoom_level += step; //zooming out
+  else zoom_level -= step; //zooming in
+  
+  var x = cx/gw, y = cy/gh, z = zoom_level > 1 ? 1 : zoom_level; //cannot zoom out further than 100%
+  //cannot zoom to make corner less than (x,y) = (0,0)
+  x = x < 0 ? 0 : x;
+  y = y < 0 ? 0 : y;
+  z = z < 0.25 ? 0.25 : z; //cannot zoom in further than 400% (1/4)
+  
+  cur.attr({ 'r' : dcr*z }); //adjust cursor size
+  sendPaperUpdate(x, y, z, z); //send update to all clients
+  
+  /*
   //handle left side collision
   if(view_w > g_w) {
     view_w = g_w;
@@ -586,9 +374,43 @@ function setZoom(delta) {
   
   //handle right wall collisions
   if(pan_x*view_w + view_w > g_w) pan_x = (g_w - view_w)/view_w;
-  //handle left wall collisions
+  //handle bottom wall collisions
   if(pan_y*view_h + view_h > g_h) pan_y = (g_h - view_h)/view_h;
   emViewBox(pan_x, pan_y, view_w/g_w, view_h/g_h);
+  */
 }
 
 initPaper();
+
+var c = document.getElementById("colourView");
+var tc = document.getElementById('thicknessView');
+var cptext = document.getElementById("colourText");
+var ctx = c.getContext("2d");
+var tctx = tc.getContext('2d');
+
+s_left = slide_obj.offsetLeft;
+s_top = slide_obj.offsetTop;
+
+drawThicknessView(default_thickness, default_colour);
+drawColourView(default_colour);
+
+cp = Raphael.colorwheel(625, 450, 75, default_colour); //create colour picker
+cp.raphael.forEach(function(item) { item.hide(); }); //hide it
+var cpVisible = false;
+
+$(function() {
+  $("#thickness").slider({ value: 1, min: 1, max: 20 });
+  $("#thickness").bind("slide", function(event, ui) {
+    drawThicknessView(ui.value, current_colour);
+  });
+});
+
+cp.onchange = function() {
+  drawColourView(this.color());
+  drawThicknessView(current_thickness, this.color());
+};
+
+cptext.onkeyup = function() {
+  drawColourView(this.value);
+  drawThicknessView(current_thickness, this.value);
+};

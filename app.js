@@ -3,7 +3,7 @@ max_chat_length = 140;
 max_username_length = 30;
 max_meetingid_length = 10;
 maxImage = 3;
-subscriptions = ['*'];
+
 
 // Module dependencies
 var express = require('express'),
@@ -33,6 +33,7 @@ var express = require('express'),
 	pub = redis.createClient();
 	sub = redis.createClient();
 	
+	subscriptions = ['*'];
   sub.psubscribe.apply(sub, subscriptions);
 
 // Configuration

@@ -283,6 +283,11 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
+	socket.on('paper', function(cx, cy, sw, sh) {
+	  var meetingID = socket.handshake.meetingID;
+	  pub.publish(meetingID, JSON.stringify(['paper', cx, cy, sw, sh]));
+	});
+	
 	// When a rectangle update event is received
 	socket.on('updRect', function (x, y, w, h) {
 	  var meetingID = socket.handshake.meetingID;

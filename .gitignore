@@ -1,4 +1,4 @@
 node_modules/
 .DS_Store
 *.rdb
-public/images/
+public/images/presentation*

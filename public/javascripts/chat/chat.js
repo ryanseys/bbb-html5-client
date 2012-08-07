@@ -1,3 +1,5 @@
+//* Math.floor((Math.random()*100)+50)/100
+
 // Object references
 var chcount = document.getElementById('charcount');
 var msgbox = document.getElementById("chat_messages");
@@ -52,14 +54,15 @@ socket.on('connect', function () {
 	    var shape_type = shapes[i].shape;
 	    var colour = shapes[i].colour;
 	    var thickness = shapes[i].thickness;
+	    //paths
 	    if(shape_type == 'path') {
 	      var pathArray = shapes[i].points.split(',');
   	    var firstValuesArray = pathArray[0].split(' ');
   	    for (var j = 0; j < 2; j++) {
           if(j == 0) {
-            firstValuesArray[j] *= g_w; //put width
+            firstValuesArray[j] *= gw; //put width
           }
-          else firstValuesArray[j] *= g_h; //put height
+          else firstValuesArray[j] *= gh; //put height
         }
   	    var pathString = "M" + firstValuesArray.join(' ');
   	    var len = pathArray.length;
@@ -67,20 +70,20 @@ socket.on('connect', function () {
   	      var pairOfPoints = pathArray[k].split(' ');
   	      for (var m = 0; m < 2; m++) {
   	        if(m == 0) {
-  	          pairOfPoints[m] *= g_w; //put width
+  	          pairOfPoints[m] *= gw; //put width
   	        }
-  	        else pairOfPoints[m] *= g_h; //put height
+  	        else pairOfPoints[m] *= gh; //put height
           }
   	      pathString += "L" + pairOfPoints.join(' ');
         }
   	    setPath(pathString, colour, thickness);
 	    }
+	    //rectangles
 	    else if(shape_type == 'rect') {
 	      var r = shapes[i].points.split(',');
   	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
 	    }
     }
-    console.log('shapes drawn');
 	});
   
   // If the server is reconnected to the client
@@ -129,7 +132,7 @@ socket.on('connect', function () {
 	  yperc = parseFloat(yperc, 10);
 	  wperc = parseFloat(wperc, 10);
 	  hperc = parseFloat(hperc, 10);
-	  setViewBox(xperc, yperc, wperc, hperc);
+	  updatePaperFromServer(xperc, yperc, wperc, hperc);
 	});
 	
 	//when the cursor is moved
@@ -157,6 +160,10 @@ socket.on('connect', function () {
 	
 	socket.on('toolChanged', function(tool) {
 	  turnOn(tool);
+	});
+	
+	socket.on('paper', function(cx, cy, sw, sh) {
+    updatePaperFromServer(cx, cy, sw, sh);
 	});
 	
 	socket.on('setPresenter', function(publicID) {
@@ -230,6 +237,10 @@ function emMakeRect(x, y, colour, thickness) {
 // Updating the size of the rectangle being drawn
 function emUpdRect(x, y, w, h) {
   socket.emit('updRect', x, y, w, h);
+}
+
+function sendPaperUpdate(cx, cy, sw, sh) {
+  socket.emit('paper', cx, cy, sw, sh);
 }
 
 // Move the cursor around the canvas
