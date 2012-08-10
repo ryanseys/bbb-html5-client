@@ -150,6 +150,14 @@ exports.getSessionIDString = function (meetingID, sessionID) {
   return 'meeting-' + meetingID + '-sessionID-' + sessionID;
 };
 
+exports.getPageWidthString = function(meetingID, presentationID, pageID) {
+  return 'meeting-' + meetingID + '-presentation-' + presentationID + '-page-' + pageID + '-width';
+};
+
+exports.getPageHeightString = function(meetingID, presentationID, pageID) {
+  return 'meeting-' + meetingID + '-presentation-' + presentationID + '-page-' + pageID + '-height';
+};
+
 
 exports.setIDs = function(meetingID, sessionID, publicID, callback) {
   store.set(redisAction.getSessionIDString(meetingID, sessionID), publicID, function(err, reply) {
@@ -335,6 +343,23 @@ exports.getCurrentUsers = function(meetingID, callback) {
   });
 };
 
+exports.setImageSize = function(meetingID, presentationID, pageID, width, height, callback) {
+  store.set(redisAction.getPageWidthString(meetingID, presentationID, pageID), width, function(err, reply) {
+    store.set(redisAction.getPageHeightString(meetingID, presentationID, pageID), height, function(err, reply) {
+      console.log('set size');
+      if(callback) callback(true);
+    });
+  });
+};
+
+exports.getImageSize = function(meetingID, presentationID, pageID, callback) {
+  store.get(redisAction.getPageWidthString(meetingID, presentationID, pageID), function(err, width) {
+    store.get(redisAction.getPageHeightString(meetingID, presentationID, pageID), function(err, height) {
+      callback(width, height);
+    });
+  });
+};
+
 exports.getPresentationIDs = function(meetingID, callback) {
   store.smembers(redisAction.getPresentationsString(meetingID), function(err, presIDs) {
     callback(presIDs);
@@ -461,7 +486,7 @@ exports.getUsers =  function (meetingID, callback) {
 
 exports.getPageImage = function(meetingID, presentationID, pageID, callback) {
   store.get(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, filename) {
-    if(filename) callback(filename);
+    if(filename) callback(pageID, filename);
     else console.log("REDIS ERROR: Couldn't get page image");
   });
 };
@@ -570,7 +595,7 @@ exports.createPage = function(meetingID, presentationID, imageName, setCurrent, 
     if(reply) {
       console.log("REDIS: Created page with ID " + pageID);
       redisAction.setPageImage(meetingID, presentationID, pageID, imageName, function() {
-        callback(pageID);
+        callback(pageID, imageName);
       });
     }
     else if(err) {

@@ -48,13 +48,15 @@ exports.publishSlides = function(meetingID, sessionID, callback) {
      var numOfSlides = pageIDs.length;
      var slideCount = 0;
      for(var i = 0; i < numOfSlides; i++) {
-       redisAction.getPageImage(meetingID, presentationID, pageIDs[i], function(filename) {
-         slides.push('images/presentation' +presentationID+'/'+filename);
-         if(slides.length == numOfSlides) {
-            var receivers = sessionID != undefined ? sessionID : meetingID;
-            pub.publish(receivers, JSON.stringify(['all_slides', slides]));
-            if(callback) callback();
-         }
+       redisAction.getPageImage(meetingID, presentationID, pageIDs[i], function(pageID, filename) {
+         redisAction.getImageSize(meetingID, presentationID, pageID, function(width, height) {
+           slides.push(['images/presentation' +presentationID+'/'+filename, width, height]);
+            if(slides.length == numOfSlides) {
+               var receivers = sessionID != undefined ? sessionID : meetingID;
+               pub.publish(receivers, JSON.stringify(['all_slides', slides]));
+               if(callback) callback();
+            }
+         });
        });
      }
     });

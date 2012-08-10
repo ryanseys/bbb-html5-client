@@ -44,6 +44,7 @@ exports.post_index = function(req, res) {
               oldFile = fs.createReadStream('images/default.png');
               newFile.once('open', function (fd) {
                   util.pump(oldFile, newFile);
+                  redisAction.setImageSize(meetingID, presentationID, pageID, 800, 600);
               });
             });
   	      });
@@ -93,24 +94,30 @@ exports.post_chat = function(req, res, next) {
             fs.mkdir(folder, 0777 , function (reply) {
               im.convert(['-quality', '50', '-density', '150x150', file, folder + '/slide%d.png'], function (err, reply) {
                 if(!err) {
-                  
                   //counts how many files are in the folder for the presentation to get the slide count.
                   exec("ls -1 " + folder + "/ | wc -l", function (error, stdout, stdouterr) {
                     var numOfPages = parseInt(stdout, 10);
+                    console.log("NUM" + numOfPages);
                     var numComplete = 0;
                     for(var i = 0; i < numOfPages; i++) {
+                      console.log("I : " + i);
                       if(i != 0) var setCurrent = false;
                       else var setCurrent = true;
-                      redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID) {
-                        pageIDs.push(pageID);
-                        numComplete++;
-                        if(numComplete == numOfPages) {
-                          redisAction.setCurrentPresentation(meetingID, presentationID, function() {
-                            socketAction.publishSlides(meetingID, null, function() {
-                              pub.publish(meetingID, JSON.stringify(['clrPaper']));
-                            });
+                      redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID, imageName) {        
+                        im.identify(folder + "/" + imageName, function(err, features) {
+                          if (err) throw err;
+                          else redisAction.setImageSize(meetingID, presentationID, pageID, features.width, features.height, function() {
+                            pageIDs.push(pageID);
+                            numComplete++;
+                            if(numComplete == numOfPages) {
+                              redisAction.setCurrentPresentation(meetingID, presentationID, function() {
+                                socketAction.publishSlides(meetingID, null, function() {
+                                  pub.publish(meetingID, JSON.stringify(['clrPaper']));
+                                });
+                              });
+                            }
                           });
-                        }
+                        });
                       });
                     }
                   });

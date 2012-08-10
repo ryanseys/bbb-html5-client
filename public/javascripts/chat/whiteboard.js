@@ -3,7 +3,7 @@ slide_obj = document.getElementById("slide");
 
 var cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
     paper, cur, defaults, onFirefox, s_top, s_left, current_url, 
-    current_colour, current_thickness, path, rect;
+    current_colour, current_thickness, path, rect, sx, sy, current_shapes;
 var gw = 600, gh = 400, rectOn = false, lineOn = false, panZoomOn = false, 
     zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
@@ -85,7 +85,11 @@ function turnOn(tool) {
 
 // Initialize default values
 function initDefaults() {
-  paper = paper || Raphael("slide", gw, gh);
+  var slide = document.getElementById('slide');
+  var x = slide.offsetLeft;
+  var y = slide.offsetTop;
+  paper = paper || Raphael(x, y, gw, gh);
+  paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
   cur = paper.circle(0, 0, dcr);
   cur.attr('fill', 'red');
   // Set defaults for variables
@@ -100,11 +104,24 @@ function initDefaults() {
 }
 
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
-  if(panning != 1) {
-    paper.setViewBox(cx = cx_*gw, cy = cy_*gh, sw = sw_*gw || sw, sh = sh_*gh || sh);
+  if(sw_ && sh_) {
+    paper.setViewBox(cx = cx_*gw, cy = cy_*gh, sw_*gw, sh_*gh);
+    sw = gw/sw_;
+    sh = gh/sh_;
   }
-  else paper.setViewBox(cx_*gw, cy_*gh, sw = sw_*gw || sw, sh = sh_*gh || sh);
-  //paper.setSize(sw, sh);
+  else {
+    console.log(cx_*gw, cy_*gh);
+    paper.setViewBox(cx = cx_*gw, cy = cy_*gh, paper._viewBox[2], paper._viewBox[3]);
+  }
+  cx *= sw/gw;
+  cy *= sh/gh;
+  sx = (slide_obj.clientWidth - gw)/2;
+  sy = (slide_obj.clientHeight - gh)/2;
+  paper.canvas.style.left = s_left + sx + "px";
+  paper.canvas.style.top = s_top + sy + "px";
+  paper.setSize(gw, gh);
+  //paper.getById(slides[current_url].id).attr({ height:sh, width:sw });
+  paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
 }
 
 function recalculateView() {
@@ -117,41 +134,28 @@ function initPaper() {
   initDefaults();
 }
 
-function addImageToPaper(url, callback) {
-  var newimg = new Image();
-  newimg.onload = function() {
-    var w = newimg.width;
-    var h = newimg.height;
-    if(fitToPage) {
-      //fit to page
-      var gr = gw/gh;
-      var ir = w/h;
-      if(ir < gr) {
-        sw = w/gr;
-        var img = paper.image(url, cx = (gw-sw)/2, cy = 0, sw, sh = gh);
-      }
-      else {
-        sh = gw/w*h;
-        var img = paper.image(url, cx = 0, cy = (gh-sh)/2, sw = gw, sh);
-      }
-      sendPaperUpdate(0, 0, 1, 1);
-    }
-    else {
-      //fit to width
-    }
-    slides[url] = { 'id' : img.id, 'height' : h, 'width' : w };
-    if(!first_image_displayed) {
-      img.toBack();
-      first_image_displayed = true;
-      current_url = url;
-    }
-    else {
-      img.hide();
-    }
-    img.mousemove(mvingCur);
-    callback(img);
-  };
-  newimg.src = url;
+function addImageToPaper(url, w, h) {
+  if(fitToPage) {
+    var xr = w/slide_obj.clientWidth;
+    var yr = h/slide_obj.clientHeight;
+    var max = Math.max(xr, yr);
+    var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
+    sendPaperUpdate(0, 0, 1, 1);
+  }
+  else {
+    //fit to width
+  }
+  slides[url] = { 'id' : img.id, 'w' : w, 'h' : h};
+  if(!first_image_displayed) {
+    img.toBack();
+    first_image_displayed = true;
+    current_url = url;
+  }
+  else {
+    img.hide();
+  }
+  img.mousemove(mvingCur);
+  return img;
 }
 
 function removeAllImagesFromPaper() {
@@ -165,11 +169,48 @@ function removeAllImagesFromPaper() {
   slides = {};
 }
 
+function drawListOfShapes(shapes) {
+  for (var i = shapes.length - 1; i >= 0; i--) {
+    var shape_type = shapes[i].shape;
+    var colour = shapes[i].colour;
+    var thickness = shapes[i].thickness;
+    //paths
+    if(shape_type == 'path') {
+      var pathArray = shapes[i].points.split(',');
+	    var firstValuesArray = pathArray[0].split(' ');
+	    for (var j = 0; j < 2; j++) {
+        if(j == 0) {
+          firstValuesArray[j] *= gw; //put width
+        }
+        else firstValuesArray[j] *= gh; //put height
+      }
+	    var pathString = "M" + firstValuesArray.join(' ');
+	    var len = pathArray.length;
+	    for (var k = 1; k < len; k++) {
+	      var pairOfPoints = pathArray[k].split(' ');
+	      for (var m = 0; m < 2; m++) {
+	        if(m == 0) {
+	          pairOfPoints[m] *= gw; //put width
+	        }
+	        else pairOfPoints[m] *= gh; //put height
+        }
+	      pathString += "L" + pairOfPoints.join(' ');
+      }
+	    setPath(pathString, colour, thickness);
+    }
+    //rectangles
+    else if(shape_type == 'rect') {
+      var r = shapes[i].points.split(',');
+	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
+    }
+  }
+}
+
 function rebuildPaper() {
   first_image_displayed = false;
   for(url in slides) {
     if(slides.hasOwnProperty(url)) {
-      addImageToPaper(url, function(img) {
+      addImageToPaper(url, slides[url].w, slides[url].h, function(img) {
       });
     }
   }
@@ -212,12 +253,19 @@ function bringCursorToFront() {
 var panGo = function(x, y) {
   px = cx;
   py = cy;
-  console.log('px:' + px + " py: " + py);
 };
 
 // When the user is dragging the cursor (click + move)
 var panDragging = function(dx, dy, x, y) {
-  sendPaperUpdate((px - dx)/gw, (py - dy)/gh, null, null);
+  var x = (px - dx);
+  x = x < 0 ? 0 : x;
+  var y = (py - dy);
+  y = y < 0 ? 0 : y;
+  var x2 = gw + x;
+  x = x2 > sw ? sw - gw : x;
+  var y2 = gh + y;
+  y = y2 > sh ? sh - gh : y;
+  sendPaperUpdate(x/sw, y/sh, null, null);
 };
 
 // When panning finishes
@@ -231,24 +279,24 @@ var curDragStart = function(x, y) {
   var attrs = img.attrs;
   var w = attrs.width;
   var h = attrs.height;
-  cx1 = (x - s_left) + cx;
-  cy1 = (y - s_top) + cy;
-  path = cx1/gw + " " + cy1/gh;
+  cx1 = (x - s_left - sx) + cx;
+  cy1 = (y - s_top - sy) + cy;
+  path = cx1/sw + " " + cy1/sh;
 };
 
 // As line drawing drag continues
 var curDragging = function(dx, dy, x, y) {
-  cx2 = (x - s_left) + cx;
-  cy2 = (y - s_top) + cy;
-  emLi(cx1/gw, cy1/gh, cx2/gw, cy2/gh, current_colour, current_thickness); //emit to socket
-  path += "," + cx2/gw + " " + cy2/gh;
+  cx2 = (x - s_left - sx) + cx;
+  cy2 = (y - s_top - sy) + cy;
+  emLi(cx1/sw, cy1/sh, cx2/sw, cy2/sh, current_colour, current_thickness); //emit to socket
+  path += "," + cx2/sw + " " + cy2/sh;
   cx1 = cx2;
   cy1 = cy2;
   path_count++;
   if(path_count == path_max) {
     path_count = 0;
     emPublishPath(path, current_colour, current_thickness);
-    path = cx1/gw + " " + cy1/gh;
+    path = cx1/sw + " " + cy1/sh;
   }
 };
 
@@ -264,8 +312,8 @@ var curDragStop = function(e) {
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
-  cx2 = (x - s_left)/gw;
-  cy2 = (y - s_top)/gh;
+  cx2 = (x - s_left - sx)/gw;
+  cy2 = (y - s_top - sy)/gh;
   emMakeRect(cx2, cy2, current_colour, current_thickness);
 };
 
@@ -318,12 +366,12 @@ var curRectDragStop = function(e) {
 
 // Send cursor moving event to server
 var mvingCur = function(e, x, y) {
-  emMvCur((x - s_left)/gw, (y - s_top)/gh);
+  emMvCur((x - s_left - sx + cx)/sw, (y - s_top - sy + cy)/sh);
 };
 
 // Socket response - Update the cursor position on screen
 function mvCur(x, y) {
-  cur.attr({ cx: (x*sw) + cx, cy: (y*sh) + cy });
+  cur.attr({ cx: (x*gw), cy: (y*gh) });
 };
 
 // Socket response - Clear canvas
@@ -349,8 +397,10 @@ function setZoom(d) {
   if(d < 0) zoom_level += step; //zooming out
   else zoom_level -= step; //zooming in
   
-  var x = cx/gw, y = cy/gh, z = zoom_level > 1 ? 1 : zoom_level; //cannot zoom out further than 100%
+  var x = cx/sw, y = cy/sh, z = zoom_level > 1 ? 1 : zoom_level; //cannot zoom out further than 100%
   //cannot zoom to make corner less than (x,y) = (0,0)
+  x = cx > (sw - gw) ? (sw - gw)/sw : cx/sw;
+  y = cy > (sh - gh) ? (sh - gh)/sw : cy/sw;
   x = x < 0 ? 0 : x;
   y = y < 0 ? 0 : y;
   z = z < 0.25 ? 0.25 : z; //cannot zoom in further than 400% (1/4)

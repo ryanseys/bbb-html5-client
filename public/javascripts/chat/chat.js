@@ -50,40 +50,7 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('all_shapes', function (shapes) {
-	  for (var i = shapes.length - 1; i >= 0; i--) {
-	    var shape_type = shapes[i].shape;
-	    var colour = shapes[i].colour;
-	    var thickness = shapes[i].thickness;
-	    //paths
-	    if(shape_type == 'path') {
-	      var pathArray = shapes[i].points.split(',');
-  	    var firstValuesArray = pathArray[0].split(' ');
-  	    for (var j = 0; j < 2; j++) {
-          if(j == 0) {
-            firstValuesArray[j] *= gw; //put width
-          }
-          else firstValuesArray[j] *= gh; //put height
-        }
-  	    var pathString = "M" + firstValuesArray.join(' ');
-  	    var len = pathArray.length;
-  	    for (var k = 1; k < len; k++) {
-  	      var pairOfPoints = pathArray[k].split(' ');
-  	      for (var m = 0; m < 2; m++) {
-  	        if(m == 0) {
-  	          pairOfPoints[m] *= gw; //put width
-  	        }
-  	        else pairOfPoints[m] *= gh; //put height
-          }
-  	      pathString += "L" + pairOfPoints.join(' ');
-        }
-  	    setPath(pathString, colour, thickness);
-	    }
-	    //rectangles
-	    else if(shape_type == 'rect') {
-	      var r = shapes[i].points.split(',');
-  	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
-	    }
-    }
+	  drawListOfShapes(shapes);
 	});
   
   // If the server is reconnected to the client
@@ -176,9 +143,9 @@ socket.on('connect', function () {
 	  var count = 0;
 	  var numOfSlides = urls.length;
 	  for (var i = urls.length - 1; i >= 0; i--) {
-	    addImageToPaper(urls[i], function(img) {
-  	    $('#slide').append('<img id="preload'+img.id+'"src="'+img.attr('src')+'" style="display:none;" alt=""/>'); //preload images
-	    });
+	    var array = urls[i];
+	    var img = addImageToPaper(array[0], array[1], array[2]);
+  	  $('#slide').append('<img id="preload'+img.id+'"src="'+img.attr('src')+'" style="display:none;" alt=""/>'); //preload images
 	  };
 	});
 });
