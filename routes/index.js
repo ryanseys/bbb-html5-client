@@ -24,12 +24,9 @@ exports.post_index = function(req, res) {
 	  var publicID = rack();
 	  redisAction.isMeetingRunning(meetingID, function(isRunning) {
 	    if(!isRunning) {
-	      console.log("Meeting " + meetingID + " is NOT already running, creating meeting...");
 	      redisAction.createMeeting(meetingID, function() {
 	        redisAction.setCurrentTool(meetingID, 'line');
-	        redisAction.setPresenter(meetingID, sessionID, publicID, function(){
-	          console.log("Set a presenter");
-	        });
+	        redisAction.setPresenter(meetingID, sessionID, publicID);
 	      });
 	    }
 	  });
@@ -38,6 +35,7 @@ exports.post_index = function(req, res) {
 	    if(!currPresID) {
 	      redisAction.createPresentation(meetingID, true, function (presentationID) {
   	      redisAction.createPage(meetingID, presentationID, 'default.png', true, function (pageID) {
+  	        redisAction.setViewBox(meetingID, JSON.stringify([0, 0, 1, 1]));
     	      var folder = routes.presentationImageFolder(presentationID);
     	      fs.mkdir(folder, 0777 , function (reply) {
     	        newFile = fs.createWriteStream(folder + '/default.png');
@@ -97,10 +95,8 @@ exports.post_chat = function(req, res, next) {
                   //counts how many files are in the folder for the presentation to get the slide count.
                   exec("ls -1 " + folder + "/ | wc -l", function (error, stdout, stdouterr) {
                     var numOfPages = parseInt(stdout, 10);
-                    console.log("NUM" + numOfPages);
                     var numComplete = 0;
                     for(var i = 0; i < numOfPages; i++) {
-                      console.log("I : " + i);
                       if(i != 0) var setCurrent = false;
                       else var setCurrent = true;
                       redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID, imageName) {        
@@ -113,6 +109,7 @@ exports.post_chat = function(req, res, next) {
                               redisAction.setCurrentPresentation(meetingID, presentationID, function() {
                                 socketAction.publishSlides(meetingID, null, function() {
                                   pub.publish(meetingID, JSON.stringify(['clrPaper']));
+                                  socketAction.publishViewBox(meetingID);
                                 });
                               });
                             }

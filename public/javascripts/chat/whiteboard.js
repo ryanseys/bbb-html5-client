@@ -56,7 +56,6 @@ function turnOn(tool) {
     panZoomOn = false;
     lineOn = true;
     cur.undrag();
-    $('#slide').unbind('mousewheel');
     cur.drag(curDragging, curDragStart, curDragStop);
   }
   // If the user requests to turn on the rectangle tool
@@ -65,7 +64,6 @@ function turnOn(tool) {
     panZoomOn = false;
     rectOn = true;
     cur.undrag();
-    $('#slide').unbind('mousewheel');
     cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
   }
 
@@ -75,7 +73,6 @@ function turnOn(tool) {
     lineOn = false;
     panZoomOn = true;
     cur.undrag();
-    $('#slide').bind('mousewheel', zoomSlide);
     cur.drag(panDragging, panGo, panStop);
   }
   else {
@@ -92,6 +89,7 @@ function initDefaults() {
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
   cur = paper.circle(0, 0, dcr);
   cur.attr('fill', 'red');
+  $(cur.node).bind('mousewheel', zoomSlide);
   // Set defaults for variables
   if(slides) {
     rebuildPaper();
@@ -105,22 +103,24 @@ function initDefaults() {
 
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
-    paper.setViewBox(cx = cx_*gw, cy = cy_*gh, sw_*gw, sh_*gh);
+    console.log(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
+    paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
     sw = gw/sw_;
     sh = gh/sh_;
   }
   else {
-    console.log(cx_*gw, cy_*gh);
-    paper.setViewBox(cx = cx_*gw, cy = cy_*gh, paper._viewBox[2], paper._viewBox[3]);
+    paper.setViewBox(cx_*gw, cy_*gh, paper._viewBox[2], paper._viewBox[3]);
   }
-  cx *= sw/gw;
-  cy *= sh/gh;
+  cx = cx_*sw;
+  cy = cy_*sh;
   sx = (slide_obj.clientWidth - gw)/2;
   sy = (slide_obj.clientHeight - gh)/2;
   paper.canvas.style.left = s_left + sx + "px";
   paper.canvas.style.top = s_top + sy + "px";
   paper.setSize(gw, gh);
-  //paper.getById(slides[current_url].id).attr({ height:sh, width:sw });
+  var z = paper._viewBox[2]/gw;
+  cur.attr({ r : dcr*z }); //adjust cursor size
+  zoom_level = z;
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
 }
 
@@ -140,7 +140,6 @@ function addImageToPaper(url, w, h) {
     var yr = h/slide_obj.clientHeight;
     var max = Math.max(xr, yr);
     var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
-    sendPaperUpdate(0, 0, 1, 1);
   }
   else {
     //fit to width
@@ -155,6 +154,7 @@ function addImageToPaper(url, w, h) {
     img.hide();
   }
   img.mousemove(mvingCur);
+  $(img.node).bind('mousewheel', zoomSlide);
   return img;
 }
 
@@ -312,8 +312,8 @@ var curDragStop = function(e) {
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
-  cx2 = (x - s_left - sx)/gw;
-  cy2 = (y - s_top - sy)/gh;
+  cx2 = (x - s_left - sx + cx)/sw;
+  cy2 = (y - s_top - sy + cy)/sh;
   emMakeRect(cx2, cy2, current_colour, current_thickness);
 };
 
@@ -321,8 +321,8 @@ var curRectDragStart = function(x, y) {
 var curRectDragging = function(dx, dy, x, y, e) {
   var x1;
   var y1;
-  dx = dx/gw;
-  dy = dy/gh;
+  dx = dx/sw;
+  dy = dy/sh;
   if(dx >= 0) x1 = cx2;
   else {
     x1 = cx2 + dx;
@@ -398,36 +398,13 @@ function setZoom(d) {
   else zoom_level -= step; //zooming in
   
   var x = cx/sw, y = cy/sh, z = zoom_level > 1 ? 1 : zoom_level; //cannot zoom out further than 100%
+  z = z < 0.25 ? 0.25 : z; //cannot zoom in further than 400% (1/4)
   //cannot zoom to make corner less than (x,y) = (0,0)
-  x = cx > (sw - gw) ? (sw - gw)/sw : cx/sw;
-  y = cy > (sh - gh) ? (sh - gh)/sw : cy/sw;
   x = x < 0 ? 0 : x;
   y = y < 0 ? 0 : y;
-  z = z < 0.25 ? 0.25 : z; //cannot zoom in further than 400% (1/4)
-  
-  cur.attr({ 'r' : dcr*z }); //adjust cursor size
+  x = x > 1 - z ? 1 - z : x;
+  y = y > 1 - z ? 1 - z : y;
   sendPaperUpdate(x, y, z, z); //send update to all clients
-  
-  /*
-  //handle left side collision
-  if(view_w > g_w) {
-    view_w = g_w;
-    pan_x = 0;
-    cur.attr({ 'r' : default_cur_r });
-  }
-  //handle top collision
-  if(view_h > g_h) {
-    view_h = g_h;
-    pan_y = 0;
-    cur.attr({ 'r' : default_cur_r });
-  }
-  
-  //handle right wall collisions
-  if(pan_x*view_w + view_w > g_w) pan_x = (g_w - view_w)/view_w;
-  //handle bottom wall collisions
-  if(pan_y*view_h + view_h > g_h) pan_y = (g_h - view_h)/view_h;
-  emViewBox(pan_x, pan_y, view_w/g_w, view_h/g_h);
-  */
 }
 
 initPaper();

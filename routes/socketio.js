@@ -81,7 +81,7 @@ exports.publishViewBox = function(meetingID, sessionID, callback) {
     redisAction.getViewBox(meetingID, function(viewBox) {
       viewBox = JSON.parse(viewBox);
       var receivers = sessionID != undefined ? sessionID : meetingID;
-      pub.publish(receivers, JSON.stringify(['viewBox', viewBox[0], viewBox[1], viewBox[2], viewBox[3]]));
+      pub.publish(receivers, JSON.stringify(['paper', viewBox[0], viewBox[1], viewBox[2], viewBox[3]]));
       if(callback) callback();
     });
   });
@@ -155,9 +155,9 @@ exports.SocketOnConnection = function(socket) {
   			  }
   			  socketAction.publishMessages(meetingID, sessionID);
   			  socketAction.publishSlides(meetingID, sessionID, function() {
-  			    socketAction.publishViewBox(meetingID, sessionID);
   			    socketAction.publishTool(meetingID, sessionID);
   			    socketAction.publishShapes(meetingID, sessionID);
+  			    socketAction.publishViewBox(meetingID, sessionID);
   			  });
     		});
   		}
@@ -285,10 +285,7 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	socket.on('paper', function(cx, cy, sw, sh) {
-	  var meetingID = socket.handshake.meetingID;
-	  pub.publish(meetingID, JSON.stringify(['paper', cx, cy, sw, sh]));
-	});
+
 	
 	// When a rectangle update event is received
 	socket.on('updRect', function (x, y, w, h) {
@@ -338,14 +335,20 @@ exports.SocketOnConnection = function(socket) {
 	    }
 	  });
 	});
-	
+
 	// When a user is updating the viewBox of the paper
-	socket.on('viewBox', function (xperc, yperc, wperc, hperc) {
+	socket.on('paper', function (cx, cy, sw, sh) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(socket.handshake.meetingID, JSON.stringify(['viewBox', xperc, yperc, wperc, hperc]));
-        redisAction.setViewBox(socket.handshake.meetingID, JSON.stringify([xperc, yperc, wperc, hperc]));
+	      pub.publish(socket.handshake.meetingID, JSON.stringify(['paper', cx, cy, sw, sh]));
+	      if(!sw && !sh) {
+	        redisAction.getViewBox(socket.handshake.meetingID, function(viewbox) {
+	          var viewbox = JSON.parse(viewbox);
+	          redisAction.setViewBox(socket.handshake.meetingID, JSON.stringify([cx, cy, viewbox[2], viewbox[3]]));
+	        });
+	      }
+        else redisAction.setViewBox(socket.handshake.meetingID, JSON.stringify([cx, cy, sw, sh]));
       }
     });
 	});
