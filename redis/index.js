@@ -486,7 +486,10 @@ exports.getUsers =  function (meetingID, callback) {
 
 exports.getPageImage = function(meetingID, presentationID, pageID, callback) {
   store.get(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, filename) {
-    if(filename) callback(pageID, filename);
+    if(filename) {
+      console.log(filename);
+      callback(pageID, filename);
+    }
     else console.log("REDIS ERROR: Couldn't get page image");
   });
 };

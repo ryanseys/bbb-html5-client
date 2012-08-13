@@ -234,7 +234,7 @@ exports.SocketOnConnection = function(socket) {
 	    if(presenterID == sessionID) {
   	    redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
   	      redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
-  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
+  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(pageID, filename)  {
   	          pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
   	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
       			  socketAction.publishShapes(meetingID);
@@ -254,7 +254,7 @@ exports.SocketOnConnection = function(socket) {
 	    if(presenterID == sessionID) {
 	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
   	      redisAction.changeToNextPage(meetingID, presentationID, function(pageID){
-  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(filename) {
+  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(pageID, filename) {
   	          pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
   	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
       			  socketAction.publishShapes(meetingID);

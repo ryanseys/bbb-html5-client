@@ -142,7 +142,7 @@ socket.on('connect', function () {
 	  removeAllImagesFromPaper();
 	  var count = 0;
 	  var numOfSlides = urls.length;
-	  for (var i = urls.length - 1; i >= 0; i--) {
+	  for (var i = 0; i < numOfSlides; i++) {
 	    var array = urls[i];
 	    var img = addImageToPaper(array[0], array[1], array[2]);
   	  $('#slide').append('<img id="preload'+img.id+'"src="'+img.attr('src')+'" style="display:none;" alt=""/>'); //preload images

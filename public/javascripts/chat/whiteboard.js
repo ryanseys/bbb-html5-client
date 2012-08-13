@@ -103,7 +103,6 @@ function initDefaults() {
 
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
-    console.log(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
     sw = gw/sw_;
     sh = gh/sh_;
@@ -135,6 +134,7 @@ function initPaper() {
 }
 
 function addImageToPaper(url, w, h) {
+  console.log('adding images');
   if(fitToPage) {
     var xr = w/slide_obj.clientWidth;
     var yr = h/slide_obj.clientHeight;
@@ -145,10 +145,12 @@ function addImageToPaper(url, w, h) {
     //fit to width
   }
   slides[url] = { 'id' : img.id, 'w' : w, 'h' : h};
-  if(!first_image_displayed) {
+  if(!current_url) {
     img.toBack();
-    first_image_displayed = true;
     current_url = url;
+  }
+  else if(current_url == url) {
+    img.toBack();
   }
   else {
     img.hide();
@@ -167,9 +169,11 @@ function removeAllImagesFromPaper() {
     }
   }
   slides = {};
+  current_url = null;
 }
 
 function drawListOfShapes(shapes) {
+  current_shapes = paper.set();
   for (var i = shapes.length - 1; i >= 0; i--) {
     var shape_type = shapes[i].shape;
     var colour = shapes[i].colour;
@@ -204,10 +208,11 @@ function drawListOfShapes(shapes) {
 	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
     }
   }
+  
 }
 
 function rebuildPaper() {
-  first_image_displayed = false;
+  current_url = null;
   for(url in slides) {
     if(slides.hasOwnProperty(url)) {
       addImageToPaper(url, slides[url].w, slides[url].h, function(img) {
@@ -217,10 +222,24 @@ function rebuildPaper() {
 }
 
 function showImageFromPaper(url) {
+  console.log('showing url ' + url);
+  console.log('hiding url' + current_url);
   var current = getImageFromPaper(current_url);
-  if(current) current.hide();
+  if(current) {
+    current.hide();
+  }
   var next = getImageFromPaper(url);
-  if(next) next.show();
+  if(next) {
+    next.show();
+    next.toFront();
+    current_shapes.forEach(function(element) {
+      element.toFront();
+    });
+    cur.toFront();
+  }
+  else {
+    console.log(next);
+  }
   current_url = url;
 }
 
@@ -340,6 +359,7 @@ var curRectDragging = function(dx, dy, x, y, e) {
 function makeRect(x, y, colour, thickness) {
   rect = paper.rect(x*gw, y*gh, 0, 0);//, thickness);
   if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  current_shapes.push(rect);
 }
 
 function drawRect(x, y, w, h, colour, thickness) {
@@ -376,13 +396,17 @@ function mvCur(x, y) {
 
 // Socket response - Clear canvas
 function clearPaper() {
-  paper.clear();
-  initPaper();
+  current_shapes.forEach(function(element) {
+    element.remove();
+  });
+  //paper.clear();
+  //initPaper();
 }
 
 function setPath(path, colour, thickness) {
   var line = paper.path(path);
   if(colour) line.attr({'stroke' : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round'});
+  current_shapes.push(line);
 }
 
 // Update zoom variables on all clients

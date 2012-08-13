@@ -107,8 +107,8 @@ exports.post_chat = function(req, res, next) {
                             numComplete++;
                             if(numComplete == numOfPages) {
                               redisAction.setCurrentPresentation(meetingID, presentationID, function() {
+                                pub.publish(meetingID, JSON.stringify(['clrPaper']));
                                 socketAction.publishSlides(meetingID, null, function() {
-                                  pub.publish(meetingID, JSON.stringify(['clrPaper']));
                                   socketAction.publishViewBox(meetingID);
                                 });
                               });
