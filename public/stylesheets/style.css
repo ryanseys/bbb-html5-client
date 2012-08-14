@@ -23,9 +23,9 @@ a {
 #slide {
   /* cursor: none; */
   width: 605px;
-  height: 405px;
+  height: 410px;
   border: 1px solid black;
-  overflow: auto; /* so they don't overlap */
+  overflow:hidden; /* so they don't overlap */
 }
 
 .presenter {

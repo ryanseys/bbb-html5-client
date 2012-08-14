@@ -7,7 +7,7 @@ var cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
 var gw = 600, gh = 400, rectOn = false, lineOn = false, panZoomOn = false, 
     zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
-    dcr = 3;
+    dcr = 3, voff = 0;
 
 current_colour = default_colour;
 
@@ -85,7 +85,7 @@ function initDefaults() {
   var slide = document.getElementById('slide');
   var x = slide.offsetLeft;
   var y = slide.offsetTop;
-  paper = paper || Raphael(x, y, gw, gh);
+  paper = paper || Raphael('slide', gw, gh);
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
   cur = paper.circle(0, 0, dcr);
   cur.attr('fill', 'red');
@@ -105,7 +105,7 @@ function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
     sw = gw/sw_;
-    sh = gh/sh_;
+    sh = (gh + voff)/sh_;
   }
   else {
     paper.setViewBox(cx_*gw, cy_*gh, paper._viewBox[2], paper._viewBox[3]);
@@ -114,9 +114,9 @@ function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   cy = cy_*sh;
   sx = (slide_obj.clientWidth - gw)/2;
   sy = (slide_obj.clientHeight - gh)/2;
-  paper.canvas.style.left = s_left + sx + "px";
-  paper.canvas.style.top = s_top + sy + "px";
-  paper.setSize(gw, gh);
+  paper.canvas.style.left = /*s_left + */ sx + "px";
+  paper.canvas.style.top = /*s_top + */ sy + "px";
+  paper.setSize(gw-2, gh-2);
   var z = paper._viewBox[2]/gw;
   cur.attr({ r : dcr*z }); //adjust cursor size
   zoom_level = z;
@@ -133,16 +133,31 @@ function initPaper() {
   initDefaults();
 }
 
+function setFitToPage(fit) {
+  fitToPage = fit;
+  var temp = slides;
+  removeAllImagesFromPaper();
+  slides = temp;
+  rebuildPaper();
+  sendPaperUpdate(0, 0, 1, 1);
+}
+
 function addImageToPaper(url, w, h) {
-  console.log('adding images');
   if(fitToPage) {
+    console.log('fit to page');
     var xr = w/slide_obj.clientWidth;
     var yr = h/slide_obj.clientHeight;
     var max = Math.max(xr, yr);
     var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
+    voff = 0;
   }
   else {
     //fit to width
+    console.log('fit to width');
+    var wr = w/slide_obj.clientWidth;
+    var img = paper.image(url, cx = 0, cy = 0, gw = w/wr, h/wr);
+    gh = slide_obj.clientHeight;
+    voff = h/wr - gh;
   }
   slides[url] = { 'id' : img.id, 'w' : w, 'h' : h};
   if(!current_url) {
@@ -208,7 +223,6 @@ function drawListOfShapes(shapes) {
 	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
     }
   }
-  
 }
 
 function rebuildPaper() {
@@ -222,8 +236,6 @@ function rebuildPaper() {
 }
 
 function showImageFromPaper(url) {
-  console.log('showing url ' + url);
-  console.log('hiding url' + current_url);
   var current = getImageFromPaper(current_url);
   if(current) {
     current.hide();
@@ -236,9 +248,6 @@ function showImageFromPaper(url) {
       element.toFront();
     });
     cur.toFront();
-  }
-  else {
-    console.log(next);
   }
   current_url = url;
 }
@@ -275,7 +284,7 @@ var panGo = function(x, y) {
 };
 
 // When the user is dragging the cursor (click + move)
-var panDragging = function(dx, dy, x, y) {
+var panDragging = function(dx, dy) {
   var x = (px - dx);
   x = x < 0 ? 0 : x;
   var y = (py - dy);
@@ -321,7 +330,7 @@ var curDragging = function(dx, dy, x, y) {
 
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2, colour, thickness) {
-  setPath("M"+(x1)*gw+" "+(y1)*gh+"L"+(x2)*gw+" "+(y2)*gh,colour,thickness);
+  setPath("M"+(x1)*gw+" "+(y1)*gh+"L"+(x2)*gw+" "+(y2)*gh, colour, thickness);
 };
 
 // Drawing line has ended
@@ -365,6 +374,7 @@ function makeRect(x, y, colour, thickness) {
 function drawRect(x, y, w, h, colour, thickness) {
   var r = paper.rect(x*gw, y*gh, w*gw, h*gh);//, thickness);
   if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  current_shapes.push(r);
 }
 
 // Socket response - Update rectangle drawn
@@ -391,16 +401,16 @@ var mvingCur = function(e, x, y) {
 
 // Socket response - Update the cursor position on screen
 function mvCur(x, y) {
-  cur.attr({ cx: (x*gw), cy: (y*gh) });
+  cur.attr({ cx: x*gw, cy: y*gh });
 };
 
 // Socket response - Clear canvas
 function clearPaper() {
-  current_shapes.forEach(function(element) {
-    element.remove();
-  });
-  //paper.clear();
-  //initPaper();
+  if(current_shapes){
+    current_shapes.forEach(function(element) {
+      element.remove();
+    });
+  }
 }
 
 function setPath(path, colour, thickness) {
