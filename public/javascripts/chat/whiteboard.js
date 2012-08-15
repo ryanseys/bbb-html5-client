@@ -3,7 +3,7 @@ slide_obj = document.getElementById("slide");
 
 var cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
     paper, cur, defaults, onFirefox, s_top, s_left, current_url, 
-    current_colour, current_thickness, path, rect, sx, sy, current_shapes;
+    current_colour, current_thickness, path, rect, sx, sy, current_shapes, voff_orig = 0;
 var gw = 600, gh = 400, rectOn = false, lineOn = false, panZoomOn = false, 
     zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
@@ -103,9 +103,10 @@ function initDefaults() {
 
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
+    voff = voff_orig / sh_;
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
     sw = gw/sw_;
-    sh = (gh + voff)/sh_;
+    sh = gh/sh_;
   }
   else {
     paper.setViewBox(cx_*gw, cy_*gh, paper._viewBox[2], paper._viewBox[3]);
@@ -150,14 +151,17 @@ function addImageToPaper(url, w, h) {
     var max = Math.max(xr, yr);
     var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
     voff = 0;
+    voff_orig = voff;
   }
   else {
     //fit to width
     console.log('fit to width');
     var wr = w/slide_obj.clientWidth;
-    var img = paper.image(url, cx = 0, cy = 0, gw = w/wr, h/wr);
+    var img = paper.image(url, cx = 0, cy = 0, w/wr, h/wr);
+    gw = slide_obj.clientWidth;
     gh = slide_obj.clientHeight;
     voff = h/wr - gh;
+    voff_orig = voff;
   }
   slides[url] = { 'id' : img.id, 'w' : w, 'h' : h};
   if(!current_url) {
@@ -292,7 +296,7 @@ var panDragging = function(dx, dy) {
   var x2 = gw + x;
   x = x2 > sw ? sw - gw : x;
   var y2 = gh + y;
-  y = y2 > sh ? sh - gh : y;
+  y = y2 > sh + voff ? sh - gh + voff : y;
   sendPaperUpdate(x/sw, y/sh, null, null);
 };
 
@@ -396,6 +400,8 @@ var curRectDragStop = function(e) {
 
 // Send cursor moving event to server
 var mvingCur = function(e, x, y) {
+  console.log(x, y);
+  console.log((y - s_top - sy + cy)/sh);
   emMvCur((x - s_left - sx + cx)/sw, (y - s_top - sy + cy)/sh);
 };
 
@@ -436,8 +442,9 @@ function setZoom(d) {
   //cannot zoom to make corner less than (x,y) = (0,0)
   x = x < 0 ? 0 : x;
   y = y < 0 ? 0 : y;
-  x = x > 1 - z ? 1 - z : x;
-  y = y > 1 - z ? 1 - z : y;
+  var zz = 1 - z;
+  x = x > zz ? zz : x;
+  y = y > zz ? zz : y;
   sendPaperUpdate(x, y, z, z); //send update to all clients
 }
 
