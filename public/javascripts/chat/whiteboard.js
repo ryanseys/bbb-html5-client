@@ -1,10 +1,10 @@
 //object references
 slide_obj = document.getElementById("slide");
 
-var cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
+var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
     paper, cur, defaults, onFirefox, s_top, s_left, current_url, 
-    current_colour, current_thickness, path, rect, sx, sy, current_shapes, voff_orig = 0;
-var gw = 600, gh = 400, rectOn = false, lineOn = false, panZoomOn = false, 
+    current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, voff_orig = 0;
+var rectOn = false, lineOn = false, panZoomOn = false, 
     zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
     dcr = 3, voff = 0;
@@ -101,12 +101,17 @@ function initDefaults() {
   }
 }
 
+function resizeWhiteboardFrame(w, h) {
+  
+  //sendFitToPage(fitToPage);
+}
+
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
     voff = voff_orig / sh_;
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
-    sw = gw/sw_;
-    sh = gh/sh_;
+    sw = sw_orig/sw_;
+    sh = sh_orig/sh_;
   }
   else {
     paper.setViewBox(cx_*gw, cy_*gh, paper._viewBox[2], paper._viewBox[3]);
@@ -115,6 +120,7 @@ function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   cy = cy_*sh;
   sx = (slide_obj.clientWidth - gw)/2;
   sy = (slide_obj.clientHeight - gh)/2;
+  if(sy < 0) sy = 0;
   paper.canvas.style.left = /*s_left + */ sx + "px";
   paper.canvas.style.top = /*s_top + */ sy + "px";
   paper.setSize(gw-2, gh-2);
@@ -122,11 +128,6 @@ function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   cur.attr({ r : dcr*z }); //adjust cursor size
   zoom_level = z;
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
-}
-
-function recalculateView() {
-  var w = parseInt($('#wslider').val(), 10);
-  var h = parseInt($('#hslider').val(), 10);
 }
 
 // Initialize the paper
@@ -141,26 +142,34 @@ function setFitToPage(fit) {
   slides = temp;
   rebuildPaper();
   sendPaperUpdate(0, 0, 1, 1);
+  getShapesFromServer();
 }
 
 function addImageToPaper(url, w, h) {
   if(fitToPage) {
-    console.log('fit to page');
     var xr = w/slide_obj.clientWidth;
     var yr = h/slide_obj.clientHeight;
     var max = Math.max(xr, yr);
     var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
+    sw = w/max;
+    sh = h/max;
+    sw_orig = sw;
+    sh_orig = sh;
     voff = 0;
     voff_orig = voff;
   }
   else {
     //fit to width
-    console.log('fit to width');
     var wr = w/slide_obj.clientWidth;
     var img = paper.image(url, cx = 0, cy = 0, w/wr, h/wr);
-    gw = slide_obj.clientWidth;
-    gh = slide_obj.clientHeight;
-    voff = h/wr - gh;
+    sw = w/wr;
+    sh = h/wr;
+    sw_orig = sw;
+    sh_orig = sh;
+    gw = sw;
+    gh = sh;
+    
+    voff = 0;//h/wr - gh;
     voff_orig = voff;
   }
   slides[url] = { 'id' : img.id, 'w' : w, 'h' : h};
@@ -191,6 +200,7 @@ function removeAllImagesFromPaper() {
   current_url = null;
 }
 
+//accepts an array of points
 function drawListOfShapes(shapes) {
   current_shapes = paper.set();
   for (var i = shapes.length - 1; i >= 0; i--) {
@@ -205,7 +215,9 @@ function drawListOfShapes(shapes) {
         if(j == 0) {
           firstValuesArray[j] *= gw; //put width
         }
-        else firstValuesArray[j] *= gh; //put height
+        else {
+          firstValuesArray[j] *= gh; //put height
+        }
       }
 	    var pathString = "M" + firstValuesArray.join(' ');
 	    var len = pathArray.length;
@@ -215,7 +227,9 @@ function drawListOfShapes(shapes) {
 	        if(m == 0) {
 	          pairOfPoints[m] *= gw; //put width
 	        }
-	        else pairOfPoints[m] *= gh; //put height
+	        else {
+	          pairOfPoints[m] *= gh; //put height
+          }
         }
 	      pathString += "L" + pairOfPoints.join(' ');
       }
@@ -293,10 +307,10 @@ var panDragging = function(dx, dy) {
   x = x < 0 ? 0 : x;
   var y = (py - dy);
   y = y < 0 ? 0 : y;
-  var x2 = gw + x;
-  x = x2 > sw ? sw - gw : x;
-  var y2 = gh + y;
-  y = y2 > sh + voff ? sh - gh + voff : y;
+  var x2 = slide_obj.clientWidth + x;
+  x = x2 > sw ? sw - (slide_obj.clientWidth - sx*2) : x;
+  var y2 = slide_obj.clientHeight + y;
+  y = y2 > sh ? sh - (slide_obj.clientHeight - sy*2) : y;
   sendPaperUpdate(x/sw, y/sh, null, null);
 };
 
@@ -311,15 +325,15 @@ var curDragStart = function(x, y) {
   var attrs = img.attrs;
   var w = attrs.width;
   var h = attrs.height;
-  cx1 = (x - s_left - sx) + cx;
-  cy1 = (y - s_top - sy) + cy;
+  cx1 = x - s_left  - sx+ cx;
+  cy1 = y - s_top  - sy+ cy;
   path = cx1/sw + " " + cy1/sh;
 };
 
 // As line drawing drag continues
 var curDragging = function(dx, dy, x, y) {
-  cx2 = (x - s_left - sx) + cx;
-  cy2 = (y - s_top - sy) + cy;
+  cx2 = x - s_left  - sx+ cx;
+  cy2 = y - s_top  - sy+  cy;
   emLi(cx1/sw, cy1/sh, cx2/sw, cy2/sh, current_colour, current_thickness); //emit to socket
   path += "," + cx2/sw + " " + cy2/sh;
   cx1 = cx2;
@@ -334,7 +348,7 @@ var curDragging = function(dx, dy, x, y) {
 
 // Socket response - Draw the path (line) on the canvas
 function dPath(x1, y1, x2, y2, colour, thickness) {
-  setPath("M"+(x1)*gw+" "+(y1)*gh+"L"+(x2)*gw+" "+(y2)*gh, colour, thickness);
+  setPath("M"+((x1)*gw) +" "+((y1)*gh)+"L"+((x2)*gw)+" "+((y2)*gh), colour, thickness);
 };
 
 // Drawing line has ended
@@ -384,7 +398,7 @@ function drawRect(x, y, w, h, colour, thickness) {
 // Socket response - Update rectangle drawn
 function updRect(x1, y1, w, h) {
   if(rect) {
-    rect.attr({ x: (x1)*gw, y: (y1)*gh, width: w*gw, height: h*gh});
+    rect.attr({ x: (x1)*gw, y: (y1)*gh, width: w*gw, height: h*gh });
   }
   else {
     rect = paper.rect(x1*gw, y1*gh, w, h);
@@ -400,9 +414,7 @@ var curRectDragStop = function(e) {
 
 // Send cursor moving event to server
 var mvingCur = function(e, x, y) {
-  console.log(x, y);
-  console.log((y - s_top - sy + cy)/sh);
-  emMvCur((x - s_left - sx + cx)/sw, (y - s_top - sy + cy)/sh);
+  emMvCur((x - sx - s_left + cx)/sw, (y - sy - s_top + cy)/sh);
 };
 
 // Socket response - Update the cursor position on screen
@@ -433,7 +445,6 @@ var zoomSlide = function(event, delta) {
 // Socket response - Update zoom variables and viewbox
 function setZoom(d) {
   var step = 0.05; //step size
-  
   if(d < 0) zoom_level += step; //zooming out
   else zoom_level -= step; //zooming in
   

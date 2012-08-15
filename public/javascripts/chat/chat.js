@@ -50,6 +50,7 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('all_shapes', function (shapes) {
+	  clearPaper();
 	  drawListOfShapes(shapes);
 	});
   
@@ -110,6 +111,10 @@ socket.on('connect', function () {
 	//when the slide changes
 	socket.on('changeslide', function(url) {
 	  showImageFromPaper(url);
+	});
+	
+	socket.on('fitToPage', function(fit) {
+	  setFitToPage(fit);
 	});
 	
 	//when the zoom level changes
@@ -189,6 +194,14 @@ function sendMessage() {
 // Clearing the canvas drawings
 function clearCanvas() {
   socket.emit("clrPaper");
+}
+
+function getShapesFromServer() {
+  socket.emit('all_shapes');
+}
+
+function sendFitToPage(fit) {
+  socket.emit('fitToPage', fit);
 }
 
 // Drawing a line on the canvas

@@ -420,4 +420,20 @@ exports.SocketOnConnection = function(socket) {
 	     }
      });
   });
+  
+  socket.on('all_shapes', function(){
+    var handshake = socket.handshake;
+    var meetingID = handshake.meetingID;
+    socketAction.publishShapes(meetingID);
+  });
+  
+  socket.on('fitToPage', function(fit) {
+    var handshake = socket.handshake;
+    var meetingID = handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+  	   if(presenterID == socket.handshake.sessionID) {
+         pub.publish(meetingID, JSON.stringify(['fitToPage', fit]));
+	     }
+     });
+  });
 };

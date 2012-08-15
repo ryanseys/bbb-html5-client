@@ -20,9 +20,7 @@ div(id="listUsers")
 // The slide and controls of the chat page
 
 div(id="slideAndControls")
-  input(id='wslider', type="range", value="600", min="20", max="800", onchange="recalculateView()")
-  input(id='hslider', type="range", value="400", min="20", max="800", onchange="recalculateView()")
-  div(id="slide", onresize="alert('resizing');")
+  div(id="slide")
 
   // Buttons below the slide
 div(id='imagecontrols', style="clear:left")
@@ -41,9 +39,9 @@ div(id='imagecontrols', style="clear:left")
   form(id="undoShape")
     input(type='submit', value='Undo', onclick='undoShape();return false;')
   form(id='fitToPage')
-    input(type="submit", value='Fit to Page', onclick='setFitToPage(true);return false;')
+    input(type="submit", value='Fit to Page', onclick='sendFitToPage(true);return false;')
   form(id='fitToWidth')
-    input(type="submit", value='Fit to Width', onclick='setFitToPage(false);return false;')
+    input(type="submit", value='Fit to Width', onclick='sendFitToPage(false);return false;')
   form(id="switchPresenter")
     input(type="submit", value="Switch presenter", onclick="switchPresenter();return false;")
   canvas(id="colourView", width="12", height="12", onclick='toggleColourPicker()')
