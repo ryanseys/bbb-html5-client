@@ -2,14 +2,12 @@
 slide_obj = document.getElementById("slide");
 
 var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
-    paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse,
-    current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, vw, vh;
+    paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse, line,
+    current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, vw, vh, shift_pressed;
 var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, 
     zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
     dcr = 3;
-
-current_colour = default_colour;
 
 function drawThicknessView(thickness, colour) {
   current_thickness = thickness;
@@ -26,17 +24,6 @@ function drawColourView(colour) {
   cptext.value = colour;
   ctx.fillRect(0,0,12,12);
 }
-function getRectOn() {
-  return rectOn;
-}
-
-function getLineOn() {
-  return lineOn;
-}
-
-function setCurrentTool(tool) {
-  current_tool = tool;
-}
 
 function toggleColourPicker() {
   if(cpVisible) {
@@ -50,39 +37,23 @@ function toggleColourPicker() {
 }
 
 function turnOn(tool) {
+  current_tool = tool;
   // If the user requests to turn on the line too
   if(tool == 'line') {
-    rectOn = false;
-    panZoomOn = false;
-    ellipseOn = false;
-    lineOn = true;
     cur.undrag();
     cur.drag(curDragging, curDragStart, curDragStop);
   }
   // If the user requests to turn on the rectangle tool
   else if(tool == 'rect') {
-    lineOn = false;
-    panZoomOn = false;
-    ellipseOn = false;
-    rectOn = true;
     cur.undrag();
     cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
   }
-
   // If the user requests to turn on the pan & zoom tool
   else if(tool == 'panzoom') {
-    rectOn = false;
-    lineOn = false;
-    ellipseOn = false;
-    panZoomOn = true;
     cur.undrag();
     cur.drag(panDragging, panGo, panStop);
   }
   else if(tool == 'ellipse') {
-    rectOn = false;
-    lineOn = false;
-    panZoomOn = false;
-    ellipseOn = true;
     cur.undrag();
     cur.drag(curEllipseDragging, curEllipseDragStart, curEllipseDragStop);
   }
@@ -122,7 +93,7 @@ function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   cy = cy_*sh;
   sx = (vw - gw)/2;
   sy = (vh - gh)/2;
-  if(sy < 0) sy = 0;
+  if(sy < 0) sy = 0; // ??
   paper.canvas.style.left = sx + "px";
   paper.canvas.style.top = sy + "px";
   paper.setSize(gw-2, gh-2);
@@ -201,31 +172,7 @@ function drawListOfShapes(shapes) {
     var thickness = shapes[i].thickness;
     //paths
     if(shape_type == 'path') {
-      var paths = shapes[i].points.split(',');
-	    var firstValuesArray = paths[0].split(' ');
-	    for (var j = 0; j < 2; j++) {
-        if(j == 0) {
-          firstValuesArray[j] *= gw; //put width
-        }
-        else {
-          firstValuesArray[j] *= gh; //put height
-        }
-      }
-	    var pathString = "M" + firstValuesArray.join(' ');
-	    var len = paths.length;
-	    for (var k = 1; k < len; k++) {
-	      var pairOfPoints = paths[k].split(' ');
-	      for (var m = 0; m < 2; m++) {
-	        if(m == 0) {
-	          pairOfPoints[m] *= gw; //put width
-	        }
-	        else {
-	          pairOfPoints[m] *= gh; //put height
-          }
-        }
-	      pathString += "L" + pairOfPoints.join(' ');
-      }
-	    setPath(pathString, colour, thickness);
+	    drawLine(shapes[i].points.toScaledPath(gw, gh), colour, thickness);
     }
     //rectangles
     else if(shape_type == 'rect') {
@@ -323,46 +270,80 @@ var panStop = function(e) {
 var curDragStart = function(x, y) {
   cx1 = x - s_left - sx + cx;
   cy1 = y - s_top - sy + cy;
-  path = cx1/sw + " " + cy1/sh;
+  emitMakeShape('line', [cx1/sw, cy1/sh, current_colour, current_thickness]);
 };
 
 // As line drawing drag continues
 var curDragging = function(dx, dy, x, y) {
   cx2 = x - s_left - sx + cx;
   cy2 = y - s_top - sy + cy;
-  emLi(cx1/sw, cy1/sh, cx2/sw, cy2/sh, current_colour, current_thickness); //emit to socket
-  path += "," + cx2/sw + " " + cy2/sh;
-  cx1 = cx2;
-  cy1 = cy2;
-  path_count++;
-  if(path_count == path_max) {
-    path_count = 0;
-    emPublishPath(path, current_colour, current_thickness);
-    path = cx1/sw + " " + cy1/sh;
+  if(shift_pressed) {
+    emitUpdateShape('line', [cx2/sw, cy2/sh, false]);
+  }
+  else {
+    path_count++;
+    if(path_count < path_max) {
+      emitUpdateShape('line', [cx2/sw, cy2/sh, true]);
+    }
+    else {
+      path_count = 0;
+      emPublishPath(line.attrs.path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness);
+      emitMakeShape('line', [cx1/sw, cy1/sh, current_colour, current_thickness]);
+    }
+    cx1 = cx2;
+    cy1 = cy2;
   }
 };
 
 // Drawing line has ended
 var curDragStop = function(e) {
-  emPublishPath(path, current_colour, current_thickness);
+  emPublishPath(line.attrs.path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness);
+  line = null; //any late updates will be blocked by this
 };
 
-// Socket response - Draw the path (line) on the canvas
-function dPath(x1, y1, x2, y2, colour, thickness) {
-  setPath("M"+((x1)*gw) +" "+((y1)*gh)+"L"+((x2)*gw)+" "+((y2)*gh), colour, thickness);
-};
+function makeLine(x, y, colour, thickness) {
+  x *= gw;
+  y *= gh;
+  line = paper.path("M" + x + " " + y + "L" + x + " " + y);
+  if(colour) line.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  current_shapes.push(line);
+}
+
+function drawLine(path, colour, thickness) {
+  var l = paper.path(path);
+  l.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  current_shapes.push(l);
+}
+
+function updateLine(x2, y2, add) {
+  x2 *= gw;
+  y2 *= gh;
+  if(add) {
+    //if adding to the line
+    if(line) line.attr({ path : (line.attrs.path + "L" + x2 + " " + y2) });
+  }
+  else {
+    //if simply updating the last portion
+    if(line) {
+      line.attrs.path.pop();
+      var path = line.attrs.path.join(' ');
+      line.attr({ path : (path + "L" + x2 + " " + y2) });
+    }
+  }
+}
 
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
   cx2 = (x - s_left - sx + cx)/sw;
   cy2 = (y - s_top - sy + cy)/sh;
-  emMakeRect(cx2, cy2, current_colour, current_thickness);
+  emitMakeShape('rect', [cx2, cy2, current_colour, current_thickness]);
 };
 
 // Adjusting rectangle continues
 var curRectDragging = function(dx, dy, x, y, e) {
   var x1;
   var y1;
+  if(shift_pressed) dy = dx;
   dx = dx/sw;
   dy = dy/sh;
   if(dx >= 0) x1 = cx2;
@@ -375,7 +356,7 @@ var curRectDragging = function(dx, dy, x, y, e) {
     y1 = cy2 + dy;
     dy = -dy;
   }
-  emUpdRect(x1, y1, dx, dy);
+  emitUpdateShape('rect', [x1, y1, dx, dy]);
 };
 
 // When rectangle finished being drawn (placeholder for now)
@@ -399,19 +380,14 @@ function drawRect(x, y, w, h, colour, thickness) {
 }
 
 // Socket response - Update rectangle drawn
-function updRect(x1, y1, w, h) {
-  if(rect) {
-    rect.attr({ x: (x1)*gw, y: (y1)*gh, width: w*gw, height: h*gh });
-  }
-  else {
-    rect = paper.rect(x1*gw, y1*gh, w*gw, h*gh);
-  }
+function updateRect(x1, y1, w, h) {
+  if(rect) rect.attr({ x: (x1)*gw, y: (y1)*gh, width: w*gw, height: h*gh });
 }
 
 var curEllipseDragStart = function(x, y) {
   ex = (x - s_left - sx + cx);
   ey = (y - s_top - sy + cy);
-  emitMakeEllipse(ex/sw, ey/sh, current_colour, current_thickness);
+  emitMakeShape('ellipse', [ex/sw, ey/sh, current_colour, current_thickness]);
 };
 
 function makeEllipse(cx, cy, colour, thickness) {
@@ -427,24 +403,19 @@ function drawEllipse(cx, cy, rx, ry, colour, thickness) {
 }
 
 var curEllipseDragging = function(dx, dy, x, y, e) {
-  console.log((ex+dx/2)/sw, (ey+dy/2)/sh, (dx/2)/sw, (dy/2)/sh);
-  emitUpdateEllipse((ex+dx/2)/sw, (ey+dy/2)/sh, (dx/2)/sw, (dy/2)/sh);
+  if(shift_pressed) dy = dx;
+  emitUpdateShape('ellipse', [(ex+dx/2)/sw, (ey+dy/2)/sh, (dx/2)/sw, (dy/2)/sh]);
 };
 
 // Socket response - Update rectangle drawn
 function updateEllipse(x, y, w, h) {
-  if(ellipse) {
-    ellipse.attr({cx: x*gw, cy: y*gh, rx: w*gw, ry: h*gh });
-  }
-  else {
-    ellipse = paper.ellipse(x*gw, y*gh, w*gw, h*gh);
-  }
+  if(ellipse) ellipse.attr({cx: x*gw, cy: y*gh, rx: w*gw, ry: h*gh });
 }
 
 var curEllipseDragStop = function(e) {
   if(ellipse) var attrs = ellipse.attrs;
   if(attrs) emitPublishEllipse(attrs.cx/gw, attrs.cy/gh, attrs.rx/gw, attrs.ry/gh, current_colour, current_thickness);
-  ellipse = null;
+  ellipse = null; //late updates will be blocked by this
 };
 
 // Send cursor moving event to server
@@ -464,12 +435,6 @@ function clearPaper() {
       element.remove();
     });
   }
-}
-
-function setPath(path, colour, thickness) {
-  var line = paper.path(path);
-  if(colour) line.attr({'stroke' : colour, 'stroke-width' : thickness, 'stroke-linecap' : 'round'});
-  current_shapes.push(line);
 }
 
 // Update zoom variables on all clients
@@ -530,4 +495,46 @@ cp.onchange = function() {
 cptext.onkeyup = function() {
   drawColourView(this.value);
   drawThicknessView(current_thickness, this.value);
+};
+
+document.onkeydown = function(event) {
+  var keyCode; 
+  if(!event) keyCode = window.event.keyCode;
+  else keyCode = event.keyCode;
+  
+  switch(keyCode) {
+    case 16:
+      shift_pressed = true;
+    break;
+
+    default:
+      //nothing
+    break; 
+  }
+};
+
+document.onkeyup = function(event) {
+  var keyCode; 
+  if(!event) keyCode = window.event.keyCode;
+  else keyCode = event.keyCode;
+  switch(keyCode) {
+    case 16:
+      shift_pressed = false;
+    break;
+
+    default:
+      //nothing
+    break; 
+  }
+};
+
+String.prototype.toScaledPath = function(w, h) {
+  var path;
+  var points = this.match(/(\d+[.]?\d*)/g);
+  var len = points.length;
+  for(var j = 0; j < len; j+=2) {
+    if(j != 0) path += "L" + (points[j] * w) + "," + (points[j+1] * h);
+    else path = "M" + (points[j] * w) + "," + (points[j+1] * h);
+  }
+  return path;
 };

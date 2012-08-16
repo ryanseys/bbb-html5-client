@@ -78,16 +78,6 @@ socket.on('connect', function () {
 	  clearPaper();
 	});
 	
-	//when a line is drawn
-	socket.on('li', function(x1, y1, x2, y2, colour, thickness){
-	  dPath(x1, y1, x2, y2, colour, thickness);
-	});
-	
-	//when a new rectangle is created/drawn
-	socket.on('makeRect', function(x, y, colour, thickness) {
-	  makeRect(x, y, colour, thickness);
-	});
-	
 	//when the rectangle being drawn is updated
 	socket.on('updRect', function(x, y, w, h) {
 	  updRect(x, y, w, h);
@@ -126,15 +116,56 @@ socket.on('connect', function () {
 	  panDone();
 	});
 	
-	socket.on('processing', function() {
+	socket.on('makeShape', function(shape, data) {
+	  switch(shape) {
+      case 'line':
+        makeLine.apply(makeLine, data);
+      break;
+
+      case 'rect':
+        makeRect.apply(makeRect, data);
+      break;
+
+      case 'ellipse':
+        makeEllipse.apply(makeEllipse, data);
+      break;
+
+      default:
+        console.log('shape not recognized');
+      break;
+    }
 	});
 	
-	socket.on('makeElip', function(cx, cy, colour, thickness) {
-	  makeEllipse(cx, cy, colour, thickness);
+	socket.on('updShape', function(shape, data) {
+	  switch(shape) {
+      case 'line':
+        updateLine.apply(updateLine, data);
+      break;
+
+      case 'rect':
+        updateRect.apply(updateRect, data);
+      break;
+
+      case 'ellipse':
+        updateEllipse.apply(updateEllipse, data);
+      break;
+
+      default:
+        console.log('shape not recognized');
+      break; 
+    }
+	});
+	
+	socket.on('processing', function() {
+	  console.log('processing');
 	});
 	
 	socket.on('updElip', function(cx, cy, rx, ry) {
 	  updateEllipse(cx, cy, rx, ry);
+	});
+	
+	socket.on('updLine', function(x, y, add){ 
+	  updateLine(x, y, add);
 	});
 	
 	socket.on('toolChanged', function(tool) {
@@ -211,14 +242,16 @@ function sendFitToPage(fit) {
   socket.emit('fitToPage', fit);
 }
 
-// Drawing a line on the canvas
-function emLi(x1, y1, x2, y2, colour, thickness) {
-  socket.emit("li", x1, y1, x2, y2, colour, thickness);
+function emitMakeShape(shape, data) {
+  socket.emit('makeShape', shape, data);
 }
 
-// Creating a rectangle on the canvas
-function emMakeRect(x, y, colour, thickness) {
-  socket.emit('makeRect', x, y, colour, thickness);
+function emitUpdateShape(shape, data) {
+  socket.emit('updShape', shape, data);
+}
+
+function emitUpdateLine(x2, y2, add) {
+  socket.emit('updLine', x2, y2, add);
 }
 
 // Updating the size of the rectangle being drawn

@@ -265,54 +265,25 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	// When a line creation event is received
-	socket.on('li', function (x1, y1, x2, y2, colour, thickness) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['li', x1, y1, x2, y2, colour, thickness]));
-	    }
-	  });
-	});
-	
 	// When a rectangle creation event is received
-	socket.on('makeRect', function (x, y, colour, thickness) {
+	socket.on('makeShape', function (shape, data) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-        pub.publish(meetingID, JSON.stringify(['makeRect', x, y, colour, thickness]));
+        pub.publish(meetingID, JSON.stringify(['makeShape', shape, data]));
       }
     });
 	});
 	
-  socket.on('makeElip', function (cx, cy, colour, thickness) {
-    var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-        pub.publish(meetingID, JSON.stringify(['makeElip', cx, cy, colour, thickness]));
-      }
-    });
-  });
-	
-	// When a rectangle update event is received
-	socket.on('updRect', function (x, y, w, h) {
+	socket.on('updShape', function (shape, data) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-        pub.publish(meetingID, JSON.stringify(['updRect', x, y, w, h]));
+        pub.publish(meetingID, JSON.stringify(['updShape', shape, data]));
       }
     });
 	});
-	
-	socket.on('updElip', function(cx, cy, rx, ry) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-        pub.publish(meetingID, JSON.stringify(['updElip', cx, cy, rx, ry]));
-      }
-    });
-	});
-	
+
 	// When a cursor move event is received
 	socket.on('mvCur', function (x, y) {
 	  var meetingID = socket.handshake.meetingID;
