@@ -132,7 +132,7 @@ exports.post_chat = function(req, res, next) {
       });
     });
   }
-  res.redirect('back');
+  res.redirect('/chat');
 };
 
 // Any other page that we have not defined yet.

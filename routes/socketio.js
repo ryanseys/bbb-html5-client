@@ -285,7 +285,14 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-
+  socket.on('makeElip', function (cx, cy, colour, thickness) {
+    var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['makeElip', cx, cy, colour, thickness]));
+      }
+    });
+  });
 	
 	// When a rectangle update event is received
 	socket.on('updRect', function (x, y, w, h) {
@@ -293,6 +300,15 @@ exports.SocketOnConnection = function(socket) {
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
         pub.publish(meetingID, JSON.stringify(['updRect', x, y, w, h]));
+      }
+    });
+	});
+	
+	socket.on('updElip', function(cx, cy, rx, ry) {
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['updElip', cx, cy, rx, ry]));
       }
     });
 	});

@@ -158,7 +158,6 @@ exports.getPageHeightString = function(meetingID, presentationID, pageID) {
   return 'meeting-' + meetingID + '-presentation-' + presentationID + '-page-' + pageID + '-height';
 };
 
-
 exports.setIDs = function(meetingID, sessionID, publicID, callback) {
   store.set(redisAction.getSessionIDString(meetingID, sessionID), publicID, function(err, reply) {
     store.set(redisAction.getPublicIDString(meetingID, publicID), sessionID, function(err, reply) {

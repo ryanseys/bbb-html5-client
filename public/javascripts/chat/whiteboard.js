@@ -2,12 +2,12 @@
 slide_obj = document.getElementById("slide");
 
 var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
-    paper, cur, defaults, onFirefox, s_top, s_left, current_url, 
-    current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, voff_orig = 0;
-var rectOn = false, lineOn = false, panZoomOn = false, 
+    paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse,
+    current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, vw, vh;
+var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, 
     zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
-    dcr = 3, voff = 0;
+    dcr = 3;
 
 current_colour = default_colour;
 
@@ -54,6 +54,7 @@ function turnOn(tool) {
   if(tool == 'line') {
     rectOn = false;
     panZoomOn = false;
+    ellipseOn = false;
     lineOn = true;
     cur.undrag();
     cur.drag(curDragging, curDragStart, curDragStop);
@@ -62,6 +63,7 @@ function turnOn(tool) {
   else if(tool == 'rect') {
     lineOn = false;
     panZoomOn = false;
+    ellipseOn = false;
     rectOn = true;
     cur.undrag();
     cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
@@ -71,9 +73,18 @@ function turnOn(tool) {
   else if(tool == 'panzoom') {
     rectOn = false;
     lineOn = false;
+    ellipseOn = false;
     panZoomOn = true;
     cur.undrag();
     cur.drag(panDragging, panGo, panStop);
+  }
+  else if(tool == 'ellipse') {
+    rectOn = false;
+    lineOn = false;
+    panZoomOn = false;
+    ellipseOn = true;
+    cur.undrag();
+    cur.drag(curEllipseDragging, curEllipseDragStart, curEllipseDragStop);
   }
   else {
     console.log("ERROR: Cannot turn on tool, invalid tool: " + tool);
@@ -81,10 +92,7 @@ function turnOn(tool) {
 }
 
 // Initialize default values
-function initDefaults() {
-  var slide = document.getElementById('slide');
-  var x = slide.offsetLeft;
-  var y = slide.offsetTop;
+function initPaper() {
   paper = paper || Raphael('slide', gw, gh);
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
   cur = paper.circle(0, 0, dcr);
@@ -101,38 +109,27 @@ function initDefaults() {
   }
 }
 
-function resizeWhiteboardFrame(w, h) {
-  
-  //sendFitToPage(fitToPage);
-}
-
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
-    voff = voff_orig / sh_;
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
-    sw = sw_orig/sw_;
-    sh = sh_orig/sh_;
+    sw = gw/sw_;
+    sh = gh/sh_;
   }
   else {
     paper.setViewBox(cx_*gw, cy_*gh, paper._viewBox[2], paper._viewBox[3]);
   }
   cx = cx_*sw;
   cy = cy_*sh;
-  sx = (slide_obj.clientWidth - gw)/2;
-  sy = (slide_obj.clientHeight - gh)/2;
+  sx = (vw - gw)/2;
+  sy = (vh - gh)/2;
   if(sy < 0) sy = 0;
-  paper.canvas.style.left = /*s_left + */ sx + "px";
-  paper.canvas.style.top = /*s_top + */ sy + "px";
+  paper.canvas.style.left = sx + "px";
+  paper.canvas.style.top = sy + "px";
   paper.setSize(gw-2, gh-2);
   var z = paper._viewBox[2]/gw;
   cur.attr({ r : dcr*z }); //adjust cursor size
   zoom_level = z;
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
-}
-
-// Initialize the paper
-function initPaper() {
-  initDefaults();
 }
 
 function setFitToPage(fit) {
@@ -147,20 +144,18 @@ function setFitToPage(fit) {
 
 function addImageToPaper(url, w, h) {
   if(fitToPage) {
-    var xr = w/slide_obj.clientWidth;
-    var yr = h/slide_obj.clientHeight;
+    var xr = w/vw;
+    var yr = h/vh;
     var max = Math.max(xr, yr);
     var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
     sw = w/max;
     sh = h/max;
     sw_orig = sw;
     sh_orig = sh;
-    voff = 0;
-    voff_orig = voff;
   }
   else {
     //fit to width
-    var wr = w/slide_obj.clientWidth;
+    var wr = w/vw;
     var img = paper.image(url, cx = 0, cy = 0, w/wr, h/wr);
     sw = w/wr;
     sh = h/wr;
@@ -168,9 +163,6 @@ function addImageToPaper(url, w, h) {
     sh_orig = sh;
     gw = sw;
     gh = sh;
-    
-    voff = 0;//h/wr - gh;
-    voff_orig = voff;
   }
   slides[url] = { 'id' : img.id, 'w' : w, 'h' : h};
   if(!current_url) {
@@ -209,8 +201,8 @@ function drawListOfShapes(shapes) {
     var thickness = shapes[i].thickness;
     //paths
     if(shape_type == 'path') {
-      var pathArray = shapes[i].points.split(',');
-	    var firstValuesArray = pathArray[0].split(' ');
+      var paths = shapes[i].points.split(',');
+	    var firstValuesArray = paths[0].split(' ');
 	    for (var j = 0; j < 2; j++) {
         if(j == 0) {
           firstValuesArray[j] *= gw; //put width
@@ -220,9 +212,9 @@ function drawListOfShapes(shapes) {
         }
       }
 	    var pathString = "M" + firstValuesArray.join(' ');
-	    var len = pathArray.length;
+	    var len = paths.length;
 	    for (var k = 1; k < len; k++) {
-	      var pairOfPoints = pathArray[k].split(' ');
+	      var pairOfPoints = paths[k].split(' ');
 	      for (var m = 0; m < 2; m++) {
 	        if(m == 0) {
 	          pairOfPoints[m] *= gw; //put width
@@ -238,7 +230,11 @@ function drawListOfShapes(shapes) {
     //rectangles
     else if(shape_type == 'rect') {
       var r = shapes[i].points.split(',');
-	    drawRect(parseFloat(r[0]), parseFloat(r[1]), parseFloat(r[2]), parseFloat(r[3]), colour, thickness);
+	    drawRect(r[0], r[1], r[2], r[3], colour, thickness);
+    }
+    else if(shape_type == 'ellipse') {
+      var elip = shapes[i].points.split(',');
+	    drawEllipse(elip[0], elip[1], elip[2], elip[3], colour, thickness);
     }
   }
 }
@@ -307,10 +303,14 @@ var panDragging = function(dx, dy) {
   x = x < 0 ? 0 : x;
   var y = (py - dy);
   y = y < 0 ? 0 : y;
-  var x2 = slide_obj.clientWidth + x;
-  x = x2 > sw ? sw - (slide_obj.clientWidth - sx*2) : x;
-  var y2 = slide_obj.clientHeight + y;
-  y = y2 > sh ? sh - (slide_obj.clientHeight - sy*2) : y;
+  var x2;
+  if(fitToPage) x2 = gw + x;
+  else x2 = vw + x;
+  x = x2 > sw ? sw - (vw - sx*2) : x;
+  var y2;
+  if(fitToPage) y2 = gh + y; 
+  else y2 = vh + y;
+  y = y2 > sh ? sh - (vh - sy*2) : y;
   sendPaperUpdate(x/sw, y/sh, null, null);
 };
 
@@ -321,19 +321,15 @@ var panStop = function(e) {
 
 // When dragging for drawing lines starts
 var curDragStart = function(x, y) {
-  var img = getImageFromPaper(current_url);
-  var attrs = img.attrs;
-  var w = attrs.width;
-  var h = attrs.height;
-  cx1 = x - s_left  - sx+ cx;
-  cy1 = y - s_top  - sy+ cy;
+  cx1 = x - s_left - sx + cx;
+  cy1 = y - s_top - sy + cy;
   path = cx1/sw + " " + cy1/sh;
 };
 
 // As line drawing drag continues
 var curDragging = function(dx, dy, x, y) {
-  cx2 = x - s_left  - sx+ cx;
-  cy2 = y - s_top  - sy+  cy;
+  cx2 = x - s_left - sx + cx;
+  cy2 = y - s_top - sy + cy;
   emLi(cx1/sw, cy1/sh, cx2/sw, cy2/sh, current_colour, current_thickness); //emit to socket
   path += "," + cx2/sw + " " + cy2/sh;
   cx1 = cx2;
@@ -346,14 +342,14 @@ var curDragging = function(dx, dy, x, y) {
   }
 };
 
-// Socket response - Draw the path (line) on the canvas
-function dPath(x1, y1, x2, y2, colour, thickness) {
-  setPath("M"+((x1)*gw) +" "+((y1)*gh)+"L"+((x2)*gw)+" "+((y2)*gh), colour, thickness);
-};
-
 // Drawing line has ended
 var curDragStop = function(e) {
   emPublishPath(path, current_colour, current_thickness);
+};
+
+// Socket response - Draw the path (line) on the canvas
+function dPath(x1, y1, x2, y2, colour, thickness) {
+  setPath("M"+((x1)*gw) +" "+((y1)*gh)+"L"+((x2)*gw)+" "+((y2)*gh), colour, thickness);
 };
 
 // Creating a rectangle has started
@@ -382,15 +378,22 @@ var curRectDragging = function(dx, dy, x, y, e) {
   emUpdRect(x1, y1, dx, dy);
 };
 
+// When rectangle finished being drawn (placeholder for now)
+var curRectDragStop = function(e) {
+  if(rect) var r = rect.attrs;
+  if(r) emPublishRect(r.x/gw, r.y/gh, r.width/gw, r.height/gh, current_colour, current_thickness);
+  rect = null;
+};
+
 // Socket response - Make rectangle on canvas
 function makeRect(x, y, colour, thickness) {
-  rect = paper.rect(x*gw, y*gh, 0, 0);//, thickness);
+  rect = paper.rect(x*gw, y*gh, 0, 0);
   if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(rect);
 }
 
 function drawRect(x, y, w, h, colour, thickness) {
-  var r = paper.rect(x*gw, y*gh, w*gw, h*gh);//, thickness);
+  var r = paper.rect(x*gw, y*gh, w*gw, h*gh);
   if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(r);
 }
@@ -401,15 +404,47 @@ function updRect(x1, y1, w, h) {
     rect.attr({ x: (x1)*gw, y: (y1)*gh, width: w*gw, height: h*gh });
   }
   else {
-    rect = paper.rect(x1*gw, y1*gh, w, h);
+    rect = paper.rect(x1*gw, y1*gh, w*gw, h*gh);
   }
 }
 
-// When rectangle finished being drawn (placeholder for now)
-var curRectDragStop = function(e) {
-  if(rect) var r = rect.attrs;
-  if(r) emPublishRect(r.x/gw, r.y/gh, r.width/gw, r.height/gh, current_colour, current_thickness);
-  rect = null;
+var curEllipseDragStart = function(x, y) {
+  ex = (x - s_left - sx + cx);
+  ey = (y - s_top - sy + cy);
+  emitMakeEllipse(ex/sw, ey/sh, current_colour, current_thickness);
+};
+
+function makeEllipse(cx, cy, colour, thickness) {
+  ellipse = paper.ellipse(cx*gw, cy*gh, 0, 0);
+  if(colour) ellipse.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  current_shapes.push(ellipse);
+}
+
+function drawEllipse(cx, cy, rx, ry, colour, thickness) {
+  var elip = paper.ellipse(cx*gw, cy*gh, rx*gw, ry*gh);
+  if(colour) elip.attr({ 'stroke' : colour, 'stroke-width' : thickness });
+  current_shapes.push(elip);
+}
+
+var curEllipseDragging = function(dx, dy, x, y, e) {
+  console.log((ex+dx/2)/sw, (ey+dy/2)/sh, (dx/2)/sw, (dy/2)/sh);
+  emitUpdateEllipse((ex+dx/2)/sw, (ey+dy/2)/sh, (dx/2)/sw, (dy/2)/sh);
+};
+
+// Socket response - Update rectangle drawn
+function updateEllipse(x, y, w, h) {
+  if(ellipse) {
+    ellipse.attr({cx: x*gw, cy: y*gh, rx: w*gw, ry: h*gh });
+  }
+  else {
+    ellipse = paper.ellipse(x*gw, y*gh, w*gw, h*gh);
+  }
+}
+
+var curEllipseDragStop = function(e) {
+  if(ellipse) var attrs = ellipse.attrs;
+  if(attrs) emitPublishEllipse(attrs.cx/gw, attrs.cy/gh, attrs.rx/gw, attrs.ry/gh, current_colour, current_thickness);
+  ellipse = null;
 };
 
 // Send cursor moving event to server
@@ -453,6 +488,7 @@ function setZoom(d) {
   //cannot zoom to make corner less than (x,y) = (0,0)
   x = x < 0 ? 0 : x;
   y = y < 0 ? 0 : y;
+  //cannot view more than the bottom corners
   var zz = 1 - z;
   x = x > zz ? zz : x;
   y = y > zz ? zz : y;
@@ -469,6 +505,8 @@ var tctx = tc.getContext('2d');
 
 s_left = slide_obj.offsetLeft;
 s_top = slide_obj.offsetTop;
+vw = slide_obj.clientWidth;
+vh = slide_obj.clientHeight;
 
 drawThicknessView(default_thickness, default_colour);
 drawColourView(default_colour);

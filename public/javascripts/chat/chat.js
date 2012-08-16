@@ -4,7 +4,6 @@
 var chcount = document.getElementById('charcount');
 var msgbox = document.getElementById("chat_messages");
 var chatbox = document.getElementById('chat_input_box');
-var proc_img = document.getElementById('processing_img');
 
 var PORT = 3000;
 var SERVER_IP = window.location.hostname;
@@ -130,6 +129,14 @@ socket.on('connect', function () {
 	socket.on('processing', function() {
 	});
 	
+	socket.on('makeElip', function(cx, cy, colour, thickness) {
+	  makeEllipse(cx, cy, colour, thickness);
+	});
+	
+	socket.on('updElip', function(cx, cy, rx, ry) {
+	  updateEllipse(cx, cy, rx, ry);
+	});
+	
 	socket.on('toolChanged', function(tool) {
 	  turnOn(tool);
 	});
@@ -219,6 +226,14 @@ function emUpdRect(x, y, w, h) {
   socket.emit('updRect', x, y, w, h);
 }
 
+function emitMakeEllipse(cx, cy, colour, thickness) {
+  socket.emit('makeElip', cx, cy, colour, thickness);
+}
+
+function emitUpdateEllipse(cx, cy, rx, ry) {
+  socket.emit('updElip', cx, cy, rx, ry);
+}
+
 function sendPaperUpdate(cx, cy, sw, sh) {
   socket.emit('paper', cx, cy, sw, sh);
 }
@@ -266,6 +281,10 @@ function emPublishRect(x, y, w, h, colour, thickness) {
   socket.emit('saveShape', 'rect', [x, y, w, h].join(','), colour, thickness);
 }
 
+function emitPublishEllipse(cx, cy, rx, ry, colour, thickness) {
+  socket.emit('saveShape', 'ellipse', [cx, cy, rx, ry].join(','), colour, thickness);
+}
+
 // Set the drawing type to "line"
 function chooseLine() {
   socket.emit('changeTool', 'line');
@@ -274,6 +293,10 @@ function chooseLine() {
 // Set the drawing type to "rectangle"
 function chooseRect() {
   socket.emit('changeTool', 'rect');
+}
+
+function chooseEllipse() {
+  socket.emit('changeTool', 'ellipse');
 }
 
 // Set the drawing type to "panzoom"
