@@ -167,21 +167,22 @@ function removeAllImagesFromPaper() {
 function drawListOfShapes(shapes) {
   current_shapes = paper.set();
   for (var i = shapes.length - 1; i >= 0; i--) {
-    var shape_type = shapes[i].shape;
-    var colour = shapes[i].colour;
-    var thickness = shapes[i].thickness;
-    //paths
-    if(shape_type == 'path') {
-	    drawLine(shapes[i].points.toScaledPath(gw, gh), colour, thickness);
-    }
-    //rectangles
-    else if(shape_type == 'rect') {
-      var r = shapes[i].points.split(',');
-	    drawRect(r[0], r[1], r[2], r[3], colour, thickness);
-    }
-    else if(shape_type == 'ellipse') {
-      var elip = shapes[i].points.split(',');
-	    drawEllipse(elip[0], elip[1], elip[2], elip[3], colour, thickness);
+    var data = JSON.parse(shapes[i].data);
+    switch(shapes[i].shape) {
+      case 'path':
+        drawLine.apply(drawLine, data);
+      break;
+      
+      case 'rect':
+        drawRect.apply(drawRect, data);
+      break;
+      
+      case 'ellipse':
+        drawEllipse.apply(drawEllipse, data);
+      break;
+      
+      default:
+      break;
     }
   }
 }
@@ -287,7 +288,7 @@ var curDragging = function(dx, dy, x, y) {
     }
     else {
       path_count = 0;
-      emPublishPath(line.attrs.path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness);
+      emitPublishShape('path', [line.attrs.path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness]);
       emitMakeShape('line', [cx1/sw, cy1/sh, current_colour, current_thickness]);
     }
     cx1 = cx2;
@@ -297,8 +298,9 @@ var curDragging = function(dx, dy, x, y) {
 
 // Drawing line has ended
 var curDragStop = function(e) {
-  emPublishPath(line.attrs.path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness);
+  var path = line.attrs.path;
   line = null; //any late updates will be blocked by this
+  emitPublishShape('path', [path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness]);
 };
 
 function makeLine(x, y, colour, thickness) {
@@ -310,7 +312,7 @@ function makeLine(x, y, colour, thickness) {
 }
 
 function drawLine(path, colour, thickness) {
-  var l = paper.path(path);
+  var l = paper.path(path.toScaledPath(gw, gh));
   l.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(l);
 }
@@ -362,7 +364,7 @@ var curRectDragging = function(dx, dy, x, y, e) {
 // When rectangle finished being drawn (placeholder for now)
 var curRectDragStop = function(e) {
   if(rect) var r = rect.attrs;
-  if(r) emPublishRect(r.x/gw, r.y/gh, r.width/gw, r.height/gh, current_colour, current_thickness);
+  if(r) emitPublishShape('rect', [r.x/gw, r.y/gh, r.width/gw, r.height/gh, current_colour, current_thickness]);
   rect = null;
 };
 
@@ -404,17 +406,22 @@ function drawEllipse(cx, cy, rx, ry, colour, thickness) {
 
 var curEllipseDragging = function(dx, dy, x, y, e) {
   if(shift_pressed) dy = dx;
-  emitUpdateShape('ellipse', [(ex+dx/2)/sw, (ey+dy/2)/sh, (dx/2)/sw, (dy/2)/sh]);
+  var x = ex+(dx/2);
+  var y = ey+(dy/2);
+  dx = dx < 0 ? -dx : dx;
+  dy = dy < 0 ? -dy : dy;
+  emitUpdateShape('ellipse', [x/sw, y/sh, (dx/2)/sw, (dy/2)/sh]);
 };
 
 // Socket response - Update rectangle drawn
 function updateEllipse(x, y, w, h) {
+  
   if(ellipse) ellipse.attr({cx: x*gw, cy: y*gh, rx: w*gw, ry: h*gh });
 }
 
 var curEllipseDragStop = function(e) {
   if(ellipse) var attrs = ellipse.attrs;
-  if(attrs) emitPublishEllipse(attrs.cx/gw, attrs.cy/gh, attrs.rx/gw, attrs.ry/gh, current_colour, current_thickness);
+  if(attrs) emitPublishShape('ellipse', [attrs.cx/gw, attrs.cy/gh, attrs.rx/gw, attrs.ry/gh, current_colour, current_thickness]);
   ellipse = null; //late updates will be blocked by this
 };
 

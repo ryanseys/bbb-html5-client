@@ -77,12 +77,7 @@ socket.on('connect', function () {
 	socket.on('clrPaper', function () {
 	  clearPaper();
 	});
-	
-	//when the rectangle being drawn is updated
-	socket.on('updRect', function(x, y, w, h) {
-	  updRect(x, y, w, h);
-	});
-	
+
 	//when the viewBox changes
 	socket.on('viewBox', function(xperc, yperc, wperc, hperc) {
 	  xperc = parseFloat(xperc, 10);
@@ -159,15 +154,7 @@ socket.on('connect', function () {
 	socket.on('processing', function() {
 	  console.log('processing');
 	});
-	
-	socket.on('updElip', function(cx, cy, rx, ry) {
-	  updateEllipse(cx, cy, rx, ry);
-	});
-	
-	socket.on('updLine', function(x, y, add){ 
-	  updateLine(x, y, add);
-	});
-	
+
 	socket.on('toolChanged', function(tool) {
 	  turnOn(tool);
 	});
@@ -250,23 +237,6 @@ function emitUpdateShape(shape, data) {
   socket.emit('updShape', shape, data);
 }
 
-function emitUpdateLine(x2, y2, add) {
-  socket.emit('updLine', x2, y2, add);
-}
-
-// Updating the size of the rectangle being drawn
-function emUpdRect(x, y, w, h) {
-  socket.emit('updRect', x, y, w, h);
-}
-
-function emitMakeEllipse(cx, cy, colour, thickness) {
-  socket.emit('makeElip', cx, cy, colour, thickness);
-}
-
-function emitUpdateEllipse(cx, cy, rx, ry) {
-  socket.emit('updElip', cx, cy, rx, ry);
-}
-
 function sendPaperUpdate(cx, cy, sw, sh) {
   socket.emit('paper', cx, cy, sw, sh);
 }
@@ -306,35 +276,12 @@ function emPanStop() {
   socket.emit('panStop');
 }
 
-function emPublishPath(path, colour, thickness) {
-  socket.emit('saveShape', 'path', path, colour, thickness);
+function emitPublishShape(shape, data) {
+  socket.emit('saveShape', shape, JSON.stringify(data));
 }
 
-function emPublishRect(x, y, w, h, colour, thickness) {
-  socket.emit('saveShape', 'rect', [x, y, w, h].join(','), colour, thickness);
-}
-
-function emitPublishEllipse(cx, cy, rx, ry, colour, thickness) {
-  socket.emit('saveShape', 'ellipse', [cx, cy, rx, ry].join(','), colour, thickness);
-}
-
-// Set the drawing type to "line"
-function chooseLine() {
-  socket.emit('changeTool', 'line');
-}
-
-// Set the drawing type to "rectangle"
-function chooseRect() {
-  socket.emit('changeTool', 'rect');
-}
-
-function chooseEllipse() {
-  socket.emit('changeTool', 'ellipse');
-}
-
-// Set the drawing type to "panzoom"
-function choosePanZoom() {
-  socket.emit('changeTool', 'panzoom');
+function changeTool(tool) {
+  socket.emit('changeTool', tool);
 }
 
 function undoShape() {

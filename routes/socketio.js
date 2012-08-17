@@ -367,7 +367,6 @@ exports.SocketOnConnection = function(socket) {
         redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
           redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
             store.rpop(redisAction.getCurrentShapesString(meetingID, presentationID, pageID), function(err, reply) {
-              pub.publish(meetingID, JSON.stringify(['clrPaper']));
               socketAction.publishShapes(meetingID);
             });
           });
@@ -376,17 +375,17 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	socket.on('saveShape', function (shape, points, colour, thickness) {
+	socket.on('saveShape', function (shape, data) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
 		redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
     	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
-    	      var shapeID = rack(); //get a randomly generated id for the message
+    	      var shapeID = rack(); //get a randomly generated id for the shape
 	          store.rpush(redisAction.getCurrentShapesString(meetingID, presentationID, pageID), shapeID);
             store.hmset(redisAction.getShapeString(meetingID, presentationID, pageID, shapeID), 
-                'shape', shape, 'points', points, 'colour', colour, 'thickness', thickness, function(err, reply) {
+                'shape', shape, 'data', data, function(err, reply) {
             });
     	    });
     	  });
