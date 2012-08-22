@@ -87,6 +87,7 @@ app.post('/', routes.post_index);
 
 // --- 404 (keep as last route) --- //
 app.get('*', routes.error404);
+app.post('*', routes.error404);
 
 // Start the web server listening
 app.listen(3000, function() {

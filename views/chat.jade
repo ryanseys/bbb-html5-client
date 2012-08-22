@@ -20,6 +20,8 @@ div(id="listUsers")
 // The slide and controls of the chat page
 
 div(id="slideAndControls")
+  textarea(id='areahidden', style="visibility:hidden;")
+  textarea(autofocus, id='area', class='textinput', style="visibility:hidden;")
   div(id="slide")
 
   // Buttons below the slide
@@ -38,6 +40,8 @@ div(id='imagecontrols', style="clear:left")
     input(id='ellipseButton', type="submit", value="Ellipse", onclick="changeTool('ellipse');return false;")
   form(id="choosePanZoom")
     input(type="submit", value='Pan', onclick="changeTool('panzoom');return false;")
+  form(id='chooseText')
+    input(type="submit", value='Text', onclick="changeTool('text');return false;")
   form(id="undoShape")
     input(type='submit', value='Undo', onclick='undoShape();return false;')
   form(id='fitToPage')

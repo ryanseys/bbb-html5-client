@@ -28,6 +28,34 @@ a {
   overflow:hidden; /* so they don't overlap */
 }
 
+.textinput {
+  font-family: Arial;
+  background-color:transparent;
+  position:absolute;
+  z-index: 2;
+  font-size:14px; /* keep in pixels*/
+  resize:none;
+  overflow:hidden;
+  padding:0;
+  margin:0;
+}
+
+text {
+  text-anchor:start;
+}
+
+#areahidden {
+  font-family: Arial;
+  top:0;
+  left:0;
+  position:absolute;
+  visibility:hidden;
+  font-size:14px; /* keep in pixels*/
+  overflow:hidden;
+  resize:none;
+  white-space: nowrap;
+}
+
 .presenter {
   border: 3px solid red;
 }

@@ -154,6 +154,10 @@ socket.on('connect', function () {
 	socket.on('processing', function() {
 	  console.log('processing');
 	});
+	
+	socket.on('textDone', function() {
+	  textDone();
+	});
 
 	socket.on('toolChanged', function(tool) {
 	  turnOn(tool);
@@ -166,6 +170,10 @@ socket.on('connect', function () {
 	socket.on('setPresenter', function(publicID) {
 	  $('.presenter').removeClass('presenter');
 	  $('#' + publicID).addClass('presenter');
+	});
+	
+	socket.on('textUpdate', function(text, x, y) {
+	  updateText(text, x, y);
 	});
 	
 	socket.on('all_slides', function(urls) {
@@ -229,6 +237,10 @@ function sendFitToPage(fit) {
   socket.emit('fitToPage', fit);
 }
 
+function emitDoneText() {
+  socket.emit('textDone');
+}
+
 function emitMakeShape(shape, data) {
   socket.emit('makeShape', shape, data);
 }
@@ -286,6 +298,10 @@ function changeTool(tool) {
 
 function undoShape() {
   socket.emit('undo');
+}
+
+function emitText(text, x, y) {
+  socket.emit('textUpdate', text, x, y);
 }
 
 function switchPresenter() {

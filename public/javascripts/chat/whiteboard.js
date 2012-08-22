@@ -1,8 +1,8 @@
 //object references
 slide_obj = document.getElementById("slide");
 
-var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides,
-    paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse, line,
+var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides, textx, texty, prevtext, text, letters = [],
+    paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse, line, scrollh, scrollw, textoffset,
     current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, vw, vh, shift_pressed;
 var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, 
     zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
@@ -38,27 +38,35 @@ function toggleColourPicker() {
 
 function turnOn(tool) {
   current_tool = tool;
-  // If the user requests to turn on the line too
-  if(tool == 'line') {
-    cur.undrag();
-    cur.drag(curDragging, curDragStart, curDragStop);
-  }
-  // If the user requests to turn on the rectangle tool
-  else if(tool == 'rect') {
-    cur.undrag();
-    cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
-  }
-  // If the user requests to turn on the pan & zoom tool
-  else if(tool == 'panzoom') {
-    cur.undrag();
-    cur.drag(panDragging, panGo, panStop);
-  }
-  else if(tool == 'ellipse') {
-    cur.undrag();
-    cur.drag(curEllipseDragging, curEllipseDragStart, curEllipseDragStop);
-  }
-  else {
-    console.log("ERROR: Cannot turn on tool, invalid tool: " + tool);
+  switch(tool) {
+    case 'line':
+      cur.undrag();
+      cur.drag(curDragging, curDragStart, curDragStop);
+    break;
+    
+    case 'rect':
+      cur.undrag();
+      cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
+    break;
+    
+    case 'panzoom':
+      cur.undrag();
+      cur.drag(panDragging, panGo, panStop);
+    break;
+    
+    case 'ellipse':
+      cur.undrag();
+      cur.drag(curEllipseDragging, curEllipseDragStart, curEllipseDragStop);
+    break;
+    
+    case 'text':
+      cur.undrag();
+      cur.drag(curRectDragging, curTextStart, curTextStop);
+    break;
+    
+    default:
+      console.log("ERROR: Cannot turn on tool, invalid tool: " + tool);
+    break;
   }
 }
 
@@ -179,6 +187,10 @@ function drawListOfShapes(shapes) {
       
       case 'ellipse':
         drawEllipse.apply(drawEllipse, data);
+      break;
+      
+      case 'text':
+        drawText.apply(drawText, data);
       break;
       
       default:
@@ -334,6 +346,118 @@ function updateLine(x2, y2, add) {
   }
 }
 
+var curTextStart = function(x, y) {
+  if(text) {
+    emitPublishShape('text', [text.attrs.text, text.attrs.x, text.attrs.y]);
+    emitDoneText();
+  }
+  var input = document.getElementById('area');
+  var hidden = document.getElementById('areahidden');
+  input.value = "";
+  input.style.visibility = "hidden";
+  hidden.value = "";
+  textx = x;
+  texty = y;
+  cx2 = (x - s_left - sx + cx)/sw;
+  cy2 = (y - s_top - sy + cy)/sh;
+  emitMakeShape('rect', [cx2, cy2, '#000', 1]);
+};
+
+/* 
+The following function fits the text given to a hidden textarea element
+which automatically checks for wraps and breaks the lines as neccesary.
+TODO: Fix bug where a user enters more than two lines of solid text with
+no spaces and it deletes this text.   
+*/
+function getFormattedText(string) {
+  hidden = document.getElementById('areahidden');
+  hidden.defaultScrollW = hidden.scrollWidth;
+  hidden.defaultScrollH = hidden.scrollHeight;
+  var words = string.split(' ');
+  var len = words.length;
+  var old;
+  for(var i = 0; i < len; i++) {
+    old = hidden.value;
+    hidden.value += words[i] + " ";
+    if(hidden.scrollWidth > hidden.defaultScrollW) {
+      hidden.value = old + "\r\n" + words[i] + " ";
+      //if still longer, then the word is too long for the form.. must be split
+      if(hidden.scrollWidth > hidden.defaultScrollW) {
+        old = hidden.value;
+        lettercount = words[i].length;
+        for(var j = 0; j < lettercount; j++) {
+          //bug is in this logic... assumes only two lines where there could be an arbitrary number of lines
+          hidden.value = old + "\r\n" + words[i].substr(0, lettercount-(j+2)) + "\r\n" + words[i].substr(lettercount-(j+2));
+          if(hidden.scrollWidth <= hidden.defaultScrollW) {
+            break;
+          }
+        }
+      }
+    }
+  }
+  var now = hidden.value;
+  hidden.value = "";
+  return now;
+}
+
+function updateText(t, x, y) {
+  if(!text) {
+    textoffset = y;
+    text = paper.text(x, y, t).attr({fill: current_colour, 'font-family' : "Arial", 'font-size' : 14});
+    text.node.style['text-anchor'] = 'start'; //force left align
+    text.node.style['textAnchor'] = 'start'; //for firefox, 'cause they like to be different.
+    current_shapes.push(text);
+  }
+  else {
+    text.attr({ text : t });
+    text.attr({ y : textoffset = y+(textoffset-text.getBBox().y)});
+    console.log(text);
+  }
+}
+
+var curTextStop = function(e) {
+  if(rect) rect.hide();
+  var tboxw = (e.pageX - textx);
+  var tboxh = (e.pageY - texty);
+  if(tboxw >= 14 || tboxh >= 14) { //restrict size
+    var input = document.getElementById('area');
+    input.style.left = textx+"px";
+    input.style.top = texty+"px";
+    input.style.width = tboxw+"px";
+    input.style.height = tboxh+"px";
+    input.style.visibility = "visible";
+    input.value = "";
+    var hidden = document.getElementById('areahidden');
+    hidden.style.width = tboxw+"px";
+    hidden.style.height = tboxh+"px";
+    var x = textx - s_left - sx + cx + 1; // 1px random padding
+    var y = texty - s_top - sy + cy;
+    input.focus();
+
+    input.onkeyup = function(e) {
+      emitText(getFormattedText(this.value), x, y);
+    };
+    /*
+    input.onblur = function(e) {
+      if(text) {
+        emitPublishShape('text', [text.attrs.text, text.attrs.x, text.attrs.y]);
+        emitDoneText();
+      }
+      input.value = "";
+      input.style.visibility = "hidden";
+      hidden.value = "";
+    };
+    */
+  }
+};
+
+function textDone() {
+  if(text) {
+    text = null;
+    if(rect) rect.hide();
+  }
+}
+
 // Creating a rectangle has started
 var curRectDragStart = function(x, y) {
   cx2 = (x - s_left - sx + cx)/sw;
@@ -406,16 +530,17 @@ function drawEllipse(cx, cy, rx, ry, colour, thickness) {
 
 var curEllipseDragging = function(dx, dy, x, y, e) {
   if(shift_pressed) dy = dx;
-  var x = ex+(dx/2);
-  var y = ey+(dy/2);
+  dx = dx/2;
+  dy = dy/2;
+  var x = ex+dx;
+  var y = ey+dy;
   dx = dx < 0 ? -dx : dx;
   dy = dy < 0 ? -dy : dy;
-  emitUpdateShape('ellipse', [x/sw, y/sh, (dx/2)/sw, (dy/2)/sh]);
+  emitUpdateShape('ellipse', [x/sw, y/sh, dx/sw, dy/sh]);
 };
 
 // Socket response - Update rectangle drawn
 function updateEllipse(x, y, w, h) {
-  
   if(ellipse) ellipse.attr({cx: x*gw, cy: y*gh, rx: w*gw, ry: h*gh });
 }
 
@@ -442,6 +567,13 @@ function clearPaper() {
       element.remove();
     });
   }
+}
+
+function drawText(text, x, y, font, size, colour) {
+  var t = paper.text(x, y, text).attr({'font-family' : font || "Arial", 'font-size' : size || 14, fill : colour || "#F00" });
+  t.node.style['text-anchor'] = 'start'; //force left align
+  t.node.style['textAnchor'] = 'start'; //for firefox, 'cause they like to be different.
+  current_shapes.push(t);
 }
 
 // Update zoom variables on all clients

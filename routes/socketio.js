@@ -375,6 +375,24 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
+	socket.on('textUpdate', function(text, x, y) {
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+	      pub.publish(meetingID, JSON.stringify(['textUpdate', text, x, y]));
+      }
+    });
+	});
+	
+	socket.on('textDone', function() {
+	  var meetingID = socket.handshake.meetingID;
+	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+	    if(presenterID == socket.handshake.sessionID) {
+	      pub.publish(meetingID, JSON.stringify(['textDone']));
+      }
+    });
+	});
+	
 	socket.on('saveShape', function (shape, data) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
