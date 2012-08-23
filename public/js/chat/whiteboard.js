@@ -79,7 +79,6 @@ function initPaper() {
   cur = paper.circle(0, 0, dcr);
   cur.attr('fill', 'red');
   $(cur.node).bind('mousewheel', zoomSlide);
-  // Set defaults for variables
   if(slides) {
     rebuildPaper();
   }
@@ -348,23 +347,6 @@ function updateLine(x2, y2, add) {
   }
 }
 
-var curTextStart = function(x, y) {
-  if(text) {
-    emitPublishShape('text', [textbox.value, text.attrs.x, text.attrs.y, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
-    emitDoneText();
-  }
-  var input = document.getElementById('area');
-  var hidden = document.getElementById('areahidden');
-  input.value = "";
-  input.style.visibility = "hidden";
-  hidden.value = "";
-  textx = x;
-  texty = y;
-  cx2 = (x - s_left - sx + cx)/sw;
-  cy2 = (y - s_top - sy + cy)/sh;
-  emitMakeShape('rect', [cx2, cy2, '#000', 1]);
-};
-
 function updateText(t, x, y, w, spacing, colour, font, fontsize) {
   x = x*gw;
   y = y*gh;
@@ -391,6 +373,23 @@ function drawText(t, x, y, w, spacing, colour, font, fontsize) {
   var dy = textFlow(t, txt.node, w, x, spacing, false);
   current_shapes.push(txt);
 }
+
+var curTextStart = function(x, y) {
+  if(text) {
+    emitPublishShape('text', [textbox.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth*(gw/sw), 16, current_colour, 'Arial', 14]);
+    emitDoneText();
+  }
+  var input = document.getElementById('area');
+  var hidden = document.getElementById('areahidden');
+  input.value = "";
+  input.style.visibility = "hidden";
+  hidden.value = "";
+  textx = x;
+  texty = y;
+  cx2 = (x - s_left - sx + cx)/sw;
+  cy2 = (y - s_top - sy + cy)/sh;
+  emitMakeShape('rect', [cx2, cy2, '#000', 1]);
+};
 
 var curTextStop = function(e) {
   if(rect) rect.hide();
@@ -425,7 +424,7 @@ var curTextStop = function(e) {
     
     textbox.onblur = function(e) {
       if(text) {
-        emitPublishShape('text', [this.value, text.attrs.x, text.attrs.y, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
+        emitPublishShape('text', [this.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth*(gw/sw), 16, current_colour, 'Arial', 14]);
         emitDoneText();
       }
       textbox.value = "";
