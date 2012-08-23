@@ -137,7 +137,6 @@ exports.post_chat = function(req, res, next) {
 
 // Any other page that we have not defined yet.
 exports.error404 = function(req, res) {
-  console.log(req);
   console.log("User tried to access: " + req.url);
   res.send("Page not found", 404);
 };

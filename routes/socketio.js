@@ -375,11 +375,11 @@ exports.SocketOnConnection = function(socket) {
     });
 	});
 	
-	socket.on('textUpdate', function(text, x, y) {
+	socket.on('textUpdate', function(t, x, y, w, spacing, colour, font, fontsize) {
 	  var meetingID = socket.handshake.meetingID;
 	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
 	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['textUpdate', text, x, y]));
+	      pub.publish(meetingID, JSON.stringify(['textUpdate', t, x, y, w, spacing, colour, font, fontsize]));
       }
     });
 	});
@@ -397,7 +397,7 @@ exports.SocketOnConnection = function(socket) {
 	  var handshake = socket.handshake;
 		var meetingID = handshake.meetingID;
 		redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
+	    if(presenterID == handshake.sessionID) {
     	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
     	      var shapeID = rack(); //get a randomly generated id for the shape

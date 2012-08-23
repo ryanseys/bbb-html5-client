@@ -172,8 +172,8 @@ socket.on('connect', function () {
 	  $('#' + publicID).addClass('presenter');
 	});
 	
-	socket.on('textUpdate', function(text, x, y) {
-	  updateText(text, x, y);
+	socket.on('textUpdate', function(t, x, y, w, spacing, colour, font, fontsize) {
+	  updateText(t, x, y, w, spacing, colour, font, fontsize);
 	});
 	
 	socket.on('all_slides', function(urls) {
@@ -300,8 +300,8 @@ function undoShape() {
   socket.emit('undo');
 }
 
-function emitText(text, x, y) {
-  socket.emit('textUpdate', text, x, y);
+function emitText(t, x, y, w, spacing, colour, font, fontsize) {
+  socket.emit('textUpdate', t, x, y, w, spacing, colour, font, fontsize);
 }
 
 function switchPresenter() {

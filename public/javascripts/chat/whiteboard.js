@@ -1,5 +1,7 @@
 //object references
 slide_obj = document.getElementById("slide");
+textbox = document.getElementById('area');
+hiddentextbox = document.getElementById('hiddenarea');
 
 var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides, textx, texty, prevtext, text, letters = [],
     paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse, line, scrollh, scrollw, textoffset,
@@ -348,7 +350,7 @@ function updateLine(x2, y2, add) {
 
 var curTextStart = function(x, y) {
   if(text) {
-    emitPublishShape('text', [text.attrs.text, text.attrs.x, text.attrs.y]);
+    emitPublishShape('text', [textbox.value, text.attrs.x, text.attrs.y, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
     emitDoneText();
   }
   var input = document.getElementById('area');
@@ -363,56 +365,26 @@ var curTextStart = function(x, y) {
   emitMakeShape('rect', [cx2, cy2, '#000', 1]);
 };
 
-/* 
-The following function fits the text given to a hidden textarea element
-which automatically checks for wraps and breaks the lines as neccesary.
-TODO: Fix bug where a user enters more than two lines of solid text with
-no spaces and it deletes this text.   
-*/
-function getFormattedText(string) {
-  hidden = document.getElementById('areahidden');
-  hidden.defaultScrollW = hidden.scrollWidth;
-  hidden.defaultScrollH = hidden.scrollHeight;
-  var words = string.split(' ');
-  var len = words.length;
-  var old;
-  for(var i = 0; i < len; i++) {
-    old = hidden.value;
-    hidden.value += words[i] + " ";
-    if(hidden.scrollWidth > hidden.defaultScrollW) {
-      hidden.value = old + "\r\n" + words[i] + " ";
-      //if still longer, then the word is too long for the form.. must be split
-      if(hidden.scrollWidth > hidden.defaultScrollW) {
-        old = hidden.value;
-        lettercount = words[i].length;
-        for(var j = 0; j < lettercount; j++) {
-          //bug is in this logic... assumes only two lines where there could be an arbitrary number of lines
-          hidden.value = old + "\r\n" + words[i].substr(0, lettercount-(j+2)) + "\r\n" + words[i].substr(lettercount-(j+2));
-          if(hidden.scrollWidth <= hidden.defaultScrollW) {
-            break;
-          }
-        }
-      }
-    }
-  }
-  var now = hidden.value;
-  hidden.value = "";
-  return now;
-}
-
-function updateText(t, x, y) {
+function updateText(t, x, y, w, spacing, colour, font, fontsize) {
   if(!text) {
-    textoffset = y;
-    text = paper.text(x, y, t).attr({fill: current_colour, 'font-family' : "Arial", 'font-size' : 14});
+    text = paper.text(x, y, "").attr({fill: colour, 'font-family' : font, 'font-size' : fontsize});
     text.node.style['text-anchor'] = 'start'; //force left align
     text.node.style['textAnchor'] = 'start'; //for firefox, 'cause they like to be different.
     current_shapes.push(text);
   }
   else {
-    text.attr({ text : t });
-    text.attr({ y : textoffset = y+(textoffset-text.getBBox().y)});
-    console.log(text);
+    var cell = text.node;
+    while(cell.hasChildNodes()) cell.removeChild(cell.firstChild);
+    var dy = textFlow(t, cell, w, x, spacing, false);
   }
+}
+
+function drawText(t, x, y, w, spacing, colour, font, fontsize) {
+  var txt = paper.text(x, y, "").attr({fill: colour, 'font-family' : font, 'font-size' : fontsize});
+  txt.node.style['text-anchor'] = 'start'; //force left align
+  txt.node.style['textAnchor'] = 'start'; //for firefox, 'cause they like to be different.
+  var dy = textFlow(t, txt.node, w, x, spacing, false);
+  current_shapes.push(txt);
 }
 
 var curTextStop = function(e) {
@@ -420,36 +392,42 @@ var curTextStop = function(e) {
   var tboxw = (e.pageX - textx);
   var tboxh = (e.pageY - texty);
   if(tboxw >= 14 || tboxh >= 14) { //restrict size
-    var input = document.getElementById('area');
-    input.style.left = textx+"px";
-    input.style.top = texty+"px";
-    input.style.width = tboxw+"px";
-    input.style.height = tboxh+"px";
-    input.style.visibility = "visible";
-    input.value = "";
-    var hidden = document.getElementById('areahidden');
-    hidden.style.width = tboxw+"px";
-    hidden.style.height = tboxh+"px";
+    textbox.style.left = textx+"px";
+    textbox.style.top = texty+"px";
+    textbox.style.width = tboxw+"px";
+    textbox.style.height = tboxh+"px";
+    textbox.style.visibility = "visible";
+    textbox.value = "";
     var x = textx - s_left - sx + cx + 1; // 1px random padding
     var y = texty - s_top - sy + cy;
-    input.focus();
-
-    input.onkeyup = function(e) {
-      emitText(getFormattedText(this.value), x, y);
+    textbox.focus();
+    
+    textbox.onkeypress = function(e) {
+      if(hidden.scrollHeight <= tboxh) {
+        this.prev_value = this.value;
+      }
     };
-    /*
-    input.onblur = function(e) {
+       
+    textbox.onkeyup = function(e) {
+      if(this.scrollHeight > tboxh) {
+        this.value = this.prev_value || "";
+      }
+      this.value = this.value.replace(/\s{2,}/g, ' '); //enforce no 2 or greater consecutive spaces.
+      emitText(this.value, x, y+14, textbox.clientWidth, 16, current_colour, 'Arial', 14);
+    };
+    
+    textbox.onblur = function(e) {
       if(text) {
-        emitPublishShape('text', [text.attrs.text, text.attrs.x, text.attrs.y]);
+        emitPublishShape('text', [this.value, text.attrs.x, text.attrs.y, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
         emitDoneText();
       }
-      input.value = "";
-      input.style.visibility = "hidden";
-      hidden.value = "";
+      textbox.value = "";
+      textbox.style.visibility = "hidden";
     };
-    */
   }
 };
+
+
 
 function textDone() {
   if(text) {
@@ -569,12 +547,7 @@ function clearPaper() {
   }
 }
 
-function drawText(text, x, y, font, size, colour) {
-  var t = paper.text(x, y, text).attr({'font-family' : font || "Arial", 'font-size' : size || 14, fill : colour || "#F00" });
-  t.node.style['text-anchor'] = 'start'; //force left align
-  t.node.style['textAnchor'] = 'start'; //for firefox, 'cause they like to be different.
-  current_shapes.push(t);
-}
+
 
 // Update zoom variables on all clients
 var zoomSlide = function(event, delta) {

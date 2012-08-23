@@ -21,7 +21,6 @@ a {
 }
 
 #slide {
-  /* cursor: none; */
   width: 605px;
   height: 410px;
   border: 1px solid black;
@@ -40,21 +39,19 @@ a {
   margin:0;
 }
 
-text {
-  text-anchor:start;
-}
-
+/*
 #areahidden {
   font-family: Arial;
   top:0;
   left:0;
   position:absolute;
   visibility:hidden;
-  font-size:14px; /* keep in pixels*/
+  font-size:14px;
   overflow:hidden;
   resize:none;
   white-space: nowrap;
 }
+*/
 
 .presenter {
   border: 3px solid red;
