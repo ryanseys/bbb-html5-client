@@ -366,6 +366,8 @@ var curTextStart = function(x, y) {
 };
 
 function updateText(t, x, y, w, spacing, colour, font, fontsize) {
+  x = x*gw;
+  y = y*gh;
   if(!text) {
     text = paper.text(x, y, "").attr({fill: colour, 'font-family' : font, 'font-size' : fontsize});
     text.node.style['text-anchor'] = 'start'; //force left align
@@ -373,6 +375,7 @@ function updateText(t, x, y, w, spacing, colour, font, fontsize) {
     current_shapes.push(text);
   }
   else {
+    text.attr({fill: colour});
     var cell = text.node;
     while(cell.hasChildNodes()) cell.removeChild(cell.firstChild);
     var dy = textFlow(t, cell, w, x, spacing, false);
@@ -380,6 +383,8 @@ function updateText(t, x, y, w, spacing, colour, font, fontsize) {
 }
 
 function drawText(t, x, y, w, spacing, colour, font, fontsize) {
+  x = x*gw;
+  y = y*gh;
   var txt = paper.text(x, y, "").attr({fill: colour, 'font-family' : font, 'font-size' : fontsize});
   txt.node.style['text-anchor'] = 'start'; //force left align
   txt.node.style['textAnchor'] = 'start'; //for firefox, 'cause they like to be different.
@@ -397,13 +402,15 @@ var curTextStop = function(e) {
     textbox.style.width = tboxw+"px";
     textbox.style.height = tboxh+"px";
     textbox.style.visibility = "visible";
+    textbox.style['font-size'] = 14*(sw/gw) + "px";
+    //textbox.style.color = current_colour;
     textbox.value = "";
     var x = textx - s_left - sx + cx + 1; // 1px random padding
     var y = texty - s_top - sy + cy;
     textbox.focus();
     
     textbox.onkeypress = function(e) {
-      if(hidden.scrollHeight <= tboxh) {
+      if(this.scrollHeight <= tboxh) {
         this.prev_value = this.value;
       }
     };
@@ -413,7 +420,7 @@ var curTextStop = function(e) {
         this.value = this.prev_value || "";
       }
       this.value = this.value.replace(/\s{2,}/g, ' '); //enforce no 2 or greater consecutive spaces.
-      emitText(this.value, x, y+14, textbox.clientWidth, 16, current_colour, 'Arial', 14);
+      emitText(this.value, x/sw, (y+(14*(sh/gh)))/sh, textbox.clientWidth*(gw/sw), 16, current_colour, 'Arial', 14);
     };
     
     textbox.onblur = function(e) {
@@ -426,8 +433,6 @@ var curTextStop = function(e) {
     };
   }
 };
-
-
 
 function textDone() {
   if(text) {
@@ -546,8 +551,6 @@ function clearPaper() {
     });
   }
 }
-
-
 
 // Update zoom variables on all clients
 var zoomSlide = function(event, delta) {
