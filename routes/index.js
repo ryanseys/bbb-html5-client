@@ -76,7 +76,7 @@ exports.get_chat = function(req, res) {
 	});
 };
 
-// Demo image upload for first image
+//Uploading custom slides
 exports.post_chat = function(req, res, next) {
   if(req.files.image.size != 0) {
     var meetingID = req.cookies['meetingid'];

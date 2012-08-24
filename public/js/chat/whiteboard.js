@@ -1,17 +1,17 @@
 //object references
 slide_obj = document.getElementById("slide");
 textbox = document.getElementById('area');
-hiddentextbox = document.getElementById('hiddenarea');
+$('#area').autosize();
 
-var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides, textx, texty, prevtext, text, letters = [],
+var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides, textx, texty, text,
     paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse, line, scrollh, scrollw, textoffset,
     current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, vw, vh, shift_pressed;
-var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, 
-    zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
+var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, letters = [],
+    zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30, 
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
     dcr = 3;
 
-function drawThicknessView(thickness, colour) {
+function drawThicknessView(thickness, colour){
   current_thickness = thickness;
   tctx.fillStyle='#FFFFFF';
   tctx.fillRect(0,0,20,20);
@@ -198,6 +198,7 @@ function drawListOfShapes(shapes) {
       break;
     }
   }
+  bringCursorToFront();
 }
 
 function rebuildPaper() {
@@ -238,11 +239,13 @@ function getImageFromPaper(url) {
   else return null;
 }
 
+//unused
 function hideImageFromPaper(url) {
   var img = getImageFromPaper(url);
   if(img) img.hide();
 }
 
+//unused
 function sendImageToBack(url) {
   var img = getImageFromPaper(url);
   if(img) img.toBack();
@@ -362,6 +365,7 @@ function updateText(t, x, y, w, spacing, colour, font, fontsize) {
     while(cell.hasChildNodes()) cell.removeChild(cell.firstChild);
     var dy = textFlow(t, cell, w, x, spacing, false);
   }
+  cur.toFront();
 }
 
 function drawText(t, x, y, w, spacing, colour, font, fontsize) {
@@ -376,14 +380,11 @@ function drawText(t, x, y, w, spacing, colour, font, fontsize) {
 
 var curTextStart = function(x, y) {
   if(text) {
-    emitPublishShape('text', [textbox.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth*(gw/sw), 16, current_colour, 'Arial', 14]);
+    emitPublishShape('text', [textbox.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
     emitDoneText();
   }
-  var input = document.getElementById('area');
-  var hidden = document.getElementById('areahidden');
-  input.value = "";
-  input.style.visibility = "hidden";
-  hidden.value = "";
+  textbox.value = "";
+  textbox.style.visibility = "hidden";
   textx = x;
   texty = y;
   cx2 = (x - s_left - sx + cx)/sw;
@@ -396,39 +397,37 @@ var curTextStop = function(e) {
   var tboxw = (e.pageX - textx);
   var tboxh = (e.pageY - texty);
   if(tboxw >= 14 || tboxh >= 14) { //restrict size
-    textbox.style.left = textx+"px";
-    textbox.style.top = texty+"px";
-    textbox.style.width = tboxw+"px";
-    textbox.style.height = tboxh+"px";
+    textbox.style.width = tboxw*(gw/sw)+"px";
     textbox.style.visibility = "visible";
-    textbox.style['font-size'] = 14*(sw/gw) + "px";
-    //textbox.style.color = current_colour;
+    textbox.style['font-size'] = 14 + "px";
+    textbox.style['fontSize'] = 14 + "px"; //ff
+    textbox.style.color = current_colour;
     textbox.value = "";
     var x = textx - s_left - sx + cx + 1; // 1px random padding
     var y = texty - s_top - sy + cy;
     textbox.focus();
     
-    textbox.onkeypress = function(e) {
-      if(this.scrollHeight <= tboxh) {
-        this.prev_value = this.value;
-      }
-    };
-       
-    textbox.onkeyup = function(e) {
-      if(this.scrollHeight > tboxh) {
-        this.value = this.prev_value || "";
-      }
-      this.value = this.value.replace(/\s{2,}/g, ' '); //enforce no 2 or greater consecutive spaces.
-      emitText(this.value, x/sw, (y+(14*(sh/gh)))/sh, textbox.clientWidth*(gw/sw), 16, current_colour, 'Arial', 14);
-    };
-    
     textbox.onblur = function(e) {
       if(text) {
-        emitPublishShape('text', [this.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth*(gw/sw), 16, current_colour, 'Arial', 14]);
+        emitPublishShape('text', [this.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
         emitDoneText();
       }
       textbox.value = "";
       textbox.style.visibility = "hidden";
+    };
+    
+    //if user presses enter key
+    textbox.onkeypress = function(e) {
+      if(e.keyCode == '13') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.onblur();
+      }
+    };
+    
+    textbox.onkeyup = function(e) {
+      this.value = this.value.replace(/\n{1,}/g, ' ').replace(/\s{2,}/g, ' '); //enforce no 2 or greater consecutive spaces, no new lines
+      emitUpdateShape('text', [this.value, x/sw, (y+(14*(sh/gh)))/sh, tboxw*(gw/sw), 16, current_colour, 'Arial', 14]);
     };
   }
 };
@@ -641,6 +640,21 @@ document.onkeyup = function(event) {
     break; 
   }
 };
+
+//upload without a refresh
+$('#uploadForm').submit(function() {
+  $(this).ajaxSubmit({
+    error: function(xhr) {
+      console.log('Error: ' + xhr.status);
+    },
+    success: function(response) {
+      console.log('uploaded new!');
+    }
+  });
+
+  // Have to stop the form from submitting and causing refresh
+  return false;
+});
 
 String.prototype.toScaledPath = function(w, h) {
   var path;

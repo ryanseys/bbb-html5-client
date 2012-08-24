@@ -126,7 +126,7 @@ socket.on('connect', function () {
       break;
 
       default:
-        console.log('shape not recognized');
+        //no other shapes allowed
       break;
     }
 	});
@@ -144,6 +144,10 @@ socket.on('connect', function () {
       case 'ellipse':
         updateEllipse.apply(updateEllipse, data);
       break;
+      
+      case 'text':
+        updateText.apply(updateText, data);
+      break;
 
       default:
         console.log('shape not recognized');
@@ -152,7 +156,6 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('processing', function() {
-	  console.log('processing');
 	});
 	
 	socket.on('textDone', function() {
@@ -170,10 +173,6 @@ socket.on('connect', function () {
 	socket.on('setPresenter', function(publicID) {
 	  $('.presenter').removeClass('presenter');
 	  $('#' + publicID).addClass('presenter');
-	});
-	
-	socket.on('textUpdate', function(t, x, y, w, spacing, colour, font, fontsize) {
-	  updateText(t, x, y, w, spacing, colour, font, fontsize);
 	});
 	
 	socket.on('all_slides', function(urls) {

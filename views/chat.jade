@@ -17,11 +17,11 @@ div(id="ChatAndControls")
 div(id="listUsers")
   div Current users
   div(id="current_users")
+  form(id="switchPresenter")
+    input(type="submit", value="Switch presenter", onclick="switchPresenter();return false;")
 // The slide and controls of the chat page
 
 div(id="slideAndControls")
-  textarea(id='areahidden', style="visibility:hidden;")
-  textarea(autofocus, id='area', class='textinput', style="visibility:hidden;")
   div(id="slide")
 
   // Buttons below the slide
@@ -49,8 +49,6 @@ div(id='imagecontrols', style="clear:left")
   form(id='fitToWidth')
     input(type="submit", value='Fit to Width', onclick='sendFitToPage(false);return false;')
   br
-  form(id="switchPresenter")
-    input(type="submit", value="Switch presenter", onclick="switchPresenter();return false;")
   canvas(id="colourView", width="12", height="12", onclick='toggleColourPicker()')
   input(id='colourText', maxlength='7', type='text')
   canvas(id="thicknessView", width="20", height="20")
@@ -58,15 +56,18 @@ div(id='imagecontrols', style="clear:left")
   // Upload controls
   div(id="uploadcontrols")
     p Upload custom slides
-      form(method="post", enctype="multipart/form-data")
+      form(method="post", enctype="multipart/form-data", id="uploadForm")
         input(type="file", name="image")
         input(type="submit", value="Upload")
+  textarea(autofocus, id='area', class='textinput', style="visibility:hidden;")
 
 // External scripts here
 script(src='/js/lib/raphael-min.js')
 script(src='/js/lib/colorwheel.js')
 script(src="/js/lib/jquery-1.7.2.min.js")
 script(src="/js/lib/jquery.mousewheel.min.js")
+script(src='/js/lib/jquery.autosize-min.js')
+script(src='/js/lib/jquery.form.js')
 script(src='/js/lib/jq-ui.js')
 script(src="/socket.io/socket.io.js")
 script(src='/js/chat/whiteboard.js')
