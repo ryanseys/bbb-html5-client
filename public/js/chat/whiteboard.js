@@ -643,17 +643,21 @@ document.onkeyup = function(event) {
 
 //upload without a refresh
 $('#uploadForm').submit(function() {
+  $('#uploadStatus').text("Uploading...");
   $(this).ajaxSubmit({
     error: function(xhr) {
       console.log('Error: ' + xhr.status);
     },
     success: function(response) {
-      console.log('uploaded new!');
+      $('#uploadStatus').text("Processing...");
     }
   });
-
   // Have to stop the form from submitting and causing refresh
   return false;
+});
+
+$('#uploadFile').change(function() {
+  $("#uploadForm").submit();
 });
 
 String.prototype.toScaledPath = function(w, h) {

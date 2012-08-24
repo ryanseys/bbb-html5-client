@@ -155,9 +155,6 @@ socket.on('connect', function () {
     }
 	});
 	
-	socket.on('processing', function() {
-	});
-	
 	socket.on('textDone', function() {
 	  textDone();
 	});
@@ -176,6 +173,7 @@ socket.on('connect', function () {
 	});
 	
 	socket.on('all_slides', function(urls) {
+	  $('#uploadStatus').text(""); //upload finished
 	  removeAllImagesFromPaper();
 	  var count = 0;
 	  var numOfSlides = urls.length;
