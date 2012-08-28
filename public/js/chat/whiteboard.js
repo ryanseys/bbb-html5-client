@@ -649,7 +649,7 @@ $('#uploadForm').submit(function() {
       console.log('Error: ' + xhr.status);
     },
     success: function(response) {
-      $('#uploadStatus').text("Processing...");
+      
     }
   });
   // Have to stop the form from submitting and causing refresh

@@ -172,6 +172,15 @@ socket.on('connect', function () {
 	  $('#' + publicID).addClass('presenter');
 	});
 	
+	socket.on('uploadStatus', function(message, error) {
+	  $('#uploadStatus').text(message);
+	  if(error) {
+	    setTimeout(function() {
+	      $('#uploadStatus').text('');
+	    }, 3000);
+	  }
+	});
+	
 	socket.on('all_slides', function(urls) {
 	  $('#uploadStatus').text(""); //upload finished
 	  removeAllImagesFromPaper();

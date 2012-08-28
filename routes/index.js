@@ -81,6 +81,7 @@ exports.post_chat = function(req, res, next) {
   if(req.files.image.size != 0) {
     var meetingID = req.cookies['meetingid'];
     var sessionID = req.cookies['sessionid'];
+    pub.publish(meetingID, JSON.stringify(['uploadStatus', "Processing..."]));
     redisAction.isValidSession(meetingID, sessionID, function (reply) {
       var file = req.files.image.path;
       var pageIDs = [];
@@ -110,6 +111,7 @@ exports.post_chat = function(req, res, next) {
                                 pub.publish(meetingID, JSON.stringify(['clrPaper']));
                                 socketAction.publishSlides(meetingID, null, function() {
                                   socketAction.publishViewBox(meetingID);
+                                  pub.publish(meetingID, JSON.stringify(['uploadStatus', ""]));
                                 });
                               });
                             }
@@ -120,10 +122,11 @@ exports.post_chat = function(req, res, next) {
                   });
                 }
                 else {
+                  console.log(err);
                   fs.rmdir(folder, function() {
                     console.log("Deleted invalid presentation folder");
+                    pub.publish(meetingID, JSON.stringify(['uploadStatus', "Invalid file", true]));
                   });
-                  console.log("CONVERT ERROR: " + err);
                 }
               });
             });
