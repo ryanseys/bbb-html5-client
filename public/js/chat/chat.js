@@ -1,35 +1,33 @@
-//* Math.floor((Math.random()*100)+50)/100
-
 // Object references
 var chcount = document.getElementById('charcount');
 var msgbox = document.getElementById("chat_messages");
 var chatbox = document.getElementById('chat_input_box');
 
-var PORT = 3000;
+var PORT = 3000; //port that SocketIO will connect on
 var SERVER_IP = window.location.hostname;
 
-//connect to the websocket.
+// Connect to the websocket via SocketIO
 var socket = io.connect('http://'+SERVER_IP+':'+PORT);
 
-//when you connect
+// If the socket is connect
 socket.on('connect', function () {
   
-	//immediately send a message saying we are connected.
+	// Immediately say we are connected
 	socket.emit('user connect');
 	
-	//when you get a new message
+	// Received event for a new public chat message
 	socket.on('msg', function (name, msg) {
 	  msgbox.innerHTML += '<div>' + name + ': ' + msg + '</div>';
 	  msgbox.scrollTop = msgbox.scrollHeight;
 	});
   
-  // Double-back confirmation of logout request
+  // Received event to logout yourself
 	socket.on('logout', function () {
 		post_to_url('logout');
 		window.location.replace("./");
 	});
 	
-	// When the user list needs an update
+	// Received event to update the user list
 	socket.on('user list change', function (names) {
 	  var clickFunc = '$(\'.selected\').removeClass(\'selected\');$(this).addClass(\'selected\');';
 	  var currusers = document.getElementById('current_users');
@@ -39,7 +37,7 @@ socket.on('connect', function () {
 	  }
 	});
 	
-	//Update all the messages in the chat box (e.g. received after first signing in)
+	// Received event to update all the messages in the chat box
 	socket.on('all_messages', function (messages) {
 	  //msgbox.innerHTML = '';
 	  for (var i = messages.length - 1; i >= 0; i--){
@@ -48,6 +46,7 @@ socket.on('connect', function () {
 	  msgbox.scrollTop = msgbox.scrollHeight;
 	});
 	
+	// Received event to update all the shapes in the whiteboard
 	socket.on('all_shapes', function (shapes) {
 	  clearPaper();
 	  drawListOfShapes(shapes);
@@ -73,12 +72,12 @@ socket.on('connect', function () {
 		window.location.replace("./");
 	});
 	
-	// WHITEBOARD EVENTS //
+	// Received event to clear the whiteboard shapes
 	socket.on('clrPaper', function () {
 	  clearPaper();
 	});
 
-	//when the viewBox changes
+	// Received event to update the viewBox value
 	socket.on('viewBox', function(xperc, yperc, wperc, hperc) {
 	  xperc = parseFloat(xperc, 10);
 	  yperc = parseFloat(yperc, 10);
@@ -87,30 +86,32 @@ socket.on('connect', function () {
 	  updatePaperFromServer(xperc, yperc, wperc, hperc);
 	});
 	
-	//when the cursor is moved
+	// Received event to update the cursor coordinates
 	socket.on('mvCur', function(x, y) {
 	  mvCur(x, y);
 	});
 	
-	//when the slide changes
+	// Received event to update the slide image
 	socket.on('changeslide', function(url) {
 	  showImageFromPaper(url);
 	});
 	
+	// Received event to update the whiteboard between fit to width and fit to page
 	socket.on('fitToPage', function(fit) {
 	  setFitToPage(fit);
 	});
 	
-	//when the zoom level changes
+	// Received event to update the zoom level of the whiteboard.
 	socket.on('zoom', function(delta) {
 	  setZoom(delta);
 	});
 	
-	//when the panning action stops
+	// Received event when the panning action finishes
 	socket.on('panStop', function() {
 	  panDone();
 	});
 	
+	// Received event to create a shape on the whiteboard
 	socket.on('makeShape', function(shape, data) {
 	  switch(shape) {
       case 'line':
@@ -131,6 +132,7 @@ socket.on('connect', function () {
     }
 	});
 	
+	// Received event to update a shape being created
 	socket.on('updShape', function(shape, data) {
 	  switch(shape) {
       case 'line':
@@ -155,32 +157,40 @@ socket.on('connect', function () {
     }
 	});
 	
+	// Received event to denote when the text has been created
 	socket.on('textDone', function() {
 	  textDone();
 	});
-
+	
+  // Received event to change the current tool
 	socket.on('toolChanged', function(tool) {
 	  turnOn(tool);
 	});
 	
+	// Received event to update the whiteboard size and position
 	socket.on('paper', function(cx, cy, sw, sh) {
     updatePaperFromServer(cx, cy, sw, sh);
 	});
 	
+	// Received event to set the presenter to a user
 	socket.on('setPresenter', function(publicID) {
 	  $('.presenter').removeClass('presenter');
 	  $('#' + publicID).addClass('presenter');
 	});
 	
-	socket.on('uploadStatus', function(message, error) {
+	// Received event to update the status of the upload progress
+	socket.on('uploadStatus', function(message, fade) {
 	  $('#uploadStatus').text(message);
-	  if(error) {
+	  // if a true is passed for fade, it will only stay for
+	  // a period of time before disappearing automatically
+	  if(fade) {
 	    setTimeout(function() {
 	      $('#uploadStatus').text('');
 	    }, 3000);
 	  }
 	});
 	
+	// Received event to update all the slide images
 	socket.on('all_slides', function(urls) {
 	  $('#uploadStatus').text(""); //upload finished
 	  removeAllImagesFromPaper();
@@ -220,7 +230,7 @@ function post_to_url(path, params, method) {
   form.submit();
 }
 
-// Sending a chat message to users
+// Sending a public chat message to users
 function sendMessage() {
   var msg = chatbox.value;
 	if (msg != '') {
@@ -239,22 +249,36 @@ function getShapesFromServer() {
   socket.emit('all_shapes');
 }
 
+// Emit an update in a fit of the whiteboard
+// true for fitToPage and false for fitToWidth
 function sendFitToPage(fit) {
   socket.emit('fitToPage', fit);
 }
 
+// Emit the finish of a text shape
 function emitDoneText() {
   socket.emit('textDone');
 }
 
+/*
+  Emit the creation of a shape
+  shape is the type of shape
+  data is all the data required to draw the shape on the client whiteboard
+*/
 function emitMakeShape(shape, data) {
   socket.emit('makeShape', shape, data);
 }
 
+/*
+  Emit the update of a shape
+  shape is the type of shape
+  data is all the data required to update the shape on the client whiteboard
+*/
 function emitUpdateShape(shape, data) {
   socket.emit('updShape', shape, data);
 }
 
+// Emit an update in the whiteboard position/size values
 function sendPaperUpdate(cx, cy, sw, sh) {
   socket.emit('paper', cx, cy, sw, sh);
 }
@@ -274,12 +298,12 @@ function emZoom(delta) {
   socket.emit('zoom', delta);
 }
 
-// Display the next image
+// Request the next slide
 function nextImg() {
   socket.emit('nextslide');
 }
 
-// Display the previous image
+// Request the previous slide
 function prevImg() {
   socket.emit('prevslide');
 }
@@ -289,27 +313,33 @@ function logout() {
   socket.emit('logout');
 }
 
-// Panning has stopped
+// Emit panning has stopped
 function emPanStop() {
   socket.emit('panStop');
 }
 
+// Publish a shape to the server to be saved
 function emitPublishShape(shape, data) {
   socket.emit('saveShape', shape, JSON.stringify(data));
 }
 
+// Emit a change in the current tool
 function changeTool(tool) {
   socket.emit('changeTool', tool);
 }
 
+// Tell the server to undo the last shape
 function undoShape() {
   socket.emit('undo');
 }
 
+// Emit an update in the current text shape.
+// TODO: Transfer over to updShape
 function emitText(t, x, y, w, spacing, colour, font, fontsize) {
   socket.emit('textUpdate', t, x, y, w, spacing, colour, font, fontsize);
 }
 
+// Emit a change in the presenter 
 function switchPresenter() {
   socket.emit('setPresenter', $('.selected').attr('id'));
 }

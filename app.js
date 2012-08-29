@@ -45,13 +45,13 @@ app.configure(function(){
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(express.cookieParser());
+	//Redis
 	app.use(express.session({
 		secret: "password",
 		cookie: { secure: true },
 		store: new RedisStore({
 			host: "127.0.0.1",
-			port: "6379",
-			db: "name_of_my_local_db"
+			port: "6379"
 		}),
 		key: 'express.sid'
 	}));
@@ -148,13 +148,16 @@ io.configure(function () {
   });
 });
 
-// When someone connects to the websocket.
+// When someone connects to the websocket. Includes all the SocketIO events.
+
 io.sockets.on('connection', socketAction.SocketOnConnection);
 
 // Redis Routes
 
-//When sub gets a message from pub
+//When Redis Sub gets a message from Pub
 sub.on("pmessage", function(pattern, channel, message) {
-  var channel_viewers = io.sockets['in'](channel);
+  //value of pub channel is used as the name of the SocketIO room to send to.
+  var channel_viewers = io.sockets.in(channel);
+  //apply the parameters to the socket event, and emit it on the channels
   channel_viewers.emit.apply(channel_viewers, JSON.parse(message));
 });
