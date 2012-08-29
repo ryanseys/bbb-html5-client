@@ -84,6 +84,7 @@ app.post('/chat',  routes.post_chat);
 app.post('/logout', requiresLogin, routes.logout);
 app.get('/chat', requiresLogin, routes.get_chat);
 app.post('/', routes.post_index);
+app.get('/join', routes.join);
 
 // --- 404 (keep as last route) --- //
 app.get('*', routes.error404);

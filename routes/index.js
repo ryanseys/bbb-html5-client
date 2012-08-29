@@ -15,49 +15,59 @@ exports.get_index = function(req, res) {
 	});
 };
 
+//Used to make a meeting in Redis and callback whether the meeting was successfully created.
+function makeMeeting(meetingID, sessionID, username, callback) {
+  if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length) && (meetingID.split(' ').length == 1)) {
+  var publicID = rack();
+  redisAction.isMeetingRunning(meetingID, function(isRunning) {
+    if(!isRunning) {
+      redisAction.createMeeting(meetingID, function() {
+        redisAction.setCurrentTool(meetingID, 'line');
+        redisAction.setPresenter(meetingID, sessionID, publicID);
+      });
+    }
+  });
+  redisAction.createUser(meetingID, sessionID);
+  store.get(redisAction.getCurrentPresentationString(meetingID), function (err, currPresID) {
+    if(!currPresID) {
+      redisAction.createPresentation(meetingID, true, function (presentationID) {
+	      redisAction.createPage(meetingID, presentationID, 'default.png', true, function (pageID) {
+	        redisAction.setViewBox(meetingID, JSON.stringify([0, 0, 1, 1]));
+  	      var folder = routes.presentationImageFolder(presentationID);
+  	      fs.mkdir(folder, 0777 , function (reply) {
+  	        newFile = fs.createWriteStream(folder + '/default.png');
+            oldFile = fs.createReadStream('images/default.png');
+            newFile.once('open', function (fd) {
+                util.pump(oldFile, newFile);
+                redisAction.setImageSize(meetingID, presentationID, pageID, 800, 600);
+            });
+          });
+	      });
+      });
+    }
+  });
+  redisAction.setIDs(meetingID, sessionID, publicID, function() {
+    redisAction.updateUserProperties(meetingID, sessionID, ["username", username,
+	          "meetingID", meetingID, "refreshing", false, "dupSess", false, "sockets", 0, 'pubID', publicID]);
+	  callback(true);
+  });
+}
+else callback(false);
+}
+
 // When first logging into the chat
 exports.post_index = function(req, res) {
   var username = sanitizer.escape(req.body.user.name);
   var meetingID = sanitizer.escape(req.body.meeting.id);
-  if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length) && (meetingID.split(' ').length == 1)) {
-	  var sessionID = req.sessionID;
-	  var publicID = rack();
-	  redisAction.isMeetingRunning(meetingID, function(isRunning) {
-	    if(!isRunning) {
-	      redisAction.createMeeting(meetingID, function() {
-	        redisAction.setCurrentTool(meetingID, 'line');
-	        redisAction.setPresenter(meetingID, sessionID, publicID);
-	      });
-	    }
-	  });
-	  redisAction.createUser(meetingID, sessionID);
-	  store.get(redisAction.getCurrentPresentationString(meetingID), function (err, currPresID) {
-	    if(!currPresID) {
-	      redisAction.createPresentation(meetingID, true, function (presentationID) {
-  	      redisAction.createPage(meetingID, presentationID, 'default.png', true, function (pageID) {
-  	        redisAction.setViewBox(meetingID, JSON.stringify([0, 0, 1, 1]));
-    	      var folder = routes.presentationImageFolder(presentationID);
-    	      fs.mkdir(folder, 0777 , function (reply) {
-    	        newFile = fs.createWriteStream(folder + '/default.png');
-              oldFile = fs.createReadStream('images/default.png');
-              newFile.once('open', function (fd) {
-                  util.pump(oldFile, newFile);
-                  redisAction.setImageSize(meetingID, presentationID, pageID, 800, 600);
-              });
-            });
-  	      });
-	      });
-	    }
-	  });
-    redisAction.setIDs(meetingID, sessionID, publicID, function() {
-	    redisAction.updateUserProperties(meetingID, sessionID, ["username", username,
-  	          "meetingID", meetingID, "refreshing", false, "dupSess", false, "sockets", 0, 'pubID', publicID]);
-  	  res.cookie('sessionid', sessionID); //save the id so socketio can get the username
+  var sessionID = req.sessionID;
+  makeMeeting(meetingID, sessionID, username, function(join) {
+    if(join) {
+      res.cookie('sessionid', sessionID); //save the id so socketio can get the username
       res.cookie('meetingid', meetingID);
       res.redirect('/chat');
-    });
-  }
-  else res.redirect('/');
+    }
+    else res.redirect('/');
+  });
 };
 
 // When we have clicked on the logout button.
@@ -65,6 +75,37 @@ exports.logout = function(req, res) {
 	req.session.destroy(); //end the session
 	res.cookie('sessionid', null); //clear the cookie from the machine
 	res.cookie('meetingid', null);
+};
+
+/* 
+The join URL is used to connect to a meeting immediately without 
+going to the login screen.
+
+Example:
+localhost:3000/join?meetingid=123&fullname=Ryan&checksum=password
+
+This will connect under the meetingID 123 with the name "Ryan" as 
+long as the checksum string is equal on the server side.
+*/
+exports.join = function(req, res) {
+  var query = req.query;
+  if(query) {
+    var meetingID = query.meetingid;
+    var username = query.fullname;
+    var checksum = query.checksum;
+    var sessionID = req.sessionID;
+    if(checksum == "password") {
+      makeMeeting(meetingID, sessionID, username, function(join) {
+        if(join) {
+          res.cookie('sessionid', sessionID); //save the id so socketio can get the username
+          res.cookie('meetingid', meetingID);
+          res.redirect('/chat');
+        }
+        else res.redirect('/');
+      });
+    }
+    else res.redirect('/');
+  }
 };
 
 // When we return to the chat page (or open a new tab when already logged in)
