@@ -11,197 +11,239 @@ var socket = io.connect('http://'+SERVER_IP+':'+PORT);
 
 // If the socket is connect
 socket.on('connect', function () {
-  
-	// Immediately say we are connected
-	socket.emit('user connect');
-	
-	// Received event for a new public chat message
-	socket.on('msg', function (name, msg) {
-	  msgbox.innerHTML += '<div>' + name + ': ' + msg + '</div>';
-	  msgbox.scrollTop = msgbox.scrollHeight;
-	});
-  
-  // Received event to logout yourself
-	socket.on('logout', function () {
-		post_to_url('logout');
-		window.location.replace("./");
-	});
-	
-	// Received event to update the user list
-	socket.on('user list change', function (names) {
-	  var clickFunc = '$(\'.selected\').removeClass(\'selected\');$(this).addClass(\'selected\');';
-	  var currusers = document.getElementById('current_users');
-	  currusers.innerHTML = ''; //clear it first
-	  for (var i = names.length - 1; i >= 0; i--) {
-	    currusers.innerHTML += '<div class="user clickable" onclick="'+clickFunc+'" id= "'+names[i].id+'"><b>' + names[i].name + '</b></div>';
-	  }
-	});
-	
-	// Received event to update all the messages in the chat box
-	socket.on('all_messages', function (messages) {
-	  //msgbox.innerHTML = '';
-	  for (var i = messages.length - 1; i >= 0; i--){
-      msgbox.innerHTML += '<div>' + messages[i].username + ": " + messages[i].message + '</div>';
-	  };
-	  msgbox.scrollTop = msgbox.scrollHeight;
-	});
-	
-	// Received event to update all the shapes in the whiteboard
-	socket.on('all_shapes', function (shapes) {
-	  clearPaper();
-	  drawListOfShapes(shapes);
-	});
-  
-  // If the server is reconnected to the client
-	socket.on('reconnect', function () {
-	  msgbox.innerHTML += '<div><b> RECONNECTED! </b></div>';
-	});
-  
-  // If the client is attempting to reconnect to the server
-	socket.on('reconnecting', function () {
-	  msgbox.innerHTML += '<div><b> Reconnecting... </b></div>';
-	});
-  
-  // If the client cannot reconnect to the server
-	socket.on('reconnect_failed', function () {
-	  msgbox.innerHTML += '<div><b> Reconnect FAILED! </b></div>';
-	});
 
-  // If the server disconnects from the client or vice-versa
-	socket.on('disconnect', function() {
-		window.location.replace("./");
-	});
-	
-	// Received event to clear the whiteboard shapes
-	socket.on('clrPaper', function () {
-	  clearPaper();
-	});
+  // Immediately say we are connected
+  socket.emit('user connect');
 
-	// Received event to update the viewBox value
-	socket.on('viewBox', function(xperc, yperc, wperc, hperc) {
-	  xperc = parseFloat(xperc, 10);
-	  yperc = parseFloat(yperc, 10);
-	  wperc = parseFloat(wperc, 10);
-	  hperc = parseFloat(hperc, 10);
-	  updatePaperFromServer(xperc, yperc, wperc, hperc);
-	});
-	
-	// Received event to update the cursor coordinates
-	socket.on('mvCur', function(x, y) {
-	  mvCur(x, y);
-	});
-	
-	// Received event to update the slide image
-	socket.on('changeslide', function(url) {
-	  showImageFromPaper(url);
-	});
-	
-	// Received event to update the whiteboard between fit to width and fit to page
-	socket.on('fitToPage', function(fit) {
-	  setFitToPage(fit);
-	});
-	
-	// Received event to update the zoom level of the whiteboard.
-	socket.on('zoom', function(delta) {
-	  setZoom(delta);
-	});
-	
-	// Received event when the panning action finishes
-	socket.on('panStop', function() {
-	  panDone();
-	});
-	
-	// Received event to create a shape on the whiteboard
-	socket.on('makeShape', function(shape, data) {
-	  switch(shape) {
-      case 'line':
-        makeLine.apply(makeLine, data);
-      break;
+  // Received event for a new public chat message
+  socket.on('msg', function (name, msg) {
+    msgbox.innerHTML += '<div>' + name + ': ' + msg + '</div>';
+    msgbox.scrollTop = msgbox.scrollHeight;
+  });
 
-      case 'rect':
-        makeRect.apply(makeRect, data);
-      break;
+  /**
+   * Received event to logout yourself
+   * @return {undefined}
+   */
+  socket.on('logout', function () {
+      post_to_url('logout');
+      window.location.replace("./");
+  });
 
-      case 'ellipse':
-        makeEllipse.apply(makeEllipse, data);
-      break;
-
-      default:
-        //no other shapes allowed
-      break;
+  /**
+   * Received event to update the user list
+   * @param  {Array} names Array of names and publicIDs of connected users
+   * @return {undefined}
+   */
+  socket.on('user list change', function (names) {
+    var clickFunc = '$(\'.selected\').removeClass(\'selected\');$(this).addClass(\'selected\');';
+    var currusers = document.getElementById('current_users');
+    currusers.innerHTML = ''; //clear it first
+    for (var i = names.length - 1; i >= 0; i--) {
+      currusers.innerHTML += '<div class="user clickable" onclick="'+clickFunc+'" id= "'+names[i].id+'"><b>' + names[i].name + '</b></div>';
     }
-	});
-	
-	// Received event to update a shape being created
-	socket.on('updShape', function(shape, data) {
-	  switch(shape) {
-      case 'line':
-        updateLine.apply(updateLine, data);
-      break;
+  });
 
-      case 'rect':
-        updateRect.apply(updateRect, data);
-      break;
+  /**
+   * Received event to update all the messages in the chat box
+   * @param  {Array} messages Array of messages in public chat box
+   * @return {undefined}
+   */
+  socket.on('all_messages', function (messages) {
+    //msgbox.innerHTML = '';
+    for (var i = messages.length - 1; i >= 0; i--){
+    msgbox.innerHTML += '<div>' + messages[i].username + ": " + messages[i].message + '</div>';
+    };
+    msgbox.scrollTop = msgbox.scrollHeight;
+  });
 
-      case 'ellipse':
-        updateEllipse.apply(updateEllipse, data);
-      break;
-      
-      case 'text':
-        updateText.apply(updateText, data);
-      break;
+  /**
+   * Received event to update all the shapes in the whiteboard
+   * @param  {Array} shapes Array of shapes to be drawn
+   * @return {undefined}
+   */
+  socket.on('all_shapes', function (shapes) {
+    clearPaper();
+    drawListOfShapes(shapes);
+  });
 
-      default:
-        console.log('shape not recognized');
-      break; 
+  /**
+   * If the server is reconnected to the client
+   * @return {undefined}
+   */
+  socket.on('reconnect', function () {
+    msgbox.innerHTML += '<div><b> RECONNECTED! </b></div>';
+  });
+
+  /**
+   * If the client is attempting to reconnect to the server
+   * @return {undefined}
+   */
+  socket.on('reconnecting', function () {
+    msgbox.innerHTML += '<div><b> Reconnecting... </b></div>';
+  });
+
+  /**
+   * If the client cannot reconnect to the server
+   * @return {undefined}
+   */
+  socket.on('reconnect_failed', function () {
+    msgbox.innerHTML += '<div><b> Reconnect FAILED! </b></div>';
+  });
+
+  /**
+   * If the server disconnects from the client or vice-versa
+   * @return {undefined}
+   */
+  socket.on('disconnect', function() {
+      window.location.replace("./");
+  });
+
+  /**
+   * Received event to clear the whiteboard shapes
+   * @return {undefined}
+   */
+  socket.on('clrPaper', function () {
+    clearPaper();
+  });
+
+  /**
+   * Received event to update the viewBox value
+   * @param  {String} xperc Percentage of x-offset from top left corner
+   * @param  {String} yperc Percentage of y-offset from top left corner
+   * @param  {String} wperc Percentage of full width of image to be displayed
+   * @param  {String} hperc Percentage of full height of image to be displayed
+   * @return {undefined}
+   */
+  socket.on('viewBox', function(xperc, yperc, wperc, hperc) {
+    xperc = parseFloat(xperc, 10);
+    yperc = parseFloat(yperc, 10);
+    wperc = parseFloat(wperc, 10);
+    hperc = parseFloat(hperc, 10);
+    updatePaperFromServer(xperc, yperc, wperc, hperc);
+  });
+
+  /**
+   * Received event to update the cursor coordinates
+   * @param  {Integer} x x-coord of the cursor as a percentage of page width
+   * @param  {Integer} y y-coord of the cursor as a percentage of page height
+   * @return {undefined}
+   */
+  socket.on('mvCur', function(x, y) {
+    mvCur(x, y);
+  });
+
+  // Received event to update the slide image
+  socket.on('changeslide', function(url) {
+    showImageFromPaper(url);
+  });
+
+  // Received event to update the whiteboard between fit to width and fit to page
+  socket.on('fitToPage', function(fit) {
+    setFitToPage(fit);
+  });
+
+  // Received event to update the zoom level of the whiteboard.
+  socket.on('zoom', function(delta) {
+    setZoom(delta);
+  });
+
+  // Received event when the panning action finishes
+  socket.on('panStop', function() {
+    panDone();
+  });
+
+  // Received event to create a shape on the whiteboard
+  socket.on('makeShape', function(shape, data) {
+    switch(shape) {
+    case 'line':
+      makeLine.apply(makeLine, data);
+    break;
+
+    case 'rect':
+      makeRect.apply(makeRect, data);
+    break;
+
+    case 'ellipse':
+      makeEllipse.apply(makeEllipse, data);
+    break;
+
+    default:
+      //no other shapes allowed
+    break;
     }
-	});
-	
-	// Received event to denote when the text has been created
-	socket.on('textDone', function() {
-	  textDone();
-	});
-	
-  // Received event to change the current tool
-	socket.on('toolChanged', function(tool) {
-	  turnOn(tool);
-	});
-	
-	// Received event to update the whiteboard size and position
-	socket.on('paper', function(cx, cy, sw, sh) {
-    updatePaperFromServer(cx, cy, sw, sh);
-	});
-	
-	// Received event to set the presenter to a user
-	socket.on('setPresenter', function(publicID) {
-	  $('.presenter').removeClass('presenter');
-	  $('#' + publicID).addClass('presenter');
-	});
-	
-	// Received event to update the status of the upload progress
-	socket.on('uploadStatus', function(message, fade) {
-	  $('#uploadStatus').text(message);
-	  // if a true is passed for fade, it will only stay for
-	  // a period of time before disappearing automatically
-	  if(fade) {
-	    setTimeout(function() {
-	      $('#uploadStatus').text('');
-	    }, 3000);
-	  }
-	});
-	
-	// Received event to update all the slide images
-	socket.on('all_slides', function(urls) {
-	  $('#uploadStatus').text(""); //upload finished
-	  removeAllImagesFromPaper();
-	  var count = 0;
-	  var numOfSlides = urls.length;
-	  for (var i = 0; i < numOfSlides; i++) {
-	    var array = urls[i];
-	    var img = addImageToPaper(array[0], array[1], array[2]);
-  	  $('#slide').append('<img id="preload'+img.id+'"src="'+img.attr('src')+'" style="display:none;" alt=""/>'); //preload images
-	  };
-	});
+  });
+
+  // Received event to update a shape being created
+  socket.on('updShape', function(shape, data) {
+    switch(shape) {
+    case 'line':
+      updateLine.apply(updateLine, data);
+    break;
+
+    case 'rect':
+      updateRect.apply(updateRect, data);
+    break;
+
+    case 'ellipse':
+      updateEllipse.apply(updateEllipse, data);
+    break;
+
+    case 'text':
+      updateText.apply(updateText, data);
+    break;
+
+    default:
+      console.log('shape not recognized');
+    break;
+  }
+  });
+
+  // Received event to denote when the text has been created
+  socket.on('textDone', function() {
+    textDone();
+  });
+
+// Received event to change the current tool
+  socket.on('toolChanged', function(tool) {
+    turnOn(tool);
+  });
+
+  // Received event to update the whiteboard size and position
+  socket.on('paper', function(cx, cy, sw, sh) {
+  updatePaperFromServer(cx, cy, sw, sh);
+  });
+
+  // Received event to set the presenter to a user
+  socket.on('setPresenter', function(publicID) {
+    $('.presenter').removeClass('presenter');
+    $('#' + publicID).addClass('presenter');
+  });
+
+  // Received event to update the status of the upload progress
+  socket.on('uploadStatus', function(message, fade) {
+    $('#uploadStatus').text(message);
+    // if a true is passed for fade, it will only stay for
+    // a period of time before disappearing automatically
+    if(fade) {
+      setTimeout(function() {
+        $('#uploadStatus').text('');
+      }, 3000);
+    }
+  });
+
+  // Received event to update all the slide images
+  socket.on('all_slides', function(urls) {
+    $('#uploadStatus').text(""); //upload finished
+    removeAllImagesFromPaper();
+    var count = 0;
+    var numOfSlides = urls.length;
+    for (var i = 0; i < numOfSlides; i++) {
+      var array = urls[i];
+      var img = addImageToPaper(array[0], array[1], array[2]);
+      $('#slide').append('<img id="preload'+img.id+'"src="'+img.attr('src')+'" style="display:none;" alt=""/>'); //preload images
+    };
+  });
 });
 
 //if an error occurs while not connected
@@ -233,11 +275,11 @@ function post_to_url(path, params, method) {
 // Sending a public chat message to users
 function sendMessage() {
   var msg = chatbox.value;
-	if (msg != '') {
-		socket.emit('msg', msg);
-		chatbox.value = '';
-	}
-	chatbox.focus();
+    if (msg != '') {
+        socket.emit('msg', msg);
+        chatbox.value = '';
+    }
+    chatbox.focus();
 }
 
 // Clearing the canvas drawings
@@ -339,7 +381,7 @@ function emitText(t, x, y, w, spacing, colour, font, fontsize) {
   socket.emit('textUpdate', t, x, y, w, spacing, colour, font, fontsize);
 }
 
-// Emit a change in the presenter 
+// Emit a change in the presenter
 function switchPresenter() {
   socket.emit('setPresenter', $('.selected').attr('id'));
 }

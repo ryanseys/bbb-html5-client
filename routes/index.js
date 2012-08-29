@@ -7,22 +7,22 @@ exports.presentationImageFolder = function(presentationID) {
 };
 
 /*
-  When  requesting the homepage a potential meetingID and sessionIDare extracted 
+  When  requesting the homepage a potential meetingID and sessionIDare extracted
   from the user's cookie. If they match with a user that is in the databaseunder
   the same data, they are instantly redirected to join into the meeting.
-  
+ 
   If they are not, they will be redirected to the index page where they can enter
   their login details
 */
 exports.get_index = function(req, res) {
-	redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function (reply) {
-	  if(!reply) {
-  		res.render('index', { title: 'BigBlueButton HTML5 Client', max_u: max_username_length, max_mid: max_meetingid_length });
-  	}
-  	else {
+  redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function (reply) {
+    if(!reply) {
+     res.render('index', { title: 'BigBlueButton HTML5 Client', max_u: max_username_length, max_mid: max_meetingid_length });
+    }
+    else {
       res.redirect('/chat');
-  	}
-	});
+    }
+  });
 };
 
 /*
@@ -47,25 +47,25 @@ function makeMeeting(meetingID, sessionID, username, callback) {
     store.get(redisAction.getCurrentPresentationString(meetingID), function (err, currPresID) {
       if(!currPresID) {
         redisAction.createPresentation(meetingID, true, function (presentationID) {
-  	      redisAction.createPage(meetingID, presentationID, 'default.png', true, function (pageID) {
-  	        redisAction.setViewBox(meetingID, JSON.stringify([0, 0, 1, 1]));
-    	      var folder = routes.presentationImageFolder(presentationID);
-    	      fs.mkdir(folder, 0777 , function (reply) {
-    	        newFile = fs.createWriteStream(folder + '/default.png');
+          redisAction.createPage(meetingID, presentationID, 'default.png', true, function (pageID) {
+            redisAction.setViewBox(meetingID, JSON.stringify([0, 0, 1, 1]));
+            var folder = routes.presentationImageFolder(presentationID);
+            fs.mkdir(folder, 0777 , function (reply) {
+              newFile = fs.createWriteStream(folder + '/default.png');
               oldFile = fs.createReadStream('images/default.png');
               newFile.once('open', function (fd) {
                   util.pump(oldFile, newFile);
                   redisAction.setImageSize(meetingID, presentationID, pageID, 800, 600);
               });
             });
-  	      });
+          });
         });
       }
     });
     redisAction.setIDs(meetingID, sessionID, publicID, function() {
       redisAction.updateUserProperties(meetingID, sessionID, ["username", username,
-  	          "meetingID", meetingID, "refreshing", false, "dupSess", false, "sockets", 0, 'pubID', publicID]);
-  	  callback(true);
+              "meetingID", meetingID, "refreshing", false, "dupSess", false, "sockets", 0, 'pubID', publicID]);
+      callback(true);
     });
   }
   else callback(false);
@@ -73,7 +73,7 @@ function makeMeeting(meetingID, sessionID, username, callback) {
 
 /*
   Upon submitting their login details from the index page via a POST request,
-  a meeting will be created and joined. If an error occurs, which usually 
+  a meeting will be created and joined. If an error occurs, which usually
   results in using a username/meetingID that is too long, they will be redirected
   to the index page again.
 */
@@ -96,19 +96,19 @@ exports.post_index = function(req, res) {
   and their cookies are cleared.
 */
 exports.logout = function(req, res) {
-	req.session.destroy(); //end the session
-	res.cookie('sessionid', null); //clear the cookie from the machine
-	res.cookie('meetingid', null);
+  req.session.destroy(); //end the session
+  res.cookie('sessionid', null); //clear the cookie from the machine
+  res.cookie('meetingid', null);
 };
 
-/* 
-  The join URL is used to connect to a meeting immediately without 
+/*
+  The join URL is used to connect to a meeting immediately without
   going to the login screen.
 
   Example:
   localhost:3000/join?meetingid=123&fullname=Ryan&checksum=password
 
-  This will connect under the meetingID 123 with the name "Ryan" as 
+  This will connect under the meetingID 123 with the name "Ryan" as
   long as the checksum string is equal on the server side.
 */
 exports.join = function(req, res) {
@@ -138,11 +138,11 @@ exports.join = function(req, res) {
 
 // When we return to the chat page (or open a new tab when already logged in)
 exports.get_chat = function(req, res) {
-	//requiresLogin before this verifies that a user is logged in...
-	var meetingID = req.cookies['meetingid'];
-	redisAction.getUserProperty(meetingID, req.cookies['sessionid'], "username", function (username) {
-	  res.render('chat', { title: 'BigBlueButton HTML5 Client', user: username, max_chat_length: max_chat_length, meetingID : meetingID });
-	});
+  //requiresLogin before this verifies that a user is logged in...
+  var meetingID = req.cookies['meetingid'];
+  redisAction.getUserProperty(meetingID, req.cookies['sessionid'], "username", function (username) {
+    res.render('chat', { title: 'BigBlueButton HTML5 Client', user: username, max_chat_length: max_chat_length, meetingID : meetingID });
+  });
 };
 
 /*
@@ -177,7 +177,7 @@ exports.post_chat = function(req, res, next) {
                     for(var i = 0; i < numOfPages; i++) {
                       if(i != 0) var setCurrent = false;
                       else var setCurrent = true;
-                      redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID, imageName) {        
+                      redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID, imageName) {       
                         //ImageMagick call to get the image size from each of the converted images.
                         im.identify(folder + "/" + imageName, function(err, features) {
                           if (err) throw err;

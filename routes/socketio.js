@@ -9,7 +9,7 @@ exports.publishUsernames = function(meetingID, sessionID, callback) {
       pub.publish(receivers, JSON.stringify(['user list change', usernames]));
       if(callback) callback(true);
   });
-  
+ 
   //check if no users left in meeting
   store.scard(redisAction.getUsersString(meetingID), function(err, cardinality) {
     if(cardinality == '0') {
@@ -97,44 +97,44 @@ exports.publishTool = function(meetingID, sessionID, tool, callback) {
 
 // All socket IO events that can be emitted by the client
 exports.SocketOnConnection = function(socket) {
-	
-	//When a user sends a message...
-	socket.on('msg', function (msg) {
-	  msg = sanitizer.escape(msg);
-	  var handshake = socket.handshake;
-	  var sessionID = handshake.sessionID;
-	  var meetingID = handshake.meetingID;
-	  redisAction.isValidSession(meetingID, sessionID, function (reply) {
-	    if(reply) {
-	      if(msg.length > max_chat_length) {
-    	    pub.publish(sessionID, JSON.stringify(['msg', 'System', 'Message too long.']));
-    	  }
-    	  else {
+ 
+  //When a user sends a message...
+  socket.on('msg', function (msg) {
+    msg = sanitizer.escape(msg);
+    var handshake = socket.handshake;
+    var sessionID = handshake.sessionID;
+    var meetingID = handshake.meetingID;
+    redisAction.isValidSession(meetingID, sessionID, function (reply) {
+      if(reply) {
+        if(msg.length > max_chat_length) {
+          pub.publish(sessionID, JSON.stringify(['msg', 'System', 'Message too long.']));
+        }
+        else {
           var username = handshake.username;
           pub.publish(meetingID, JSON.stringify(['msg', username, msg]));
           var messageID = rack(); //get a randomly generated id for the message
-          
+         
           //try later taking these nulls out and see if the function still works
           store.rpush(redisAction.getMessagesString(meetingID, null, null), messageID); //store the messageID in the list of messages
           store.hmset(redisAction.getMessageString(meetingID, null, null, messageID), 'message', msg, 'username', username);
         }
-	    }
-	  });
+      }
+    });
   });
 
-	// When a user connects to the socket...
-	socket.on('user connect', function () {
-	  var handshake = socket.handshake;
-	  var sessionID = handshake.sessionID;
-	  var meetingID = handshake.meetingID;
-	  redisAction.isValidSession(meetingID, sessionID, function (reply) {
-		  if(reply) {
-      	var username = handshake.username;
-      	var socketID = socket.id;
-    	
+  // When a user connects to the socket...
+  socket.on('user connect', function () {
+    var handshake = socket.handshake;
+    var sessionID = handshake.sessionID;
+    var meetingID = handshake.meetingID;
+    redisAction.isValidSession(meetingID, sessionID, function (reply) {
+     if(reply) {
+        var username = handshake.username;
+        var socketID = socket.id;
+     
         socket.join(meetingID); //join the socket Room with value of the meetingID
         socket.join(sessionID); //join the socket Room with value of the sessionID
-        
+       
         //add socket to list of sockets.
         redisAction.getUserProperties(meetingID, sessionID, function(properties) {
           var numOfSockets = parseInt(properties.sockets, 10);
@@ -146,221 +146,221 @@ exports.SocketOnConnection = function(socket) {
             socketAction.publishUsernames(meetingID, null, function() {
               socketAction.publishPresenter(meetingID);
             });
-    			}
-    			else {
-    			  store.hset(redisAction.getUserString(meetingID, sessionID), 'refreshing', false);
-    			  socketAction.publishUsernames(meetingID, sessionID, function() {
-    			    socketAction.publishPresenter(meetingID, sessionID);
-    			  });
-  			  }
-  			  socketAction.publishMessages(meetingID, sessionID);
-  			  socketAction.publishSlides(meetingID, sessionID, function() {
-  			    socketAction.publishTool(meetingID, sessionID);
-  			    socketAction.publishShapes(meetingID, sessionID);
-  			    socketAction.publishViewBox(meetingID, sessionID);
-  			  });
-    		});
-  		}
-  	});
-	});
+         }
+         else {
+           store.hset(redisAction.getUserString(meetingID, sessionID), 'refreshing', false);
+           socketAction.publishUsernames(meetingID, sessionID, function() {
+             socketAction.publishPresenter(meetingID, sessionID);
+           });
+         }
+         socketAction.publishMessages(meetingID, sessionID);
+         socketAction.publishSlides(meetingID, sessionID, function() {
+           socketAction.publishTool(meetingID, sessionID);
+           socketAction.publishShapes(meetingID, sessionID);
+           socketAction.publishViewBox(meetingID, sessionID);
+         });
+       });
+     }
+    });
+  });
 
-	// When a user disconnects from the socket...
-	socket.on('disconnect', function () {
-	  var handshake = socket.handshake;
-		var sessionID = handshake.sessionID;
-		var meetingID = handshake.meetingID;
-		//check if user is still in database
-		redisAction.isValidSession(meetingID, sessionID, function (isValid) {
-		  if(isValid) {
-  		  var username = handshake.username;
-    		var socketID = socket.id;
-  			redisAction.updateUserProperties(meetingID, sessionID, ['refreshing', true], function(success) {
-  			  setTimeout(function () {
-    			    //in one second, check again...
-      			redisAction.isValidSession(meetingID, sessionID, function (isValid) {
-      				if(isValid) {
-      				  redisAction.getUserProperties(meetingID, sessionID, function(properties) {
+  // When a user disconnects from the socket...
+  socket.on('disconnect', function () {
+    var handshake = socket.handshake;
+   var sessionID = handshake.sessionID;
+   var meetingID = handshake.meetingID;
+   //check if user is still in database
+   redisAction.isValidSession(meetingID, sessionID, function (isValid) {
+     if(isValid) {
+       var username = handshake.username;
+       var socketID = socket.id;
+       redisAction.updateUserProperties(meetingID, sessionID, ['refreshing', true], function(success) {
+         setTimeout(function () {
+             //in one second, check again...
+           redisAction.isValidSession(meetingID, sessionID, function (isValid) {
+            if(isValid) {
+              redisAction.getUserProperties(meetingID, sessionID, function(properties) {
                   var numOfSockets = parseInt(properties.sockets, 10);
                   numOfSockets-=1;
-        					if(numOfSockets == 0) {
-        					  redisAction.deleteUser(meetingID, sessionID, function() {
-        					    socketAction.publishUsernames(meetingID);
-        					  });
-          				}
-          				else {
-          					redisAction.updateUserProperties(meetingID, sessionID, ['sockets', numOfSockets]);
-        					}
-        				});
-      				}
-        			else {
-        				socketAction.publishUsernames(meetingID);
-        				socketAction.publishPresenter(meetingID, sessionID);
-        			}
-      			});
-      		}, 1000);
-  			});
-  		}
-		});
-	});
-  
+                if(numOfSockets == 0) {
+                  redisAction.deleteUser(meetingID, sessionID, function() {
+                    socketAction.publishUsernames(meetingID);
+                  });
+                }
+                else {
+                  redisAction.updateUserProperties(meetingID, sessionID, ['sockets', numOfSockets]);
+                }
+              });
+            }
+             else {
+              socketAction.publishUsernames(meetingID);
+              socketAction.publishPresenter(meetingID, sessionID);
+             }
+           });
+         }, 1000);
+       });
+     }
+   });
+  });
+ 
   // When the user logs out
-	socket.on('logout', function() {
-	  var handshake = socket.handshake;
-		var sessionID = handshake.sessionID;
-		var meetingID = handshake.meetingID;
-		redisAction.isValidSession(meetingID, sessionID, function (isValid) {
-			if(isValid) {
-  		  //initialize local variables
-  		  var username = handshake.username;
-  		  //remove the user from the list of users
-  		  store.srem(redisAction.getUsersString(meetingID), sessionID, function(numDeleted) {
-  		    //delete key from database
-		      store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
+  socket.on('logout', function() {
+    var handshake = socket.handshake;
+   var sessionID = handshake.sessionID;
+   var meetingID = handshake.meetingID;
+   redisAction.isValidSession(meetingID, sessionID, function (isValid) {
+     if(isValid) {
+       //initialize local variables
+       var username = handshake.username;
+       //remove the user from the list of users
+       store.srem(redisAction.getUsersString(meetingID), sessionID, function(numDeleted) {
+         //delete key from database
+         store.del(redisAction.getUserString(meetingID, sessionID), function(reply) {
             pub.publish(sessionID, JSON.stringify(['logout'])); //send to all users on same session (all tabs)
-          	socket.disconnect(); //disconnect own socket
-  		    });
-  		  });
-  		}
-  		socketAction.publishUsernames(meetingID);
-	  });
-	});
-	
-	// A user clicks to change to previous slide
-	socket.on('prevslide', function (slide_num) {
-	  var handshake = socket.handshake;
-		var sessionID = handshake.sessionID;
-		var meetingID = handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == sessionID) {
-  	    redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
-  	      redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
-  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(pageID, filename)  {
-  	          pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
-  	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
-      			  socketAction.publishShapes(meetingID);
-  	        });
-  	      });
-	      });
-      }
+            socket.disconnect(); //disconnect own socket
+         });
+       });
+     }
+     socketAction.publishUsernames(meetingID);
     });
-	});
-	
-	// A user clicks to change to next slide
-	socket.on('nextslide', function () {
-	  var handshake = socket.handshake;
-		var sessionID = handshake.sessionID;
-		var meetingID = handshake.meetingID;
+  });
+ 
+  // A user clicks to change to previous slide
+  socket.on('prevslide', function (slide_num) {
+    var handshake = socket.handshake;
+   var sessionID = handshake.sessionID;
+   var meetingID = handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == sessionID) {
-	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
-  	      redisAction.changeToNextPage(meetingID, presentationID, function(pageID){
-  	        redisAction.getPageImage(meetingID, presentationID, pageID, function(pageID, filename) {
-  	          pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
-  	          pub.publish(meetingID, JSON.stringify(['clrPaper']));
-      			  socketAction.publishShapes(meetingID);
-  	        });
-  	      });
-	      });
+      if(presenterID == sessionID) {
+        redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+          redisAction.changeToPrevPage(meetingID, presentationID, function(pageID){
+            redisAction.getPageImage(meetingID, presentationID, pageID, function(pageID, filename)  {
+              pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
+              pub.publish(meetingID, JSON.stringify(['clrPaper']));
+             socketAction.publishShapes(meetingID);
+            });
+          });
+        });
       }
     });
-	});
-	
-	// When a rectangle creation event is received
-	socket.on('makeShape', function (shape, data) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
+  });
+ 
+  // A user clicks to change to next slide
+  socket.on('nextslide', function () {
+    var handshake = socket.handshake;
+   var sessionID = handshake.sessionID;
+   var meetingID = handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == sessionID) {
+        redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+          redisAction.changeToNextPage(meetingID, presentationID, function(pageID){
+            redisAction.getPageImage(meetingID, presentationID, pageID, function(pageID, filename) {
+              pub.publish(meetingID, JSON.stringify(['changeslide', 'images/presentation' + presentationID + '/'+filename]));
+              pub.publish(meetingID, JSON.stringify(['clrPaper']));
+             socketAction.publishShapes(meetingID);
+            });
+          });
+        });
+      }
+    });
+  });
+ 
+  // When a rectangle creation event is received
+  socket.on('makeShape', function (shape, data) {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
         pub.publish(meetingID, JSON.stringify(['makeShape', shape, data]));
       }
     });
-	});
-	
-	socket.on('updShape', function (shape, data) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
+  });
+ 
+  socket.on('updShape', function (shape, data) {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
         pub.publish(meetingID, JSON.stringify(['updShape', shape, data]));
       }
     });
-	});
+  });
 
-	// When a cursor move event is received
-	socket.on('mvCur', function (x, y) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['mvCur', x, y]));
+  // When a cursor move event is received
+  socket.on('mvCur', function (x, y) {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['mvCur', x, y]));
       }
     });
-	});
-	
-	// When a clear Paper event is received
-	socket.on('clrPaper', function () {
-	  var meetingID = socket.handshake.meetingID;
-	  var sessionID = socket.handshake.sessionID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
-    	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
-    	      redisAction.getItemIDs(meetingID, presentationID, pageID, 'currentshapes', function(meetingID, presentationID, pageID, itemIDs, itemName) {
-    	        redisAction.deleteItemList(meetingID, presentationID, pageID, itemName, itemIDs);
-    	      });
-        	  pub.publish(meetingID, JSON.stringify(['clrPaper']));
-        	  socketAction.publishTool(meetingID, sessionID);
-    	    });
-    	  });
-  	  }
-	  });
-	});
+  });
+ 
+  // When a clear Paper event is received
+  socket.on('clrPaper', function () {
+    var meetingID = socket.handshake.meetingID;
+    var sessionID = socket.handshake.sessionID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
+        redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+          redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
+            redisAction.getItemIDs(meetingID, presentationID, pageID, 'currentshapes', function(meetingID, presentationID, pageID, itemIDs, itemName) {
+              redisAction.deleteItemList(meetingID, presentationID, pageID, itemName, itemIDs);
+            });
+            pub.publish(meetingID, JSON.stringify(['clrPaper']));
+            socketAction.publishTool(meetingID, sessionID);
+          });
+        });
+      }
+    });
+  });
 
-	socket.on('setPresenter', function (publicID) {
-	  console.log('setting presenter to' + publicID);
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.setPresenterFromPublicID(meetingID, publicID, function(success) {
-	    if(success) {
-	      pub.publish(meetingID, JSON.stringify(['setPresenter', publicID]));
-	    }
-	  });
-	});
+  socket.on('setPresenter', function (publicID) {
+    console.log('setting presenter to' + publicID);
+    var meetingID = socket.handshake.meetingID;
+    redisAction.setPresenterFromPublicID(meetingID, publicID, function(success) {
+      if(success) {
+        pub.publish(meetingID, JSON.stringify(['setPresenter', publicID]));
+      }
+    });
+  });
 
-	// When a user is updating the viewBox of the paper
-	socket.on('paper', function (cx, cy, sw, sh) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(socket.handshake.meetingID, JSON.stringify(['paper', cx, cy, sw, sh]));
-	      if(!sw && !sh) {
-	        redisAction.getViewBox(socket.handshake.meetingID, function(viewbox) {
-	          var viewbox = JSON.parse(viewbox);
-	          redisAction.setViewBox(socket.handshake.meetingID, JSON.stringify([cx, cy, viewbox[2], viewbox[3]]));
-	        });
-	      }
+  // When a user is updating the viewBox of the paper
+  socket.on('paper', function (cx, cy, sw, sh) {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
+        pub.publish(socket.handshake.meetingID, JSON.stringify(['paper', cx, cy, sw, sh]));
+        if(!sw && !sh) {
+          redisAction.getViewBox(socket.handshake.meetingID, function(viewbox) {
+            var viewbox = JSON.parse(viewbox);
+            redisAction.setViewBox(socket.handshake.meetingID, JSON.stringify([cx, cy, viewbox[2], viewbox[3]]));
+          });
+        }
         else redisAction.setViewBox(socket.handshake.meetingID, JSON.stringify([cx, cy, sw, sh]));
       }
     });
-	});
-	
-	// When a user is zooming
-	socket.on('zoom', function(delta) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['zoom', delta]));
+  });
+ 
+  // When a user is zooming
+  socket.on('zoom', function(delta) {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['zoom', delta]));
       }
     });
-	});
-	
-	// When a user finishes panning
-	socket.on('panStop', function() {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['panStop']));
+  });
+ 
+  // When a user finishes panning
+  socket.on('panStop', function() {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['panStop']));
       }
     });
-	});
-	
-	socket.on('undo', function() {
+  });
+ 
+  socket.on('undo', function() {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
       if(presenterID == socket.handshake.sessionID) {
@@ -373,71 +373,77 @@ exports.SocketOnConnection = function(socket) {
         });
       }
     });
-	});
-	
-	socket.on('textUpdate', function(t, x, y, w, spacing, colour, font, fontsize) {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['textUpdate', t, x, y, w, spacing, colour, font, fontsize]));
+  });
+ 
+  socket.on('textUpdate', function(t, x, y, w, spacing, colour, font, fontsize) {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['textUpdate', t, x, y, w, spacing, colour, font, fontsize]));
       }
     });
-	});
-	
-	socket.on('textDone', function() {
-	  var meetingID = socket.handshake.meetingID;
-	  redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == socket.handshake.sessionID) {
-	      pub.publish(meetingID, JSON.stringify(['textDone']));
+  });
+ 
+  socket.on('textDone', function() {
+    var meetingID = socket.handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == socket.handshake.sessionID) {
+        pub.publish(meetingID, JSON.stringify(['textDone']));
       }
     });
-	});
-	
-	socket.on('saveShape', function (shape, data) {
-	  var handshake = socket.handshake;
-		var meetingID = handshake.meetingID;
-		redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-	    if(presenterID == handshake.sessionID) {
-    	  redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
-    	    redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
-    	      var shapeID = rack(); //get a randomly generated id for the shape
-	          store.rpush(redisAction.getCurrentShapesString(meetingID, presentationID, pageID), shapeID);
-            store.hmset(redisAction.getShapeString(meetingID, presentationID, pageID, shapeID), 
+  });
+ 
+  // Saving a shape to Redis. Does not provide feedback to client(s)
+  socket.on('saveShape', function (shape, data) {
+    var handshake = socket.handshake;
+    var meetingID = handshake.meetingID;
+    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+      if(presenterID == handshake.sessionID) {
+        redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
+          redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
+            var shapeID = rack(); //get a randomly generated id for the shape
+            store.rpush(redisAction.getCurrentShapesString(meetingID, presentationID, pageID), shapeID);
+            store.hmset(redisAction.getShapeString(meetingID, presentationID, pageID, shapeID),
                 'shape', shape, 'data', data, function(err, reply) {
             });
-    	    });
-    	  });
-  	  }
-	  });
-	});
+          });
+        });
+      }
+    });
+  });
 
+  // Changing the currently set tool.
+  // Set the current tool in Redis, then
+  // publish the tool change to the members
   socket.on('changeTool', function (tool) {
      var handshake = socket.handshake;
-  	 var meetingID = handshake.meetingID;
-  	 redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-  	   if(presenterID == socket.handshake.sessionID) {
-	        redisAction.setCurrentTool(meetingID, tool, function(success) {
-	          if(success) {
-	            pub.publish(meetingID, JSON.stringify(['toolChanged', tool]));
-	          }
-	        });
-	     }
+     var meetingID = handshake.meetingID;
+     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
+       if(presenterID == socket.handshake.sessionID) {
+          redisAction.setCurrentTool(meetingID, tool, function(success) {
+            if(success) {
+              pub.publish(meetingID, JSON.stringify(['toolChanged', tool]));
+            }
+          });
+       }
      });
   });
-  
+ 
+  // If a user requests all the shapes,
+  // publish the shapes to everyone.
   socket.on('all_shapes', function(){
     var handshake = socket.handshake;
     var meetingID = handshake.meetingID;
     socketAction.publishShapes(meetingID);
   });
-  
+ 
   socket.on('fitToPage', function(fit) {
     var handshake = socket.handshake;
     var meetingID = handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-  	   if(presenterID == socket.handshake.sessionID) {
+       if(presenterID == socket.handshake.sessionID) {
          pub.publish(meetingID, JSON.stringify(['fitToPage', fit]));
-	     }
+       }
      });
   });
 };

@@ -7,10 +7,15 @@ var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides, 
     paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse, line, scrollh, scrollw, textoffset,
     current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, vw, vh, shift_pressed;
 var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, letters = [],
-    zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30, 
+    zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
     dcr = 3;
 
+/*
+  Drawing the thickness viewer for client feedback.
+  No messages are sent to the server, it is completely
+  local. Shows visual of thickness for drawing tools.
+*/
 function drawThicknessView(thickness, colour){
   current_thickness = thickness;
   tctx.fillStyle='#FFFFFF';
@@ -20,6 +25,12 @@ function drawThicknessView(thickness, colour){
   tctx.fillRect(center,center,thickness+1,thickness+1);
 }
 
+/*
+  Drawing the colour viewer for client feedback.
+  No messages are sent to the server, it is
+  completely local. Shows colour visual for drawing
+  tools.
+*/
 function drawColourView(colour) {
   current_colour = colour;
   ctx.fillStyle = colour;
@@ -27,6 +38,12 @@ function drawColourView(colour) {
   ctx.fillRect(0,0,12,12);
 }
 
+/*
+  Toggles the visibility of the colour picker,
+  which is hidden by default. The picker is a
+  RaphaelJS object, so each node of the object
+  must be shown/hidden individually.
+*/
 function toggleColourPicker() {
   if(cpVisible) {
     cpVisible = false;
@@ -38,6 +55,10 @@ function toggleColourPicker() {
   }
 }
 
+/*
+  Switches the tool and thus the functions that get
+  called when certain events are fired from Raphael.
+*/
 function turnOn(tool) {
   current_tool = tool;
   switch(tool) {
@@ -45,35 +66,39 @@ function turnOn(tool) {
       cur.undrag();
       cur.drag(curDragging, curDragStart, curDragStop);
     break;
-    
+
     case 'rect':
       cur.undrag();
       cur.drag(curRectDragging, curRectDragStart, curRectDragStop);
     break;
-    
+
     case 'panzoom':
       cur.undrag();
       cur.drag(panDragging, panGo, panStop);
     break;
-    
+
     case 'ellipse':
       cur.undrag();
       cur.drag(curEllipseDragging, curEllipseDragStart, curEllipseDragStop);
     break;
-    
+
     case 'text':
       cur.undrag();
       cur.drag(curRectDragging, curTextStart, curTextStop);
     break;
-    
+
     default:
       console.log("ERROR: Cannot turn on tool, invalid tool: " + tool);
     break;
   }
 }
 
-// Initialize default values
+/*
+  Initializes the "Paper" which is the Raphael term for
+  the entire SVG object on the webpage.
+*/
 function initPaper() {
+  //paper is embedded within the div#slide of the page.
   paper = paper || Raphael('slide', gw, gh);
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
   cur = paper.circle(0, 0, dcr);
@@ -83,12 +108,15 @@ function initPaper() {
     rebuildPaper();
   }
   else slides = {}; //if previously loaded
-  
+
   if (navigator.userAgent.indexOf("Firefox") != -1) {
     paper.renderfix();
   }
 }
 
+/*
+  Updates the paper from the server values.
+*/
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
@@ -112,6 +140,11 @@ function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
 }
 
+/*
+  Sets the fit to page.
+  fit == true ? -> fit to page
+  fit == false ? -> fit to width
+*/
 function setFitToPage(fit) {
   fitToPage = fit;
   var temp = slides;
@@ -122,6 +155,9 @@ function setFitToPage(fit) {
   getShapesFromServer();
 }
 
+/*
+  Add an image to the paper.
+*/
 function addImageToPaper(url, w, h) {
   if(fitToPage) {
     var xr = w/vw;
@@ -160,6 +196,9 @@ function addImageToPaper(url, w, h) {
   return img;
 }
 
+/*
+  Removes all the images from the Raphael paper.
+*/
 function removeAllImagesFromPaper() {
   var img;
   for (url in slides) {
@@ -172,7 +211,9 @@ function removeAllImagesFromPaper() {
   current_url = null;
 }
 
-//accepts an array of points
+/*
+  Draws an array of shapes to the paper.
+*/
 function drawListOfShapes(shapes) {
   current_shapes = paper.set();
   for (var i = shapes.length - 1; i >= 0; i--) {
@@ -181,26 +222,30 @@ function drawListOfShapes(shapes) {
       case 'path':
         drawLine.apply(drawLine, data);
       break;
-      
+
       case 'rect':
         drawRect.apply(drawRect, data);
       break;
-      
+
       case 'ellipse':
         drawEllipse.apply(drawEllipse, data);
       break;
-      
+
       case 'text':
         drawText.apply(drawText, data);
       break;
-      
+
       default:
       break;
     }
   }
-  bringCursorToFront();
+  bringCursorToFront(); //make sure the cursor is still on top;
 }
 
+/*
+  Re-add the images to the paper that are found
+  in the slides array (an object of urls and dimensions).
+*/
 function rebuildPaper() {
   current_url = null;
   for(url in slides) {
@@ -211,23 +256,30 @@ function rebuildPaper() {
   }
 }
 
+/*
+  Shows an image from the paper.
+  The url must be in the slides array.
+*/
 function showImageFromPaper(url) {
-  var current = getImageFromPaper(current_url);
-  if(current) {
-    current.hide();
+  if(current_url != url) {
+    hideImageFromPaper(current_url);
+    var next = getImageFromPaper(url);
+    if(next) {
+      next.show();
+      next.toFront();
+      current_shapes.forEach(function(element) {
+        element.toFront();
+      });
+      cur.toFront();
+    }
+    current_url = url;
   }
-  var next = getImageFromPaper(url);
-  if(next) {
-    next.show();
-    next.toFront();
-    current_shapes.forEach(function(element) {
-      element.toFront();
-    });
-    cur.toFront();
-  }
-  current_url = url;
 }
 
+/*
+  Retrieves an image element from the paper.
+  The url must be in the slides array.
+*/
 function getImageFromPaper(url) {
   if(slides[url]) {
     var id = slides[url].id;
@@ -239,18 +291,19 @@ function getImageFromPaper(url) {
   else return null;
 }
 
-//unused
+/*
+  Hides an image from the paper given the URL.
+  The url must be in the slides array.
+*/
 function hideImageFromPaper(url) {
   var img = getImageFromPaper(url);
   if(img) img.hide();
 }
 
-//unused
-function sendImageToBack(url) {
-  var img = getImageFromPaper(url);
-  if(img) img.toBack();
-}
-
+/*
+  Puts the cursor on top so it doesn't
+  get hidden behind any objects/images.
+*/
 function bringCursorToFront() {
   cur.toFront();
 }
@@ -272,7 +325,7 @@ var panDragging = function(dx, dy) {
   else x2 = vw + x;
   x = x2 > sw ? sw - (vw - sx*2) : x;
   var y2;
-  if(fitToPage) y2 = gh + y; 
+  if(fitToPage) y2 = gh + y;
   else y2 = vh + y;
   y = y2 > sh ? sh - (vh - sy*2) : y;
   sendPaperUpdate(x/sw, y/sh, null, null);
@@ -406,7 +459,7 @@ var curTextStop = function(e) {
     var x = textx - s_left - sx + cx + 1; // 1px random padding
     var y = texty - s_top - sy + cy;
     textbox.focus();
-    
+
     textbox.onblur = function(e) {
       if(text) {
         emitPublishShape('text', [this.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
@@ -415,7 +468,7 @@ var curTextStop = function(e) {
       textbox.value = "";
       textbox.style.visibility = "hidden";
     };
-    
+
     //if user presses enter key
     textbox.onkeypress = function(e) {
       if(e.keyCode == '13') {
@@ -424,7 +477,7 @@ var curTextStop = function(e) {
         this.onblur();
       }
     };
-    
+
     textbox.onkeyup = function(e) {
       this.value = this.value.replace(/\n{1,}/g, ' ').replace(/\s{2,}/g, ' '); //enforce no 2 or greater consecutive spaces, no new lines
       emitUpdateShape('text', [this.value, x/sw, (y+(14*(sh/gh)))/sh, tboxw*(gw/sw), 16, current_colour, 'Arial', 14]);
@@ -560,7 +613,7 @@ function setZoom(d) {
   var step = 0.05; //step size
   if(d < 0) zoom_level += step; //zooming out
   else zoom_level -= step; //zooming in
-  
+
   var x = cx/sw, y = cy/sh, z = zoom_level > 1 ? 1 : zoom_level; //cannot zoom out further than 100%
   z = z < 0.25 ? 0.25 : z; //cannot zoom in further than 400% (1/4)
   //cannot zoom to make corner less than (x,y) = (0,0)
@@ -611,10 +664,10 @@ cptext.onkeyup = function() {
 };
 
 document.onkeydown = function(event) {
-  var keyCode; 
+  var keyCode;
   if(!event) keyCode = window.event.keyCode;
   else keyCode = event.keyCode;
-  
+
   switch(keyCode) {
     case 16:
       shift_pressed = true;
@@ -622,12 +675,12 @@ document.onkeydown = function(event) {
 
     default:
       //nothing
-    break; 
+    break;
   }
 };
 
 document.onkeyup = function(event) {
-  var keyCode; 
+  var keyCode;
   if(!event) keyCode = window.event.keyCode;
   else keyCode = event.keyCode;
   switch(keyCode) {
@@ -637,7 +690,7 @@ document.onkeyup = function(event) {
 
     default:
       //nothing
-    break; 
+    break;
   }
 };
 
@@ -649,7 +702,7 @@ $('#uploadForm').submit(function() {
       console.log('Error: ' + xhr.status);
     },
     success: function(response) {
-      
+
     }
   });
   // Have to stop the form from submitting and causing refresh

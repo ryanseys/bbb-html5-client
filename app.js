@@ -12,70 +12,70 @@ var express = require('express'),
   RedisStore = require('connect-redis')(express),
   redis = require('redis');
 
-	routes = require('./routes');
+  routes = require('./routes');
 
-	hat = require('hat');
-	rack = hat.rack();
-	format = require('util').format;
-	fs = require('fs');
-	im = require('imagemagick');
-	
-	util = require('util');
+  hat = require('hat');
+  rack = hat.rack();
+  format = require('util').format;
+  fs = require('fs');
+  im = require('imagemagick');
+  
+  util = require('util');
   exec = require('child_process').exec;
   ip_address = 'localhost';
-	
-	//global variables
-	redisAction = require('./redis');
-	socketAction = require('./routes/socketio');
-	sanitizer = require('sanitizer');
-	store = redis.createClient();
-	store.flushdb();
-	pub = redis.createClient();
-	sub = redis.createClient();
-	
-	subscriptions = ['*'];
+  
+  //global variables
+  redisAction = require('./redis');
+  socketAction = require('./routes/socketio');
+  sanitizer = require('sanitizer');
+  store = redis.createClient();
+  store.flushdb();
+  pub = redis.createClient();
+  sub = redis.createClient();
+  
+  subscriptions = ['*'];
   sub.psubscribe.apply(sub, subscriptions);
 
 // Configuration
 
 app.configure(function(){
-	app.set('views', __dirname + '/views');
-	app.set('view engine', 'jade');
-	app.use(express['static'](__dirname + '/public'));
-	app.use(express.bodyParser());
-	app.use(express.methodOverride());
-	app.use(express.cookieParser());
-	//Redis
-	app.use(express.session({
-		secret: "password",
-		cookie: { secure: true },
-		store: new RedisStore({
-			host: "127.0.0.1",
-			port: "6379"
-		}),
-		key: 'express.sid'
-	}));
-	app.use(app.router);
+  app.set('views', __dirname + '/views');
+  app.set('view engine', 'jade');
+  app.use(express['static'](__dirname + '/public'));
+  app.use(express.bodyParser());
+  app.use(express.methodOverride());
+  app.use(express.cookieParser());
+  //Redis
+  app.use(express.session({
+    secret: "password",
+    cookie: { secure: true },
+    store: new RedisStore({
+      host: "127.0.0.1",
+      port: "6379"
+    }),
+    key: 'express.sid'
+  }));
+  app.use(app.router);
 });
 
 app.configure('development', function(){
-	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
 app.configure('production', function(){
-	app.use(express.errorHandler());
+  app.use(express.errorHandler());
 });
 
 // If a page requires authentication to view...
 function requiresLogin(req, res, next) {
-	//check that they have a cookie with valid session id
-	redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function(isValid) {
-	  if(isValid) {
-  		next();
-  	} else {
-  		res.redirect('/');
-  	}
-	});
+  //check that they have a cookie with valid session id
+  redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function(isValid) {
+    if(isValid) {
+      next();
+    } else {
+      res.redirect('/');
+    }
+  });
 }
 
 // Routes (see /routes/index.js)
@@ -92,33 +92,33 @@ app.post('*', routes.error404);
 
 // Start the web server listening
 app.listen(3000, function() {
-	console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
+  console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
 });
 
 // Socket.IO Routes
 
-/*
-  This verifies with the database that the sessionID
-  contained within the connected socket is indeed valid.
-  If the sessionID is not valid, the socket is disconnected
-  and the function returns false.
-
-  This test is to be used whenever a connected socket requests
-  to make actions against the server i.e. sends a message to the server.
-*/
-
-// Used to parse the cookie data.
+/**
+ * This verifies with the database that the sessionID
+ * contained within the connected socket is indeed valid.
+ * If the sessionID is not valid, the socket is disconnected
+ * and the function returns false. This test is to be used whenever
+ * a connected socket requests to make actions against the server 
+ * i.e. sends a message to the server.
+ * @param  {String} cookie_string The cookie to parse.
+ * @param  {String} c_var         The variable to extract from the cookie.
+ * @return {String} The value of the variable extracted.
+ */
 function getCookie(cookie_string, c_var) {
   if(cookie_string) {
     var i,x,y,ARRcookies=cookie_string.split(";");
-  	for (i=0;i<ARRcookies.length;i++) {
-  		x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
-  		y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
-  		x=x.replace(/^\s+|\s+$/g,"");
-  		if (x==c_var) {
-  			return unescape(y);
-  		}
-  	}
+    for (i=0;i<ARRcookies.length;i++) {
+      x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+      y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+      x=x.replace(/^\s+|\s+$/g,"");
+      if (x==c_var) {
+        return unescape(y);
+      }
+    }
   }
   else {
     console.log("Invalid cookie");
@@ -126,7 +126,9 @@ function getCookie(cookie_string, c_var) {
   }
 }
 
-// Authorize a session before it given access to connect to SocketIO
+/**
+ * Authorize a session before it given access to connect to SocketIO
+ */
 io.configure(function () {
   io.set('authorization', function (handshakeData, callback) {
     var sessionID = getCookie(handshakeData.headers.cookie, "sessionid");
@@ -153,8 +155,13 @@ io.configure(function () {
 io.sockets.on('connection', socketAction.SocketOnConnection);
 
 // Redis Routes
-
-//When Redis Sub gets a message from Pub
+/**
+ * When Redis Sub gets a message from Pub
+ * @param  {String} pattern Matched pattern on Redis PubSub
+ * @param  {String} channel Channel the pmessage was published on (socket room)
+ * @param  {String} message Message published (socket message data)
+ * @return {undefined}
+ */
 sub.on("pmessage", function(pattern, channel, message) {
   //value of pub channel is used as the name of the SocketIO room to send to.
   var channel_viewers = io.sockets.in(channel);

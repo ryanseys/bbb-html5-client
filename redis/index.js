@@ -500,10 +500,10 @@ exports.getItems = function(meetingID, presentationID, pageID, item, callback) {
   var itemsDone = 0;
   var itemsGetFunction;
   var itemGetFunction;
-  
+ 
   itemGetFunction = redisAction.getItemStringFunction(item);
   itemsGetFunction = redisAction.getItemsStringFunction(item);
-  
+ 
   store.lrange(itemsGetFunction(meetingID, presentationID, pageID), 0, -1, function (err, itemIDs) {
     itemCount = itemIDs.length;
     if(itemCount == 0) callback([]);
@@ -605,7 +605,7 @@ exports.createPage = function(meetingID, presentationID, imageName, setCurrent, 
       callback(null);
     }
   };
-  
+ 
   console.log("Making page with id " + pageID);
   if(setCurrent) {
     store.lpush(redisAction.getPagesString(meetingID, presentationID), pageID, afterPush);
