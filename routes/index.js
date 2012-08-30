@@ -71,12 +71,15 @@ function makeMeeting(meetingID, sessionID, username, callback) {
   else callback(false);
 }
 
-/*
-  Upon submitting their login details from the index page via a POST request,
-  a meeting will be created and joined. If an error occurs, which usually
-  results in using a username/meetingID that is too long, they will be redirected
-  to the index page again.
-*/
+/**
+ * Upon submitting their login details from the index page via a POST request,
+ * a meeting will be created and joined. If an error occurs, which usually
+ * results in using a username/meetingID that is too long, they will be redirected
+ * to the index page again.
+ * @param  {Object} req request object
+ * @param  {Object} res response object
+ * @return {undefined}     response is parsed and sent back to client
+ */
 exports.post_index = function(req, res) {
   var username = sanitizer.escape(req.body.user.name);
   var meetingID = sanitizer.escape(req.body.meeting.id);

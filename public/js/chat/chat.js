@@ -9,13 +9,21 @@ var SERVER_IP = window.location.hostname;
 // Connect to the websocket via SocketIO
 var socket = io.connect('http://'+SERVER_IP+':'+PORT);
 
-// If the socket is connect
+/**
+ * If the socket is connected
+ * @return {undefined}
+ */
 socket.on('connect', function () {
 
   // Immediately say we are connected
   socket.emit('user connect');
 
-  // Received event for a new public chat message
+  /**
+   * Received event for a new public chat message
+   * @param  {string} name name of user
+   * @param  {string} msg  message to be displayed
+   * @return {undefined}
+   */
   socket.on('msg', function (name, msg) {
     msgbox.innerHTML += '<div>' + name + ': ' + msg + '</div>';
     msgbox.scrollTop = msgbox.scrollHeight;
@@ -109,10 +117,10 @@ socket.on('connect', function () {
 
   /**
    * Received event to update the viewBox value
-   * @param  {String} xperc Percentage of x-offset from top left corner
-   * @param  {String} yperc Percentage of y-offset from top left corner
-   * @param  {String} wperc Percentage of full width of image to be displayed
-   * @param  {String} hperc Percentage of full height of image to be displayed
+   * @param  {string} xperc Percentage of x-offset from top left corner
+   * @param  {string} yperc Percentage of y-offset from top left corner
+   * @param  {string} wperc Percentage of full width of image to be displayed
+   * @param  {string} hperc Percentage of full height of image to be displayed
    * @return {undefined}
    */
   socket.on('viewBox', function(xperc, yperc, wperc, hperc) {
@@ -125,35 +133,55 @@ socket.on('connect', function () {
 
   /**
    * Received event to update the cursor coordinates
-   * @param  {Integer} x x-coord of the cursor as a percentage of page width
-   * @param  {Integer} y y-coord of the cursor as a percentage of page height
+   * @param  {number} x x-coord of the cursor as a percentage of page width
+   * @param  {number} y y-coord of the cursor as a percentage of page height
    * @return {undefined}
    */
   socket.on('mvCur', function(x, y) {
     mvCur(x, y);
   });
 
-  // Received event to update the slide image
+  /**
+   * Received event to update the slide image
+   * @param  {string} url URL of image to show
+   * @return {undefined}
+   */
   socket.on('changeslide', function(url) {
     showImageFromPaper(url);
   });
 
-  // Received event to update the whiteboard between fit to width and fit to page
+  /**
+   * Received event to update the whiteboard between fit to width and fit to page
+   * @param  {boolean} fit choice of fit: true for fit to page, false for fit to width
+   * @return {undefined}
+   */
   socket.on('fitToPage', function(fit) {
     setFitToPage(fit);
   });
 
-  // Received event to update the zoom level of the whiteboard.
+  /**
+   * Received event to update the zoom level of the whiteboard.
+   * @param  {number} delta amount of change in scroll wheel
+   * @return {undefined}
+   */
   socket.on('zoom', function(delta) {
     setZoom(delta);
   });
 
-  // Received event when the panning action finishes
+  /**
+   * Received event when the panning action finishes
+   * @return {undefined}
+   */
   socket.on('panStop', function() {
     panDone();
   });
 
-  // Received event to create a shape on the whiteboard
+  /**
+   * Received event to create a shape on the whiteboard
+   * @param  {string} shape type of shape being made
+   * @param  {Array} data   all information to make the shape
+   * @return {undefined}
+   */
   socket.on('makeShape', function(shape, data) {
     switch(shape) {
     case 'line':
@@ -174,7 +202,12 @@ socket.on('connect', function () {
     }
   });
 
-  // Received event to update a shape being created
+  /**
+   * Received event to update a shape being created
+   * @param  {string} shape type of shape being updated
+   * @param  {Array} data   all information to update the shape
+   * @return {undefined}
+   */
   socket.on('updShape', function(shape, data) {
     switch(shape) {
     case 'line':
@@ -199,28 +232,51 @@ socket.on('connect', function () {
   }
   });
 
-  // Received event to denote when the text has been created
+  /**
+   * Received event to denote when the text has been created
+   * @return {undefined}
+   */
   socket.on('textDone', function() {
     textDone();
   });
 
-// Received event to change the current tool
+  /**
+   * Received event to change the current tool
+   * @param  {string} tool tool to be turned on
+   * @return {undefined}
+   */
   socket.on('toolChanged', function(tool) {
     turnOn(tool);
   });
 
-  // Received event to update the whiteboard size and position
+  /**
+   * Received event to update the whiteboard size and position
+   * @param  {number} cx x-offset from top left corner as percentage of original width of paper
+   * @param  {number} cy y-offset from top left corner as percentage of original height of paper
+   * @param  {number} sw slide width as percentage of original width of paper
+   * @param  {number} sh slide height as a percentage of original height of paper
+   * @return {undefined}
+   */
   socket.on('paper', function(cx, cy, sw, sh) {
   updatePaperFromServer(cx, cy, sw, sh);
   });
 
-  // Received event to set the presenter to a user
+  /**
+   * Received event to set the presenter to a user
+   * @param  {string} publicID publicID of the user that is being set as the current presenter
+   * @return {undefined}
+   */
   socket.on('setPresenter', function(publicID) {
     $('.presenter').removeClass('presenter');
     $('#' + publicID).addClass('presenter');
   });
 
-  // Received event to update the status of the upload progress
+  /**
+   * Received event to update the status of the upload progress
+   * @param  {string} message  update message of status of upload progress
+   * @param  {boolean} fade    true if you wish the message to automatically disappear after 3 seconds
+   * @return {undefined}
+   */
   socket.on('uploadStatus', function(message, fade) {
     $('#uploadStatus').text(message);
     // if a true is passed for fade, it will only stay for
@@ -232,7 +288,11 @@ socket.on('connect', function () {
     }
   });
 
-  // Received event to update all the slide images
+  /**
+   * Received event to update all the slide images
+   * @param  {Array} urls list of URLs to be added to the paper (after old images are removed)
+   * @return {undefined}
+   */
   socket.on('all_slides', function(urls) {
     $('#uploadStatus').text(""); //upload finished
     removeAllImagesFromPaper();
@@ -246,12 +306,22 @@ socket.on('connect', function () {
   });
 });
 
-//if an error occurs while not connected
+/**
+ * If an error occurs while not connected
+ * @param  {string} reason Reason for the error.
+ * @return {undefined}
+ */
 socket.on('error', function (reason) {
   console.error('Unable to connect Socket.IO', reason);
 });
 
-//POST request using javascript
+/**
+ * POST request using javascript
+ * @param  {string} path   path of submission
+ * @param  {string} params parameters to submit
+ * @param  {string} method method of submission ("post" is default)
+ * @return {undefined}
+ */
 function post_to_url(path, params, method) {
   method = method || "post"; // Set method to post by default, if not specified.
   // The rest of this code assumes you are not using a library.
@@ -272,7 +342,10 @@ function post_to_url(path, params, method) {
   form.submit();
 }
 
-// Sending a public chat message to users
+/**
+ * Sending a public chat message to users
+ * @return {undefined}
+ */
 function sendMessage() {
   var msg = chatbox.value;
     if (msg != '') {
@@ -282,111 +355,192 @@ function sendMessage() {
     chatbox.focus();
 }
 
-// Clearing the canvas drawings
+/**
+ * Clearing the canvas drawings
+ * @return {undefined}
+ */
 function clearCanvas() {
   socket.emit("clrPaper");
 }
 
+/**
+ * Requests the shapes from the server.
+ * @return {undefined}
+ */
 function getShapesFromServer() {
   socket.emit('all_shapes');
 }
 
-// Emit an update in a fit of the whiteboard
-// true for fitToPage and false for fitToWidth
+/**
+ * Emit an update in a fit of the whiteboard
+ * @param  {boolean} true for fitToPage, false for fitToWidth
+ * @return {undefined}
+ */
 function sendFitToPage(fit) {
   socket.emit('fitToPage', fit);
 }
 
-// Emit the finish of a text shape
+/**
+ * Emit the finish of a text shape
+ * @return {undefined}
+ */
 function emitDoneText() {
   socket.emit('textDone');
 }
 
-/*
-  Emit the creation of a shape
-  shape is the type of shape
-  data is all the data required to draw the shape on the client whiteboard
-*/
+/**
+ * Emit the creation of a shape
+ * @param  {string} shape type of shape
+ * @param  {Array} data  all the data required to draw the shape on the client whiteboard
+ * @return {undefined}
+ */
 function emitMakeShape(shape, data) {
   socket.emit('makeShape', shape, data);
 }
 
-/*
-  Emit the update of a shape
-  shape is the type of shape
-  data is all the data required to update the shape on the client whiteboard
-*/
+/**
+ * Emit the update of a shape
+ * @param  {string} shape type of shape
+ * @param  {Array} data  all the data required to update the shape on the client whiteboard
+ * @return {undefined}
+ */
 function emitUpdateShape(shape, data) {
   socket.emit('updShape', shape, data);
 }
 
-// Emit an update in the whiteboard position/size values
+/**
+ * Emit an update in the whiteboard position/size values
+ * @param  {number} cx x-offset from top left corner as percentage of original width of paper
+ * @param  {number} cy y-offset from top left corner as percentage of original height of paper
+ * @param  {number} sw slide width as percentage of original width of paper
+ * @param  {number} sh slide height as a percentage of original height of paper
+ * @return {undefined}
+ */
 function sendPaperUpdate(cx, cy, sw, sh) {
   socket.emit('paper', cx, cy, sw, sh);
 }
 
-// Move the cursor around the canvas
+/**
+ * Emit an update to move the cursor around the canvas
+ * @param  {number} x x-coord of the cursor as a percentage of page width
+ * @param  {number} y y-coord of the cursor as a percentage of page height
+ * @return {undefined}
+ */
 function emMvCur(x, y) {
   socket.emit('mvCur', x, y);
 }
 
-// Change the ViewBox size of the canvas (pan and zoom)
+/**
+ * Emit an update to change the viewBox size of the canvas (pan and zoom)
+ * @deprecated Use sendUpdateToPaper() instead.
+ * @param  {string} xperc Percentage of x-offset from top left corner
+ * @param  {string} yperc Percentage of y-offset from top left corner
+ * @param  {string} wperc Percentage of full width of image to be displayed
+ * @param  {string} hperc Percentage of full height of image to be displayed
+ * @return {undefined}
+ */
 function emViewBox(xperc, yperc, wperc, hperc) {
   socket.emit('viewBox', xperc, yperc, wperc, hperc);
 }
 
-// Update the zoom level for the clients
+/**
+ * Update the zoom level for the clients
+ * @param  {number} delta amount of change in scroll wheel
+ * @return {undefined}
+ */
 function emZoom(delta) {
   socket.emit('zoom', delta);
 }
 
-// Request the next slide
+/**
+ * Request the next slide
+ * @return {undefined}
+ */
 function nextImg() {
   socket.emit('nextslide');
 }
 
-// Request the previous slide
+/**
+ * Request the previous slide
+ * @return {undefined}
+ */
 function prevImg() {
   socket.emit('prevslide');
 }
 
-// Logout of the meeting
+/**
+ * Logout of the meeting
+ * @return {undefined}
+ */
 function logout() {
   socket.emit('logout');
 }
 
-// Emit panning has stopped
+/**
+ * Emit panning has stopped
+ * @return {undefined}
+ */
 function emPanStop() {
   socket.emit('panStop');
 }
 
-// Publish a shape to the server to be saved
+/**
+ * Publish a shape to the server to be saved
+ * @param  {string} shape type of shape to be saved
+ * @param  {Array} data   information about shape so that it can be recreated later
+ * @return {undefined}
+ */
 function emitPublishShape(shape, data) {
   socket.emit('saveShape', shape, JSON.stringify(data));
 }
 
-// Emit a change in the current tool
+/**
+ * Emit a change in the current tool
+ * @param  {string} tool [description]
+ * @return {undefined}
+ */
 function changeTool(tool) {
   socket.emit('changeTool', tool);
 }
 
-// Tell the server to undo the last shape
+/**
+ * Tell the server to undo the last shape
+ * @return {undefined}
+ */
 function undoShape() {
   socket.emit('undo');
 }
 
-// Emit an update in the current text shape.
-// TODO: Transfer over to updShape
+/**
+ * Emit an update in the current text shape.
+ * TODO: Transfer over to updShape
+ * @param  {string} t        text for textbox
+ * @param  {number} x        x-coord as a percentage of the original paper width
+ * @param  {number} y        y-coord as a percentage of the original paper height
+ * @param  {number} w        the width of the textbox as a percentage of the original paper width
+ * @param  {number} spacing  the spacing of the letters from one another
+ * @param  {string} colour   the colour of the text
+ * @param  {string} font     the font family of the text
+ * @param  {number} fontsize the size of the font (in pixels)
+ * @return {undefined}
+ */
 function emitText(t, x, y, w, spacing, colour, font, fontsize) {
   socket.emit('textUpdate', t, x, y, w, spacing, colour, font, fontsize);
 }
 
-// Emit a change in the presenter
+/**
+ * Emit a change in the presenter
+ * @return {undefined}
+ */
 function switchPresenter() {
   socket.emit('setPresenter', $('.selected').attr('id'));
 }
 
-// Update the character count in the chat box
+/**
+ * Update the character count in the chat box
+ * @param  {number} max maximum number of allowed characters
+ * @return {undefined}
+ */
 function countchars(max) {
   chcount.innerHTML = max - chatbox.value.length;
 }

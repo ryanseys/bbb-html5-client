@@ -66,7 +66,14 @@ app.configure('production', function(){
   app.use(express.errorHandler());
 });
 
-// If a page requires authentication to view...
+/**
+ * If a page requires authentication to view, this
+ * function is used to verify they are logged in.
+ * @param  {Object}   req   Request object from client
+ * @param  {Object}   res   Response object to client
+ * @param  {Function} next  To be run as a callback if valid
+ * @return {undefined}      response object is used to send data back to the client
+ */
 function requiresLogin(req, res, next) {
   //check that they have a cookie with valid session id
   redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function(isValid) {
@@ -98,12 +105,7 @@ app.listen(3000, function() {
 // Socket.IO Routes
 
 /**
- * This verifies with the database that the sessionID
- * contained within the connected socket is indeed valid.
- * If the sessionID is not valid, the socket is disconnected
- * and the function returns false. This test is to be used whenever
- * a connected socket requests to make actions against the server 
- * i.e. sends a message to the server.
+ * This function is used to parse a variable value from a cookie string.
  * @param  {String} cookie_string The cookie to parse.
  * @param  {String} c_var         The variable to extract from the cookie.
  * @return {String} The value of the variable extracted.
