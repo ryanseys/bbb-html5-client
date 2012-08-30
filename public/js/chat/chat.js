@@ -1,3 +1,5 @@
+// Documented
+
 // Object references
 var chcount = document.getElementById('charcount');
 var msgbox = document.getElementById("chat_messages");

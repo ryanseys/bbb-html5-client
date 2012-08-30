@@ -1,19 +1,23 @@
-/*
-  This returns the folder where the presentation files will be
-  stored for that particular presentationID.
-*/
+/**
+ * This returns the folder where the presentation files will be
+ * stored for that particular presentationID.
+ * @param  {string} presentationID the presentationID being looked up for a folder
+ * @return {string}                the relative URL for where the images will be stored
+ */
 exports.presentationImageFolder = function(presentationID) {
   return 'public/images/presentation' + presentationID;
 };
 
-/*
-  When  requesting the homepage a potential meetingID and sessionIDare extracted
-  from the user's cookie. If they match with a user that is in the databaseunder
-  the same data, they are instantly redirected to join into the meeting.
- 
-  If they are not, they will be redirected to the index page where they can enter
-  their login details
-*/
+/**
+ * When  requesting the homepage a potential meetingID and sessionIDare extracted
+ * from the user's cookie. If they match with a user that is in the databaseunder
+ * the same data, they are instantly redirected to join into the meeting.
+ * If they are not, they will be redirected to the index page where they can enter
+ * their login details.
+ * @param  {Object} req Request object from the client
+ * @param  {Object} res Response object to the client
+ * @return {undefined}  Response object is sent back to the client.
+ */
 exports.get_index = function(req, res) {
   redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function (reply) {
     if(!reply) {
@@ -25,13 +29,16 @@ exports.get_index = function(req, res) {
   });
 };
 
-/*
-  Given a meetingID, sessionID and username a meeting will be created
-  and a user with the username will be joined.
-
-  The callback returns either true or false depending on whether
-  the meeting was created successfully or not.
-*/
+/**
+ * Given a meetingID, sessionID and username a meeting will be created
+ * and a user with the username will be joined.The callback returns either true or false depending on whether
+ * the meeting was created successfully or not.
+ * @param  {string}   meetingID the meeting ID of the meeting we are creating and/or connecting to
+ * @param  {string}   sessionID the session ID of the user that is connecting to the meeting
+ * @param  {string}   username  username of the users that that is connecting to the meeting
+ * @param  {Function} callback  [description]
+ * @return {undefined}
+ */
 function makeMeeting(meetingID, sessionID, username, callback) {
   if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length) && (meetingID.split(' ').length == 1)) {
     var publicID = rack();
@@ -76,9 +83,9 @@ function makeMeeting(meetingID, sessionID, username, callback) {
  * a meeting will be created and joined. If an error occurs, which usually
  * results in using a username/meetingID that is too long, they will be redirected
  * to the index page again.
- * @param  {Object} req request object
- * @param  {Object} res response object
- * @return {undefined}     response is parsed and sent back to client
+ * @param  {Object} req Request object from the client
+ * @param  {Object} res Response object to the client
+ * @return {undefined}  Response object is sent back to the client.
  */
 exports.post_index = function(req, res) {
   var username = sanitizer.escape(req.body.user.name);
@@ -94,26 +101,30 @@ exports.post_index = function(req, res) {
   });
 };
 
-/*
-  When a user logs out, their session is destroyed,
-  and their cookies are cleared.
-*/
+/**
+ * When a user logs out, their session is destroyed,
+ * and their cookies are cleared.
+ * @param  {Object} req Request object from the client
+ * @param  {Object} res Response object to the client
+ * @return {undefined}  Response object is sent back to the client.
+ */
 exports.logout = function(req, res) {
   req.session.destroy(); //end the session
   res.cookie('sessionid', null); //clear the cookie from the machine
   res.cookie('meetingid', null);
 };
 
-/*
-  The join URL is used to connect to a meeting immediately without
-  going to the login screen.
-
-  Example:
-  localhost:3000/join?meetingid=123&fullname=Ryan&checksum=password
-
-  This will connect under the meetingID 123 with the name "Ryan" as
-  long as the checksum string is equal on the server side.
-*/
+/**
+ * The join URL is used to connect to a meeting immediately without
+ * going to the login screen.
+ * Example:
+ *   localhost:3000/join?meetingid=123&fullname=Ryan&checksum=password
+ * This will connect under the meetingID 123 with the name "Ryan" as
+ * long as the checksum string is equal on the server side.
+ * @param  {Object} req Request object from the client
+ * @param  {Object} res Response object to the client
+ * @return {undefined}  Response object is sent back to the client.
+ */
 exports.join = function(req, res) {
   var query = req.query;
   if(query) {
@@ -139,7 +150,12 @@ exports.join = function(req, res) {
   }
 };
 
-// When we return to the chat page (or open a new tab when already logged in)
+/**
+ * When we return to the chat page (or open a new tab when already logged in)
+ * @param  {Object} req Request object from the client
+ * @param  {Object} res Response object to the client
+ * @return {undefined}  Response object is sent back to the client.
+ */
 exports.get_chat = function(req, res) {
   //requiresLogin before this verifies that a user is logged in...
   var meetingID = req.cookies['meetingid'];
@@ -148,12 +164,16 @@ exports.get_chat = function(req, res) {
   });
 };
 
-/*
-  POSTing a file from the client page, the images will be
-  converted and their URLs will be send via SocketIO if
-  successful. If unsuccessful, a status of failed will be sent.
-*/
-exports.post_chat = function(req, res, next) {
+
+/**
+ * POSTing a file from the client page, the images will be
+ * converted and their URLs will be send via SocketIO if
+ * successful. If unsuccessful, a status of failed will be sent.
+ * @param  {Object}   req  Request object from the client
+ * @param  {Object}   res  Response object to the client
+ * @return {undefined}     Response object is sent back to the client.
+ */
+exports.post_chat = function(req, res) {
   // the client must send a file
   if(req.files.image.size != 0) {
     var meetingID = req.cookies['meetingid'];
@@ -221,7 +241,12 @@ exports.post_chat = function(req, res, next) {
   res.redirect('/chat');
 };
 
-// Any other page that we have not defined yet.
+/**
+ * Any other page that we have not defined yet.
+ * @param  {Object} req Request object from the client
+ * @param  {Object} res Response object to the client
+ * @return {undefined}  Response object is sent back to the client.
+ */
 exports.error404 = function(req, res) {
   console.log("User tried to access: " + req.url);
   res.send("Page not found", 404);

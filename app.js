@@ -72,7 +72,7 @@ app.configure('production', function(){
  * @param  {Object}   req   Request object from client
  * @param  {Object}   res   Response object to client
  * @param  {Function} next  To be run as a callback if valid
- * @return {undefined}      response object is used to send data back to the client
+ * @return {undefined}      Response object is used to send data back to the client
  */
 function requiresLogin(req, res, next) {
   //check that they have a cookie with valid session id

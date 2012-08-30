@@ -1,4 +1,10 @@
-// Publish usernames to all the sockets
+/**
+ * Publish usernames to all the sockets
+ * @param  {string}   meetingID ID of the meeting
+ * @param  {string}   sessionID ID of the user
+ * @param  {Function} callback  callback to call when finished
+ * @return {undefined} publish to Redis PubSub
+ */
 exports.publishUsernames = function(meetingID, sessionID, callback) {
   var usernames = [];
   redisAction.getUsers(meetingID, function (users) {
@@ -9,8 +15,6 @@ exports.publishUsernames = function(meetingID, sessionID, callback) {
       pub.publish(receivers, JSON.stringify(['user list change', usernames]));
       if(callback) callback(true);
   });
- 
-  //check if no users left in meeting
   store.scard(redisAction.getUsersString(meetingID), function(err, cardinality) {
     if(cardinality == '0') {
       redisAction.processMeeting(meetingID);
@@ -19,6 +23,13 @@ exports.publishUsernames = function(meetingID, sessionID, callback) {
   });
 };
 
+/**
+ * Publish presenter to appropriate clients.
+ * @param  {string}   meetingID ID of the meeting
+ * @param  {string}   sessionID ID of the user
+ * @param  {Function} callback  callback to call when finished
+ * @return {undefined} publish to Redis PubSub
+ */
 exports.publishPresenter = function(meetingID, sessionID, callback) {
   redisAction.getPresenterPublicID(meetingID, function(publicID) {
     var receivers = sessionID != undefined ? sessionID : meetingID;
@@ -27,7 +38,13 @@ exports.publishPresenter = function(meetingID, sessionID, callback) {
   });
 };
 
-//Get all messages from Redis and publish to a specific sessionID (user)
+/**
+ * Get all messages from Redis and publish to a specific sessionID (user)
+ * @param  {string}   meetingID ID of the meeting
+ * @param  {string}   sessionID ID of the user
+ * @param  {Function} callback  callback to call when finished
+ * @return {undefined} publish to Redis PubSub
+ */
 exports.publishMessages = function(meetingID, sessionID, callback) {
   var messages = [];
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
@@ -41,6 +58,13 @@ exports.publishMessages = function(meetingID, sessionID, callback) {
   });
 };
 
+/**
+ * Publish list of slides from Redis to the appropriate clients
+ * @param  {string}   meetingID ID of the meeting
+ * @param  {string}   sessionID ID of the user
+ * @param  {Function} callback  callback to call when finished
+ * @return {undefined} publish to Redis PubSub
+ */
 exports.publishSlides = function(meetingID, sessionID, callback) {
   var slides = [];
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
@@ -62,7 +86,13 @@ exports.publishSlides = function(meetingID, sessionID, callback) {
     });
   });
 };
-
+/**
+ * Publish list of shapes from Redis to appropriate clients
+ * @param  {string}   meetingID ID of the meeting
+ * @param  {string}   sessionID ID of the user
+ * @param  {Function} callback  callback to call when finished
+ * @return {undefined} publish to Redis PubSub
+ */
 exports.publishShapes = function(meetingID, sessionID, callback) {
   var shapes = [];
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
@@ -76,6 +106,13 @@ exports.publishShapes = function(meetingID, sessionID, callback) {
   });
 };
 
+/**
+ * Publish viewbox from Redis to appropriate clients
+ * @param  {string}   meetingID ID of the meeting
+ * @param  {string}   sessionID ID of the user
+ * @param  {Function} callback  callback to call when finished
+ * @return {undefined} publish to Redis PubSub
+ */
 exports.publishViewBox = function(meetingID, sessionID, callback) {
   redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
     redisAction.getViewBox(meetingID, function(viewBox) {
@@ -87,6 +124,14 @@ exports.publishViewBox = function(meetingID, sessionID, callback) {
   });
 };
 
+/**
+ * Publish tool from Redis to appropriate clients
+ * @param  {string}   meetingID ID of the meeting
+ * @param  {string}   sessionID ID of the user
+ * @param  {string}   tool      [description]
+ * @param  {Function} callback  callback to call when finished
+ * @return {undefined} publish to Redis PubSub
+ */
 exports.publishTool = function(meetingID, sessionID, tool, callback) {
   redisAction.getCurrentTool(meetingID, function(tool) {
     var receivers = sessionID != undefined ? sessionID : meetingID;
@@ -95,7 +140,10 @@ exports.publishTool = function(meetingID, sessionID, tool, callback) {
   });
 };
 
-// All socket IO events that can be emitted by the client
+/**
+ * All socket IO events that can be emitted by the client
+ * @param {[type]} socket [description]
+ */
 exports.SocketOnConnection = function(socket) {
  
   //When a user sends a message...
@@ -122,7 +170,10 @@ exports.SocketOnConnection = function(socket) {
     });
   });
 
-  // When a user connects to the socket...
+  /**
+   * When a user connects to the socket...
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('user connect', function () {
     var handshake = socket.handshake;
     var sessionID = handshake.sessionID;
@@ -164,7 +215,10 @@ exports.SocketOnConnection = function(socket) {
     });
   });
 
-  // When a user disconnects from the socket...
+  /**
+   * When a user disconnects from the socket...
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('disconnect', function () {
     var handshake = socket.handshake;
    var sessionID = handshake.sessionID;
@@ -203,7 +257,10 @@ exports.SocketOnConnection = function(socket) {
    });
   });
  
-  // When the user logs out
+  /**
+   * When the user logs out
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('logout', function() {
     var handshake = socket.handshake;
    var sessionID = handshake.sessionID;
@@ -225,8 +282,11 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
-  // A user clicks to change to previous slide
-  socket.on('prevslide', function (slide_num) {
+  /**
+   * A user clicks to change to previous slide
+   * @return {undefined} publish to Redis PubSub
+   */
+  socket.on('prevslide', function () {
     var handshake = socket.handshake;
    var sessionID = handshake.sessionID;
    var meetingID = handshake.meetingID;
@@ -245,7 +305,10 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
-  // A user clicks to change to next slide
+  /**
+   * A user clicks to change to next slide
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('nextslide', function () {
     var handshake = socket.handshake;
    var sessionID = handshake.sessionID;
@@ -265,7 +328,12 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
-  // When a rectangle creation event is received
+  /**
+   * When a rectangle creation event is received
+   * @param  {string} shape type of shape
+   * @param  {Object} data  information needed to draw the shape
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('makeShape', function (shape, data) {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -275,6 +343,12 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
+  /**
+   * When a update shape event is received
+   * @param  {string} shape type of shape
+   * @param  {Object} data  information needed to draw the shape
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('updShape', function (shape, data) {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -284,7 +358,12 @@ exports.SocketOnConnection = function(socket) {
     });
   });
 
-  // When a cursor move event is received
+  /**
+   * When a cursor move event is received
+   * @param  {[type]} x x coord of cursor as a percentage of width
+   * @param  {[type]} y y coord of cursor as a percentage of height
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('mvCur', function (x, y) {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -294,7 +373,10 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
-  // When a clear Paper event is received
+  /**
+   * When a clear Paper event is received
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('clrPaper', function () {
     var meetingID = socket.handshake.meetingID;
     var sessionID = socket.handshake.sessionID;
@@ -313,6 +395,11 @@ exports.SocketOnConnection = function(socket) {
     });
   });
 
+  /**
+   * When the user wishes to set the presenter to another user
+   * @param  {[type]} publicID public ID of user to make presenter
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('setPresenter', function (publicID) {
     console.log('setting presenter to' + publicID);
     var meetingID = socket.handshake.meetingID;
@@ -323,7 +410,14 @@ exports.SocketOnConnection = function(socket) {
     });
   });
 
-  // When a user is updating the viewBox of the paper
+  /**
+   * When a user is updating the viewBox of the paper
+   * @param  {number} cx x-offset from corner as a percentage of width
+   * @param  {number} cy y-offset from corner as a percentage of height
+   * @param  {number} sw width of page as a percentage of original width
+   * @param  {number} sh height of page as a percentage of original height
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('paper', function (cx, cy, sw, sh) {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -340,7 +434,11 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
-  // When a user is zooming
+  /**
+   * When a user is zooming
+   * @param  {number} delta amount the mouse scroll has moved
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('zoom', function(delta) {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -350,7 +448,10 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
-  // When a user finishes panning
+  /**
+   * When a user finishes panning
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('panStop', function() {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -359,13 +460,18 @@ exports.SocketOnConnection = function(socket) {
       }
     });
   });
- 
+  
+  /**
+   * Undoing the last shape
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('undo', function() {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
       if(presenterID == socket.handshake.sessionID) {
         redisAction.getCurrentPresentationID(meetingID, function(presentationID) {
           redisAction.getCurrentPageID(meetingID, presentationID, function(pageID) {
+            //pop the last shape off the current list of shapes
             store.rpop(redisAction.getCurrentShapesString(meetingID, presentationID, pageID), function(err, reply) {
               socketAction.publishShapes(meetingID);
             });
@@ -374,7 +480,19 @@ exports.SocketOnConnection = function(socket) {
       }
     });
   });
- 
+  
+  /**
+   * Updating the text object
+   * @param  {string} t        text for the text object
+   * @param  {number} x        x coord as a percentage of the page width
+   * @param  {number} y        y coord as a percentage of the page height
+   * @param  {number} w        width of the textbox as a percentage of the page width
+   * @param  {number} spacing  spacing between characters
+   * @param  {string} colour   colour of the text
+   * @param  {string} font     font family of the text
+   * @param  {number} fontsize size of the text in pixels (not points)
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('textUpdate', function(t, x, y, w, spacing, colour, font, fontsize) {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -383,7 +501,11 @@ exports.SocketOnConnection = function(socket) {
       }
     });
   });
- 
+  
+  /**
+   * Telling everyone the current text has been finished
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('textDone', function() {
     var meetingID = socket.handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
@@ -393,7 +515,12 @@ exports.SocketOnConnection = function(socket) {
     });
   });
  
-  // Saving a shape to Redis. Does not provide feedback to client(s)
+  /**
+   * Saving a shape to Redis. Does not provide feedback to client(s)
+   * @param  {string} shape type of shape
+   * @param  {Object} data  information needed to recreate shape
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('saveShape', function (shape, data) {
     var handshake = socket.handshake;
     var meetingID = handshake.meetingID;
@@ -412,9 +539,13 @@ exports.SocketOnConnection = function(socket) {
     });
   });
 
-  // Changing the currently set tool.
-  // Set the current tool in Redis, then
-  // publish the tool change to the members
+  /**
+   * Changing the currently set tool.
+   * Set the current tool in Redis, then publish
+   * the tool change to the members
+   * @param  {string} tool [description]
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('changeTool', function (tool) {
      var handshake = socket.handshake;
      var meetingID = handshake.meetingID;
@@ -429,19 +560,27 @@ exports.SocketOnConnection = function(socket) {
      });
   });
  
-  // If a user requests all the shapes,
-  // publish the shapes to everyone.
+  /**
+   * If a user requests all the shapes,
+   * publish the shapes to everyone.
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('all_shapes', function(){
     var handshake = socket.handshake;
     var meetingID = handshake.meetingID;
     socketAction.publishShapes(meetingID);
   });
- 
+  
+  /**
+   * Updating the fit of the image to the whiteboard
+   * @param  {boolean} fit true for fit to page and false for fit to width
+   * @return {undefined} publish to Redis PubSub
+   */
   socket.on('fitToPage', function(fit) {
     var handshake = socket.handshake;
     var meetingID = handshake.meetingID;
     redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-       if(presenterID == socket.handshake.sessionID) {
+       if(presenterID == sockt.handshake.sessionID) {
          pub.publish(meetingID, JSON.stringify(['fitToPage', fit]));
        }
      });
