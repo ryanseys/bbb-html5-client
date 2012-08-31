@@ -1069,7 +1069,7 @@ exports.createUser = function(meetingID, userID, callback) {
  * @param  {string}   userID     the unique session ID of the user
  * @param  {Object}   properties a hash of properties to set as the users properties
  * @param  {Function} callback   the callback function to be called when finished
- * @return {undefined}              callback is called with return value if applicable
+ * @return {undefined}           callback is called with return value if applicable
  */
 exports.updateUserProperties = function(meetingID, userID, properties, callback) {
   properties.unshift(redisAction.getUserString(meetingID, userID));

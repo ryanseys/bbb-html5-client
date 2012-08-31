@@ -25,9 +25,9 @@ exports.publishUsernames = function(meetingID, sessionID, callback) {
 
 /**
  * Publish presenter to appropriate clients.
- * @param  {string}   meetingID ID of the meeting
- * @param  {string}   sessionID ID of the user
- * @param  {Function} callback  callback to call when finished
+ * @param  {string}    meetingID ID of the meeting
+ * @param  {string}    sessionID ID of the user
+ * @param  {Function}  callback  callback to call when finished
  * @return {undefined} publish to Redis PubSub
  */
 exports.publishPresenter = function(meetingID, sessionID, callback) {
@@ -40,9 +40,9 @@ exports.publishPresenter = function(meetingID, sessionID, callback) {
 
 /**
  * Get all messages from Redis and publish to a specific sessionID (user)
- * @param  {string}   meetingID ID of the meeting
- * @param  {string}   sessionID ID of the user
- * @param  {Function} callback  callback to call when finished
+ * @param  {string}    meetingID ID of the meeting
+ * @param  {string}    sessionID ID of the user
+ * @param  {Function}  callback  callback to call when finished
  * @return {undefined} publish to Redis PubSub
  */
 exports.publishMessages = function(meetingID, sessionID, callback) {
@@ -60,9 +60,9 @@ exports.publishMessages = function(meetingID, sessionID, callback) {
 
 /**
  * Publish list of slides from Redis to the appropriate clients
- * @param  {string}   meetingID ID of the meeting
- * @param  {string}   sessionID ID of the user
- * @param  {Function} callback  callback to call when finished
+ * @param  {string}    meetingID ID of the meeting
+ * @param  {string}    sessionID ID of the user
+ * @param  {Function}  callback  callback to call when finished
  * @return {undefined} publish to Redis PubSub
  */
 exports.publishSlides = function(meetingID, sessionID, callback) {
@@ -88,9 +88,9 @@ exports.publishSlides = function(meetingID, sessionID, callback) {
 };
 /**
  * Publish list of shapes from Redis to appropriate clients
- * @param  {string}   meetingID ID of the meeting
- * @param  {string}   sessionID ID of the user
- * @param  {Function} callback  callback to call when finished
+ * @param  {string}    meetingID ID of the meeting
+ * @param  {string}    sessionID ID of the user
+ * @param  {Function}  callback  callback to call when finished
  * @return {undefined} publish to Redis PubSub
  */
 exports.publishShapes = function(meetingID, sessionID, callback) {
@@ -108,9 +108,9 @@ exports.publishShapes = function(meetingID, sessionID, callback) {
 
 /**
  * Publish viewbox from Redis to appropriate clients
- * @param  {string}   meetingID ID of the meeting
- * @param  {string}   sessionID ID of the user
- * @param  {Function} callback  callback to call when finished
+ * @param  {string}    meetingID ID of the meeting
+ * @param  {string}    sessionID ID of the user
+ * @param  {Function}  callback  callback to call when finished
  * @return {undefined} publish to Redis PubSub
  */
 exports.publishViewBox = function(meetingID, sessionID, callback) {
@@ -126,10 +126,10 @@ exports.publishViewBox = function(meetingID, sessionID, callback) {
 
 /**
  * Publish tool from Redis to appropriate clients
- * @param  {string}   meetingID ID of the meeting
- * @param  {string}   sessionID ID of the user
- * @param  {string}   tool      [description]
- * @param  {Function} callback  callback to call when finished
+ * @param  {string}    meetingID ID of the meeting
+ * @param  {string}    sessionID ID of the user
+ * @param  {string}    tool      [description]
+ * @param  {Function}  callback  callback to call when finished
  * @return {undefined} publish to Redis PubSub
  */
 exports.publishTool = function(meetingID, sessionID, tool, callback) {
@@ -519,7 +519,7 @@ exports.SocketOnConnection = function(socket) {
    * Saving a shape to Redis. Does not provide feedback to client(s)
    * @param  {string} shape type of shape
    * @param  {Object} data  information needed to recreate shape
-   * @return {undefined} publish to Redis PubSub
+   * @return {undefined}    publish to Redis PubSub
    */
   socket.on('saveShape', function (shape, data) {
     var handshake = socket.handshake;
@@ -543,8 +543,8 @@ exports.SocketOnConnection = function(socket) {
    * Changing the currently set tool.
    * Set the current tool in Redis, then publish
    * the tool change to the members
-   * @param  {string} tool [description]
-   * @return {undefined} publish to Redis PubSub
+   * @param  {string} tool  name of the tool to change to
+   * @return {undefined}    publish to Redis PubSub
    */
   socket.on('changeTool', function (tool) {
      var handshake = socket.handshake;
@@ -574,7 +574,7 @@ exports.SocketOnConnection = function(socket) {
   /**
    * Updating the fit of the image to the whiteboard
    * @param  {boolean} fit true for fit to page and false for fit to width
-   * @return {undefined} publish to Redis PubSub
+   * @return {undefined}   publish to Redis PubSub
    */
   socket.on('fitToPage', function(fit) {
     var handshake = socket.handshake;

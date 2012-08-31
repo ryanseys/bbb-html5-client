@@ -11,11 +11,14 @@ var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, letter
     path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
     dcr = 3;
 
-/*
-  Drawing the thickness viewer for client feedback.
-  No messages are sent to the server, it is completely
-  local. Shows visual of thickness for drawing tools.
-*/
+/**
+ * Drawing the thickness viewer for client feedback.
+ * No messages are sent to the server, it is completely
+ * local. Shows visual of thickness for drawing tools.
+ * @param  {number} thickness the thickness value
+ * @param  {string} colour    the colour it should be displayed as
+ * @return {undefined}
+ */
 function drawThicknessView(thickness, colour){
   current_thickness = thickness;
   tctx.fillStyle='#FFFFFF';
@@ -25,12 +28,14 @@ function drawThicknessView(thickness, colour){
   tctx.fillRect(center,center,thickness+1,thickness+1);
 }
 
-/*
-  Drawing the colour viewer for client feedback.
-  No messages are sent to the server, it is
-  completely local. Shows colour visual for drawing
-  tools.
-*/
+/**
+ * Drawing the colour viewer for client feedback.
+ * No messages are sent to the server, it is
+ * completely local. Shows colour visual for drawing
+ * tools.
+ * @param  {string} colour the colour it should be displayed as
+ * @return {undefined}
+ */
 function drawColourView(colour) {
   current_colour = colour;
   ctx.fillStyle = colour;
@@ -38,12 +43,13 @@ function drawColourView(colour) {
   ctx.fillRect(0,0,12,12);
 }
 
-/*
-  Toggles the visibility of the colour picker,
-  which is hidden by default. The picker is a
-  RaphaelJS object, so each node of the object
-  must be shown/hidden individually.
-*/
+/**
+ * Toggles the visibility of the colour picker,
+ * which is hidden by default. The picker is a
+ * RaphaelJS object, so each node of the object
+ * must be shown/hidden individually.
+ * @return {undefined}
+ */
 function toggleColourPicker() {
   if(cpVisible) {
     cpVisible = false;
@@ -55,10 +61,12 @@ function toggleColourPicker() {
   }
 }
 
-/*
-  Switches the tool and thus the functions that get
-  called when certain events are fired from Raphael.
-*/
+/**
+ * Switches the tool and thus the functions that get
+ * called when certain events are fired from Raphael.
+ * @param  {string} tool the tool to turn on
+ * @return {undefined}
+ */
 function turnOn(tool) {
   current_tool = tool;
   switch(tool) {
@@ -93,10 +101,11 @@ function turnOn(tool) {
   }
 }
 
-/*
-  Initializes the "Paper" which is the Raphael term for
-  the entire SVG object on the webpage.
-*/
+/**
+ * Initializes the "Paper" which is the Raphael term for
+ * the entire SVG object on the webpage.
+ * @return {undefined}
+ */
 function initPaper() {
   //paper is embedded within the div#slide of the page.
   paper = paper || Raphael('slide', gw, gh);
@@ -114,9 +123,14 @@ function initPaper() {
   }
 }
 
-/*
-  Updates the paper from the server values.
-*/
+/**
+ * Updates the paper from the server values.
+ * @param  {number} cx_ the x-offset value as a percentage of the original width
+ * @param  {number} cy_ the y-offset value as a percentage of the original height
+ * @param  {number} sw_ the slide width value as a percentage of the original width
+ * @param  {number} sh_ the slide height value as a percentage of the original height
+ * @return {undefined}
+ */
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   if(sw_ && sh_) {
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
@@ -140,11 +154,10 @@ function updatePaperFromServer(cx_, cy_, sw_, sh_) {
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
 }
 
-/*
-  Sets the fit to page.
-  fit == true ? -> fit to page
-  fit == false ? -> fit to width
-*/
+/**
+ * Sets the fit to page.
+ * @param {boolean} fit fit == true ? -> fit to page. fit == false ? -> fit to width.
+ */
 function setFitToPage(fit) {
   fitToPage = fit;
   var temp = slides;
@@ -155,9 +168,13 @@ function setFitToPage(fit) {
   getShapesFromServer();
 }
 
-/*
-  Add an image to the paper.
-*/
+/**
+ * Add an image to the paper.
+ * @param {string} url the URL of the image to add to the paper
+ * @param {number} w   the width of the image (in pixels)
+ * @param {number} h   the height of the image (in pixels)
+ * @return {Raphael.image} the image object added to the whiteboard
+ */
 function addImageToPaper(url, w, h) {
   if(fitToPage) {
     var xr = w/vw;
@@ -196,9 +213,10 @@ function addImageToPaper(url, w, h) {
   return img;
 }
 
-/*
-  Removes all the images from the Raphael paper.
-*/
+/**
+ * Removes all the images from the Raphael paper.
+ * @return {undefined}
+ */
 function removeAllImagesFromPaper() {
   var img;
   for (url in slides) {
@@ -211,9 +229,11 @@ function removeAllImagesFromPaper() {
   current_url = null;
 }
 
-/*
-  Draws an array of shapes to the paper.
-*/
+/**
+ * Draws an array of shapes to the paper.
+ * @param  {array} shapes the array of shapes to draw
+ * @return {undefined}
+ */
 function drawListOfShapes(shapes) {
   current_shapes = paper.set();
   for (var i = shapes.length - 1; i >= 0; i--) {
@@ -242,10 +262,11 @@ function drawListOfShapes(shapes) {
   bringCursorToFront(); //make sure the cursor is still on top;
 }
 
-/*
-  Re-add the images to the paper that are found
-  in the slides array (an object of urls and dimensions).
-*/
+/**
+ * Re-add the images to the paper that are found
+ * in the slides array (an object of urls and dimensions).
+ * @return {undefined}
+ */
 function rebuildPaper() {
   current_url = null;
   for(url in slides) {
@@ -256,10 +277,12 @@ function rebuildPaper() {
   }
 }
 
-/*
-  Shows an image from the paper.
-  The url must be in the slides array.
-*/
+/**
+ * Shows an image from the paper.
+ * The url must be in the slides array.
+ * @param  {string} url the url of the image (must be in slides array)
+ * @return {undefined}
+ */
 function showImageFromPaper(url) {
   if(current_url != url) {
     hideImageFromPaper(current_url);
@@ -276,10 +299,12 @@ function showImageFromPaper(url) {
   }
 }
 
-/*
-  Retrieves an image element from the paper.
-  The url must be in the slides array.
-*/
+/**
+ * Retrieves an image element from the paper.
+ * The url must be in the slides array.
+ * @param  {string} url        the url of the image (must be in slides array)
+ * @return {Raphael.image}     return the image or null if not found
+ */
 function getImageFromPaper(url) {
   if(slides[url]) {
     var id = slides[url].id;
@@ -291,30 +316,43 @@ function getImageFromPaper(url) {
   else return null;
 }
 
-/*
-  Hides an image from the paper given the URL.
-  The url must be in the slides array.
-*/
+/**
+ * Hides an image from the paper given the URL.
+ * The url must be in the slides array.
+ * @param  {string} url the url of the image (must be in slides array)
+ * @return {undefined}
+ */
 function hideImageFromPaper(url) {
   var img = getImageFromPaper(url);
   if(img) img.hide();
 }
 
-/*
-  Puts the cursor on top so it doesn't
-  get hidden behind any objects/images.
-*/
+/**
+ * Puts the cursor on top so it doesn't
+ * get hidden behind any objects/images.
+ * @return {undefined}
+ */
 function bringCursorToFront() {
   cur.toFront();
 }
 
-//When panning starts (placeholder for now)
+/**
+ * When panning starts
+ * @param  {number} x the x value of the cursor
+ * @param  {number} y the y value of the cursor
+ * @return {undefined}
+ */
 var panGo = function(x, y) {
   px = cx;
   py = cy;
 };
 
-// When the user is dragging the cursor (click + move)
+/**
+ * When the user is dragging the cursor (click + move)
+ * @param  {number} dx the difference between the x value from panGo and now
+ * @param  {number} dy the difference between the y value from panGo and now
+ * @return {undefined}
+ */
 var panDragging = function(dx, dy) {
   var x = (px - dx);
   x = x < 0 ? 0 : x;
@@ -331,19 +369,35 @@ var panDragging = function(dx, dy) {
   sendPaperUpdate(x/sw, y/sh, null, null);
 };
 
-// When panning finishes
+/**
+ * When panning finishes
+ * @param  {Event} e the mouse event
+ * @return {undefined}
+ */
 var panStop = function(e) {
   //nothing to do
 };
 
-// When dragging for drawing lines starts
+/**
+ * When dragging for drawing lines starts
+ * @param  {number} x the x value of the cursor
+ * @param  {number} y the y value of the cursor
+ * @return {undefined}
+ */
 var curDragStart = function(x, y) {
   cx1 = x - s_left - sx + cx;
   cy1 = y - s_top - sy + cy;
   emitMakeShape('line', [cx1/sw, cy1/sh, current_colour, current_thickness]);
 };
 
-// As line drawing drag continues
+/**
+ * As line drawing drag continues
+ * @param  {number} dx the difference between the x value from curDragStart and now
+ * @param  {number} dy the difference between the y value from curDragStart and now
+ * @param  {number} x  the x value of the cursor
+ * @param  {number} y  the y value of the cursor
+ * @return {undefined}
+ */
 var curDragging = function(dx, dy, x, y) {
   cx2 = x - s_left - sx + cx;
   cy2 = y - s_top - sy + cy;
@@ -365,13 +419,25 @@ var curDragging = function(dx, dy, x, y) {
   }
 };
 
-// Drawing line has ended
+/**
+ * Drawing line has ended
+ * @param  {Event} e the mouse event
+ * @return {undefined}
+ */
 var curDragStop = function(e) {
   var path = line.attrs.path;
   line = null; //any late updates will be blocked by this
   emitPublishShape('path', [path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness]);
 };
 
+/**
+ * Make a line on the whiteboard that could be updated shortly after
+ * @param  {number} x         the x value of the line start point as a percentage of the original width
+ * @param  {number} y         the y value of the line start point as a percentage of the original height
+ * @param  {string} colour    the colour of the shape to be drawn
+ * @param  {number} thickness the thickness of the line to be drawn
+ * @return {undefined}
+ */
 function makeLine(x, y, colour, thickness) {
   x *= gw;
   y *= gh;
@@ -380,12 +446,26 @@ function makeLine(x, y, colour, thickness) {
   current_shapes.push(line);
 }
 
+/**
+ * Drawing a line from the list o
+ * @param  {string} path      height of the shape as a percentage of the original height
+ * @param  {string} colour    the colour of the shape to be drawn
+ * @param  {number} thickness the thickness of the line to be drawn
+ * @return {undefined}
+ */
 function drawLine(path, colour, thickness) {
   var l = paper.path(path.toScaledPath(gw, gh));
   l.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(l);
 }
 
+/**
+ * Updating drawing the line
+ * @param  {number} x2  the next x point to be added to the line as a percentage of the original width
+ * @param  {number} y2  the next y point to be added to the line as a percentage of the original height
+ * @param  {boolean} add true if the line should be added to the current line, false if it should replace the last point
+ * @return {undefined}
+ */
 function updateLine(x2, y2, add) {
   x2 *= gw;
   y2 *= gh;
@@ -394,7 +474,7 @@ function updateLine(x2, y2, add) {
     if(line) line.attr({ path : (line.attrs.path + "L" + x2 + " " + y2) });
   }
   else {
-    //if simply updating the last portion
+    //if simply updating the last portion (for drawing a straight line)
     if(line) {
       line.attrs.path.pop();
       var path = line.attrs.path.join(' ');
@@ -403,6 +483,18 @@ function updateLine(x2, y2, add) {
   }
 }
 
+/**
+ * Updating the text from the messages on the socket
+ * @param  {[type]} t        the text of the text object
+ * @param  {number} x        the x value of the object as a percentage of the original width
+ * @param  {number} y        the y value of the object as a percentage of the original height
+ * @param  {number} w        the width of the text box as a percentage of the original width
+ * @param  {number} spacing  the spacing between the letters
+ * @param  {string} colour   the colour of the text
+ * @param  {string} font     the font family of the text
+ * @param  {number} fontsize the size of the font (in PIXELS)
+ * @return {undefined}
+ */
 function updateText(t, x, y, w, spacing, colour, font, fontsize) {
   x = x*gw;
   y = y*gh;
@@ -421,6 +513,18 @@ function updateText(t, x, y, w, spacing, colour, font, fontsize) {
   cur.toFront();
 }
 
+/**
+ * Drawing the text on the whiteboard from object
+ * @param  {[type]} t        the text of the text object
+ * @param  {number} x        the x value of the object as a percentage of the original width
+ * @param  {number} y        the y value of the object as a percentage of the original height
+ * @param  {number} w        the width of the text box as a percentage of the original width
+ * @param  {number} spacing  the spacing between the letters
+ * @param  {string} colour   the colour of the text
+ * @param  {string} font     the font family of the text
+ * @param  {number} fontsize the size of the font (in PIXELS)
+ * @return {undefined}
+ */
 function drawText(t, x, y, w, spacing, colour, font, fontsize) {
   x = x*gw;
   y = y*gh;
@@ -431,6 +535,12 @@ function drawText(t, x, y, w, spacing, colour, font, fontsize) {
   current_shapes.push(txt);
 }
 
+/**
+ * When first dragging the mouse to create the textbox size
+ * @param  {number} x the x value of cursor at the time in relation to the left side of the browser
+ * @param  {number} y the y value of cursor at the time in relation to the top of the browser
+ * @return {undefined}
+ */
 var curTextStart = function(x, y) {
   if(text) {
     emitPublishShape('text', [textbox.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
@@ -445,6 +555,11 @@ var curTextStart = function(x, y) {
   emitMakeShape('rect', [cx2, cy2, '#000', 1]);
 };
 
+/**
+ * Finished drawing the rectangle that the text will fit into
+ * @param  {Event} e the mouse event
+ * @return {undefined}
+ */
 var curTextStop = function(e) {
   if(rect) rect.hide();
   var tboxw = (e.pageX - textx);
@@ -485,6 +600,11 @@ var curTextStop = function(e) {
   }
 };
 
+/**
+ * The server has said the text is finished,
+ * so set it to null for the next text object
+ * @return {undefined}
+ */
 function textDone() {
   if(text) {
     text = null;
@@ -492,14 +612,27 @@ function textDone() {
   }
 }
 
-// Creating a rectangle has started
+/**
+ * Creating a rectangle has started
+ * @param  {number} x the x value of cursor at the time in relation to the left side of the browser
+ * @param  {number} y the y value of cursor at the time in relation to the top of the browser
+ * @return {undefined}
+ */
 var curRectDragStart = function(x, y) {
   cx2 = (x - s_left - sx + cx)/sw;
   cy2 = (y - s_top - sy + cy)/sh;
   emitMakeShape('rect', [cx2, cy2, current_colour, current_thickness]);
 };
 
-// Adjusting rectangle continues
+/**
+ * Adjusting rectangle continues
+ * @param  {number} dx the difference in the x value at the start as opposed to the x value now
+ * @param  {number} dy the difference in the y value at the start as opposed to the y value now
+ * @param  {number} x the x value of cursor at the time in relation to the left side of the browser
+ * @param  {number} y the y value of cursor at the time in relation to the top of the browser
+ * @param  {Event} e  the mouse event
+ * @return {undefined}
+ */
 var curRectDragging = function(dx, dy, x, y, e) {
   var x1;
   var y1;
@@ -519,49 +652,110 @@ var curRectDragging = function(dx, dy, x, y, e) {
   emitUpdateShape('rect', [x1, y1, dx, dy]);
 };
 
-// When rectangle finished being drawn (placeholder for now)
+/**
+ * When rectangle finished being drawn
+ * @param  {Event} e the mouse event
+ * @return {undefined}
+ */
 var curRectDragStop = function(e) {
   if(rect) var r = rect.attrs;
   if(r) emitPublishShape('rect', [r.x/gw, r.y/gh, r.width/gw, r.height/gh, current_colour, current_thickness]);
   rect = null;
 };
 
-// Socket response - Make rectangle on canvas
+/**
+ * Socket response - Make rectangle on canvas
+ * @param  {number} x         the x value of the object as a percentage of the original width
+ * @param  {number} y         the y value of the object as a percentage of the original height
+ * @param  {string} colour    the colour of the object
+ * @param  {number} thickness the thickness of the object's line(s)
+ * @return {undefined}
+ */
 function makeRect(x, y, colour, thickness) {
   rect = paper.rect(x*gw, y*gh, 0, 0);
   if(colour) rect.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(rect);
 }
 
+/**
+ * Draw a rectangle on the paper
+ * @param  {number} x         the x value of the object as a percentage of the original width
+ * @param  {number} y         the y value of the object as a percentage of the original height
+ * @param  {number} w         width of the shape as a percentage of the original width
+ * @param  {number} h         height of the shape as a percentage of the original height
+ * @param  {string} colour    the colour of the object
+ * @param  {number} thickness the thickness of the object's line(s)
+ * @return {undefined}
+ */
 function drawRect(x, y, w, h, colour, thickness) {
   var r = paper.rect(x*gw, y*gh, w*gw, h*gh);
   if(colour) r.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(r);
 }
 
-// Socket response - Update rectangle drawn
+/**
+ * Socket response - Update rectangle drawn
+ * @param  {number} x1 the x value of the object as a percentage of the original width
+ * @param  {number} y1 the y value of the object as a percentage of the original height
+ * @param  {number} w  width of the shape as a percentage of the original width
+ * @param  {number} h  height of the shape as a percentage of the original height
+ * @return {undefined}
+ */
 function updateRect(x1, y1, w, h) {
   if(rect) rect.attr({ x: (x1)*gw, y: (y1)*gh, width: w*gw, height: h*gh });
 }
 
+/**
+ * When first starting drawing the ellipse
+ * @param  {number} x the x value of cursor at the time in relation to the left side of the browser
+ * @param  {number} y the y value of cursor at the time in relation to the top of the browser
+ * @return {undefined}
+ */
 var curEllipseDragStart = function(x, y) {
   ex = (x - s_left - sx + cx);
   ey = (y - s_top - sy + cy);
   emitMakeShape('ellipse', [ex/sw, ey/sh, current_colour, current_thickness]);
 };
 
+/**
+ * Make an ellipse on the whiteboard
+ * @param  {[type]} cx        the x value of the center as a percentage of the original width
+ * @param  {[type]} cy        the y value of the center as a percentage of the original height
+ * @param  {string} colour    the colour of the object
+ * @param  {number} thickness the thickness of the object's line(s)
+ * @return {undefined}
+ */
 function makeEllipse(cx, cy, colour, thickness) {
   ellipse = paper.ellipse(cx*gw, cy*gh, 0, 0);
   if(colour) ellipse.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(ellipse);
 }
 
+/**
+ * Draw an ellipse on the whiteboard
+ * @param  {[type]} cx        the x value of the center as a percentage of the original width
+ * @param  {[type]} cy        the y value of the center as a percentage of the original height
+ * @param  {[type]} rx        the radius-x of the ellipse as a percentage of the original width
+ * @param  {[type]} ry        the radius-y of the ellipse as a percentage of the original height
+ * @param  {string} colour    the colour of the object
+ * @param  {number} thickness the thickness of the object's line(s)
+ * @return {undefined}
+ */
 function drawEllipse(cx, cy, rx, ry, colour, thickness) {
   var elip = paper.ellipse(cx*gw, cy*gh, rx*gw, ry*gh);
   if(colour) elip.attr({ 'stroke' : colour, 'stroke-width' : thickness });
   current_shapes.push(elip);
 }
 
+/**
+ * When first starting to draw an ellipse
+ * @param  {number} dx the difference in the x value at the start as opposed to the x value now
+ * @param  {number} dy the difference in the y value at the start as opposed to the y value now
+ * @param  {number} x the x value of cursor at the time in relation to the left side of the browser
+ * @param  {number} y the y value of cursor at the time in relation to the top of the browser
+ * @param  {Event} e   the mouse event
+ * @return {undefined}
+ */
 var curEllipseDragging = function(dx, dy, x, y, e) {
   if(shift_pressed) dy = dx;
   dx = dx/2;
@@ -573,28 +767,54 @@ var curEllipseDragging = function(dx, dy, x, y, e) {
   emitUpdateShape('ellipse', [x/sw, y/sh, dx/sw, dy/sh]);
 };
 
-// Socket response - Update rectangle drawn
+/**
+ * Socket response - Update rectangle drawn
+ * @param  {number} x the x value of the object as a percentage of the original width
+ * @param  {number} y the y value of the object as a percentage of the original height
+ * @param  {number} w width of the shape as a percentage of the original width
+ * @param  {number} h height of the shape as a percentage of the original height
+ * @return {undefined}
+ */
 function updateEllipse(x, y, w, h) {
   if(ellipse) ellipse.attr({cx: x*gw, cy: y*gh, rx: w*gw, ry: h*gh });
 }
 
+/**
+ * When releasing the mouse after drawing the ellipse
+ * @param  {Event} e the mouse event
+ * @return {undefined}
+ */
 var curEllipseDragStop = function(e) {
   if(ellipse) var attrs = ellipse.attrs;
   if(attrs) emitPublishShape('ellipse', [attrs.cx/gw, attrs.cy/gh, attrs.rx/gw, attrs.ry/gh, current_colour, current_thickness]);
   ellipse = null; //late updates will be blocked by this
 };
 
-// Send cursor moving event to server
+/**
+ * Send cursor moving event to server
+ * @param  {Event} e the mouse event
+ * @param  {number} x the x value of cursor at the time in relation to the left side of the browser
+ * @param  {number} y the y value of cursor at the time in relation to the top of the browser
+ * @return {undefined}
+ */
 var mvingCur = function(e, x, y) {
   emMvCur((x - sx - s_left + cx)/sw, (y - sy - s_top + cy)/sh);
 };
 
-// Socket response - Update the cursor position on screen
+/**
+ * Socket response - Update the cursor position on screen
+ * @param  {number} x the x value of the cursor as a percentage of the width
+ * @param  {number} y the y value of the cursor as a percentage of the height
+ * @return {undefined}
+ */
 function mvCur(x, y) {
   cur.attr({ cx: x*gw, cy: y*gh });
 };
 
-// Socket response - Clear canvas
+/**
+ * Socket response - Clear canvas
+ * @return {undefined}
+ */
 function clearPaper() {
   if(current_shapes){
     current_shapes.forEach(function(element) {
@@ -603,12 +823,21 @@ function clearPaper() {
   }
 }
 
-// Update zoom variables on all clients
+/**
+ * Update zoom variables on all clients
+ * @param  {Event} event the event that occurs when scrolling
+ * @param  {number} delta the speed/direction at which the scroll occurred
+ * @return {undefined}
+ */
 var zoomSlide = function(event, delta) {
   emZoom(delta);
 };
 
-// Socket response - Update zoom variables and viewbox
+/**
+ * Socket response - Update zoom variables and viewbox
+ * @param {number} d the delta value from the scroll event
+ * @return {undefined}
+ */
 function setZoom(d) {
   var step = 0.05; //step size
   if(d < 0) zoom_level += step; //zooming out
@@ -634,9 +863,9 @@ var cptext = document.getElementById("colourText");
 var ctx = c.getContext("2d");
 var tctx = tc.getContext('2d');
 
-s_left = slide_obj.offsetLeft;
-s_top = slide_obj.offsetTop;
-vw = slide_obj.clientWidth;
+s_left = slide_obj.offsetLeft; //the offset from the left of the page to the whiteboard frame border
+s_top = slide_obj.offsetTop; // the offset from the top of the page to the whiteboard frame border
+vw = slide_obj.clientWidth; 
 vh = slide_obj.clientHeight;
 
 drawThicknessView(default_thickness, default_colour);
@@ -653,23 +882,26 @@ $(function() {
   });
 });
 
+//when the colour picker colour changes
 cp.onchange = function() {
   drawColourView(this.color());
   drawThicknessView(current_thickness, this.color());
 };
 
+//when finished typing a colour into the colour text box
 cptext.onkeyup = function() {
   drawColourView(this.value);
   drawThicknessView(current_thickness, this.value);
 };
 
+//when pressing down on a key at anytime
 document.onkeydown = function(event) {
   var keyCode;
   if(!event) keyCode = window.event.keyCode;
   else keyCode = event.keyCode;
 
   switch(keyCode) {
-    case 16:
+    case 16: //shift key
       shift_pressed = true;
     break;
 
@@ -679,12 +911,13 @@ document.onkeydown = function(event) {
   }
 };
 
+//when releasing any key at any time
 document.onkeyup = function(event) {
   var keyCode;
   if(!event) keyCode = window.event.keyCode;
   else keyCode = event.keyCode;
   switch(keyCode) {
-    case 16:
+    case 16: //shift key
       shift_pressed = false;
     break;
 
@@ -709,10 +942,17 @@ $('#uploadForm').submit(function() {
   return false;
 });
 
+//automatically upload the file if it is chosen
 $('#uploadFile').change(function() {
   $("#uploadForm").submit();
 });
 
+/**
+ * Scales a path string to fit within a width and height of the new paper size
+ * @param  {number} w width of the shape as a percentage of the original width
+ * @param  {number} h height of the shape as a percentage of the original height
+ * @return {string}   the path string after being manipulated to new paper size
+ */
 String.prototype.toScaledPath = function(w, h) {
   var path;
   var points = this.match(/(\d+[.]?\d*)/g);

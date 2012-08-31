@@ -36,8 +36,8 @@ exports.get_index = function(req, res) {
  * @param  {string}   meetingID the meeting ID of the meeting we are creating and/or connecting to
  * @param  {string}   sessionID the session ID of the user that is connecting to the meeting
  * @param  {string}   username  username of the users that that is connecting to the meeting
- * @param  {Function} callback  [description]
- * @return {undefined}
+ * @param  {Function} callback  the callback function returns true if meeting successfully started and joined, false otherwise
+ * @return {undefined}          callback is used to send the status back to the caller of this function
  */
 function makeMeeting(meetingID, sessionID, username, callback) {
   if((username) && (meetingID) && (username.length <= max_username_length) && (meetingID.length <= max_meetingid_length) && (meetingID.split(' ').length == 1)) {
