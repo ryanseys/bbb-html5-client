@@ -108,7 +108,7 @@ function turnOn(tool) {
  */
 function initPaper() {
   //paper is embedded within the div#slide of the page.
-  paper = paper || Raphael('slide', gw, gh);
+  paper = paper || Raphael('slide', gw, gh); //create a SVG object using RaphaelJS
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
   cur = paper.circle(0, 0, dcr);
   cur.attr('fill', 'red');
@@ -132,25 +132,31 @@ function initPaper() {
  * @return {undefined}
  */
 function updatePaperFromServer(cx_, cy_, sw_, sh_) {
+  //if updating the slide size (zooming!)
   if(sw_ && sh_) {
     paper.setViewBox(cx_*gw, cy_*gh, sw_*gw, sh_*gh);
     sw = gw/sw_;
     sh = gh/sh_;
   }
+  //just panning, so use old slide size values
   else {
     paper.setViewBox(cx_*gw, cy_*gh, paper._viewBox[2], paper._viewBox[3]);
   }
+  //update corners
   cx = cx_*sw;
   cy = cy_*sh;
+  //update position of svg object in the window
   sx = (vw - gw)/2;
   sy = (vh - gh)/2;
   if(sy < 0) sy = 0; // ??
   paper.canvas.style.left = sx + "px";
   paper.canvas.style.top = sy + "px";
   paper.setSize(gw-2, gh-2);
+  //update zoom level and cursor position
   var z = paper._viewBox[2]/gw;
   cur.attr({ r : dcr*z }); //adjust cursor size
   zoom_level = z;
+  //force the slice attribute despite Raphael changing it
   paper.canvas.setAttribute('preserveAspectRatio', 'xMinYMin slice');
 }
 
@@ -163,9 +169,9 @@ function setFitToPage(fit) {
   var temp = slides;
   removeAllImagesFromPaper();
   slides = temp;
-  rebuildPaper();
-  sendPaperUpdate(0, 0, 1, 1);
-  getShapesFromServer();
+  rebuildPaper(); //re-add all the images as they should fit differently
+  sendPaperUpdate(0, 0, 1, 1); //set to default zoom level
+  getShapesFromServer(); //reprocess the shapes
 }
 
 /**
@@ -177,10 +183,13 @@ function setFitToPage(fit) {
  */
 function addImageToPaper(url, w, h) {
   if(fitToPage) {
+    //solve for the ratio of what length is going to fit more than the other
     var xr = w/vw;
     var yr = h/vh;
     var max = Math.max(xr, yr);
+    //fit it all in appropriately
     var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
+    //update the global variables we will need to use
     sw = w/max;
     sh = h/max;
     sw_orig = sw;
@@ -188,6 +197,7 @@ function addImageToPaper(url, w, h) {
   }
   else {
     //fit to width
+    //assume it will fit width ways
     var wr = w/vw;
     var img = paper.image(url, cx = 0, cy = 0, w/wr, h/wr);
     sw = w/wr;
@@ -354,18 +364,19 @@ var panGo = function(x, y) {
  * @return {undefined}
  */
 var panDragging = function(dx, dy) {
+  //ensuring that we cannot pan outside of the boundaries
   var x = (px - dx);
-  x = x < 0 ? 0 : x;
+  x = x < 0 ? 0 : x; //cannot pan past the left edge of the page
   var y = (py - dy);
-  y = y < 0 ? 0 : y;
+  y = y < 0 ? 0 : y; //cannot pan past the top of the page
   var x2;
   if(fitToPage) x2 = gw + x;
   else x2 = vw + x;
-  x = x2 > sw ? sw - (vw - sx*2) : x;
+  x = x2 > sw ? sw - (vw - sx*2) : x; //cannot pan past the width
   var y2;
   if(fitToPage) y2 = gh + y;
-  else y2 = vh + y;
-  y = y2 > sh ? sh - (vh - sy*2) : y;
+  else y2 = vh + y; //height of image could be greater (or less) than the box it fits in
+  y = y2 > sh ? sh - (vh - sy*2) : y; //cannot pan below the height
   sendPaperUpdate(x/sw, y/sh, null, null);
 };
 
@@ -385,6 +396,7 @@ var panStop = function(e) {
  * @return {undefined}
  */
 var curDragStart = function(x, y) {
+  //find the x and y values in relation to the whiteboard
   cx1 = x - s_left - sx + cx;
   cy1 = y - s_top - sy + cy;
   emitMakeShape('line', [cx1/sw, cy1/sh, current_colour, current_thickness]);
@@ -399,6 +411,7 @@ var curDragStart = function(x, y) {
  * @return {undefined}
  */
 var curDragging = function(dx, dy, x, y) {
+  //find the x and y values in relation to the whiteboard
   cx2 = x - s_left - sx + cx;
   cy2 = y - s_top - sy + cy;
   if(shift_pressed) {
@@ -411,6 +424,7 @@ var curDragging = function(dx, dy, x, y) {
     }
     else {
       path_count = 0;
+      //scale the path appropriately before sending
       emitPublishShape('path', [line.attrs.path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness]);
       emitMakeShape('line', [cx1/sw, cy1/sh, current_colour, current_thickness]);
     }
@@ -427,6 +441,7 @@ var curDragging = function(dx, dy, x, y) {
 var curDragStop = function(e) {
   var path = line.attrs.path;
   line = null; //any late updates will be blocked by this
+  //scale the path appropriately before sending
   emitPublishShape('path', [path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness]);
 };
 
@@ -575,6 +590,7 @@ var curTextStop = function(e) {
     var y = texty - s_top - sy + cy;
     textbox.focus();
 
+    //if you click outside, it will automatically sumbit
     textbox.onblur = function(e) {
       if(text) {
         emitPublishShape('text', [this.value, text.attrs.x/gw, text.attrs.y/gh, textbox.clientWidth, 16, current_colour, 'Arial', 14]);
@@ -584,7 +600,7 @@ var curTextStop = function(e) {
       textbox.style.visibility = "hidden";
     };
 
-    //if user presses enter key
+    //if user presses enter key, then automatically submit
     textbox.onkeypress = function(e) {
       if(e.keyCode == '13') {
         e.preventDefault();
@@ -593,6 +609,7 @@ var curTextStop = function(e) {
       }
     };
 
+    //update everyone with the new text at every change
     textbox.onkeyup = function(e) {
       this.value = this.value.replace(/\n{1,}/g, ' ').replace(/\s{2,}/g, ' '); //enforce no 2 or greater consecutive spaces, no new lines
       emitUpdateShape('text', [this.value, x/sw, (y+(14*(sh/gh)))/sh, tboxw*(gw/sw), 16, current_colour, 'Arial', 14]);
@@ -619,6 +636,7 @@ function textDone() {
  * @return {undefined}
  */
 var curRectDragStart = function(x, y) {
+  //find the x and y values in relation to the whiteboard
   cx2 = (x - s_left - sx + cx)/sw;
   cy2 = (y - s_top - sy + cy)/sh;
   emitMakeShape('rect', [cx2, cy2, current_colour, current_thickness]);
@@ -636,9 +654,11 @@ var curRectDragStart = function(x, y) {
 var curRectDragging = function(dx, dy, x, y, e) {
   var x1;
   var y1;
+  //if shift is pressed, make it a square
   if(shift_pressed) dy = dx;
   dx = dx/sw;
   dy = dy/sh;
+
   if(dx >= 0) x1 = cx2;
   else {
     x1 = cx2 + dx;
@@ -712,6 +732,7 @@ function updateRect(x1, y1, w, h) {
  * @return {undefined}
  */
 var curEllipseDragStart = function(x, y) {
+  //find the x and y values in relation to the whiteboard
   ex = (x - s_left - sx + cx);
   ey = (y - s_top - sy + cy);
   emitMakeShape('ellipse', [ex/sw, ey/sh, current_colour, current_thickness]);
@@ -757,6 +778,7 @@ function drawEllipse(cx, cy, rx, ry, colour, thickness) {
  * @return {undefined}
  */
 var curEllipseDragging = function(dx, dy, x, y, e) {
+  //if shift is pressed, draw a circle instead of ellipse
   if(shift_pressed) dy = dx;
   dx = dx/2;
   dy = dy/2;
@@ -957,6 +979,7 @@ String.prototype.toScaledPath = function(w, h) {
   var path;
   var points = this.match(/(\d+[.]?\d*)/g);
   var len = points.length;
+  //go through each point and multiply it by the new height and width
   for(var j = 0; j < len; j+=2) {
     if(j != 0) path += "L" + (points[j] * w) + "," + (points[j+1] * h);
     else path = "M" + (points[j] * w) + "," + (points[j+1] * h);

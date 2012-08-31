@@ -539,7 +539,7 @@ function switchPresenter() {
 }
 
 /**
- * Update the character count in the chat box
+ * Update the character count remaining in the chat box
  * @param  {number} max maximum number of allowed characters
  * @return {undefined}
  */
