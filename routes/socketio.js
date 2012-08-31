@@ -482,27 +482,6 @@ exports.SocketOnConnection = function(socket) {
   });
   
   /**
-   * Updating the text object
-   * @param  {string} t        text for the text object
-   * @param  {number} x        x coord as a percentage of the page width
-   * @param  {number} y        y coord as a percentage of the page height
-   * @param  {number} w        width of the textbox as a percentage of the page width
-   * @param  {number} spacing  spacing between characters
-   * @param  {string} colour   colour of the text
-   * @param  {string} font     font family of the text
-   * @param  {number} fontsize size of the text in pixels (not points)
-   * @return {undefined} publish to Redis PubSub
-   */
-  socket.on('textUpdate', function(t, x, y, w, spacing, colour, font, fontsize) {
-    var meetingID = socket.handshake.meetingID;
-    redisAction.getPresenterSessionID(meetingID, function(presenterID) {
-      if(presenterID == socket.handshake.sessionID) {
-        pub.publish(meetingID, JSON.stringify(['textUpdate', t, x, y, w, spacing, colour, font, fontsize]));
-      }
-    });
-  });
-  
-  /**
    * Telling everyone the current text has been finished
    * @return {undefined} publish to Redis PubSub
    */
@@ -563,11 +542,13 @@ exports.SocketOnConnection = function(socket) {
   /**
    * If a user requests all the shapes,
    * publish the shapes to everyone.
+   * Only reason this happens is when its fit changes.
    * @return {undefined} publish to Redis PubSub
    */
   socket.on('all_shapes', function(){
     var handshake = socket.handshake;
     var meetingID = handshake.meetingID;
+    var sessionID = handshake.sessionID;
     socketAction.publishShapes(meetingID);
   });
   

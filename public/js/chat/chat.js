@@ -433,19 +433,6 @@ function emMvCur(x, y) {
 }
 
 /**
- * Emit an update to change the viewBox size of the canvas (pan and zoom)
- * @deprecated Use sendUpdateToPaper() instead.
- * @param  {string} xperc Percentage of x-offset from top left corner
- * @param  {string} yperc Percentage of y-offset from top left corner
- * @param  {string} wperc Percentage of full width of image to be displayed
- * @param  {string} hperc Percentage of full height of image to be displayed
- * @return {undefined}
- */
-function emViewBox(xperc, yperc, wperc, hperc) {
-  socket.emit('viewBox', xperc, yperc, wperc, hperc);
-}
-
-/**
  * Update the zoom level for the clients
  * @param  {number} delta amount of change in scroll wheel
  * @return {undefined}
@@ -511,23 +498,6 @@ function changeTool(tool) {
  */
 function undoShape() {
   socket.emit('undo');
-}
-
-/**
- * Emit an update in the current text shape.
- * TODO: Transfer over to updShape
- * @param  {string} t        text for textbox
- * @param  {number} x        x-coord as a percentage of the original paper width
- * @param  {number} y        y-coord as a percentage of the original paper height
- * @param  {number} w        the width of the textbox as a percentage of the original paper width
- * @param  {number} spacing  the spacing of the letters from one another
- * @param  {string} colour   the colour of the text
- * @param  {string} font     the font family of the text
- * @param  {number} fontsize the size of the font (in pixels)
- * @return {undefined}
- */
-function emitText(t, x, y, w, spacing, colour, font, fontsize) {
-  socket.emit('textUpdate', t, x, y, w, spacing, colour, font, fontsize);
 }
 
 /**

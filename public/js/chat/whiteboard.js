@@ -500,7 +500,7 @@ function updateLine(x2, y2, add) {
 
 /**
  * Updating the text from the messages on the socket
- * @param  {[type]} t        the text of the text object
+ * @param  {string} t        the text of the text object
  * @param  {number} x        the x value of the object as a percentage of the original width
  * @param  {number} y        the y value of the object as a percentage of the original height
  * @param  {number} w        the width of the text box as a percentage of the original width
@@ -530,7 +530,7 @@ function updateText(t, x, y, w, spacing, colour, font, fontsize) {
 
 /**
  * Drawing the text on the whiteboard from object
- * @param  {[type]} t        the text of the text object
+ * @param  {string} t        the text of the text object
  * @param  {number} x        the x value of the object as a percentage of the original width
  * @param  {number} y        the y value of the object as a percentage of the original height
  * @param  {number} w        the width of the text box as a percentage of the original width
@@ -583,7 +583,7 @@ var curTextStop = function(e) {
     textbox.style.width = tboxw*(gw/sw)+"px";
     textbox.style.visibility = "visible";
     textbox.style['font-size'] = 14 + "px";
-    textbox.style['fontSize'] = 14 + "px"; //ff
+    textbox.style['fontSize'] = 14 + "px"; //firefox
     textbox.style.color = current_colour;
     textbox.value = "";
     var x = textx - s_left - sx + cx + 1; // 1px random padding
