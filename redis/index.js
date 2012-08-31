@@ -1,8 +1,8 @@
 /**
  * Returns the function for getting the string of a specific
  * item given the name of the item type in Redis.
- * @param  {[type]} itemString [description]
- * @return {[type]}            [description]
+ * @param  {string} itemString the name of the item
+ * @return {Function}          the function used to get the key for a specific item from Redis
  */
 exports.getItemStringFunction = function(itemString) {
   var functions = {
@@ -16,8 +16,8 @@ exports.getItemStringFunction = function(itemString) {
 /**
  * Returns the function for getting the string of all the items
  * given the name of the items in Redis
- * @param  {[type]} itemString [description]
- * @return {[type]}            [description]
+ * @param  {string} itemString the name of the item
+ * @return {Function}          the function used to get the key for the list of specific items in Redis
  */
 exports.getItemsStringFunction = function(itemString) {
   var functions = {
@@ -29,8 +29,8 @@ exports.getItemsStringFunction = function(itemString) {
 };
 
 /**
- * Get the string respresenting the list of meetings in Redis
- * @return {[type]} [description]
+ * Get the key for the list of meetings in Redis
+ * @return {string} the key for the list of meetings in Redis
  */
 exports.getMeetingsString = function() {
   return "meetings";
@@ -39,8 +39,8 @@ exports.getMeetingsString = function() {
 /**
  * Get the string representing the key for the meeting
  * given the meetingID in Redis
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           the key for the meeting given the meetingID in Redis
  */
 exports.getMeetingString = function(meetingID) {
   return "meeting-" + meetingID;
@@ -49,8 +49,8 @@ exports.getMeetingString = function(meetingID) {
 /**
  * Get the string representing the key for the hash of all
  * the users for a specified meetingID in Redis
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           the key for the hash of all the users for a specified meetingID in Redis
  */
 exports.getUsersString = function(meetingID) {
   return "meeting-" + meetingID + "-users";
@@ -58,9 +58,9 @@ exports.getUsersString = function(meetingID) {
 
 /**
  * Get the string representing the key for a specific sessionID in Redis
- * @param  {[type]} meetingID [description]
- * @param  {[type]} sessionID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @param  {string} sessionID the sessionID (unique ID) of the user
+ * @return {string}           the key for a specific sessionID in Redis
  */
 exports.getUserString = function(meetingID, sessionID) {
   return "meeting-" + meetingID + "-user-" + sessionID;
@@ -69,8 +69,8 @@ exports.getUserString = function(meetingID, sessionID) {
 /**
  * Get the string representing the key for the list of current users
  * in a specific meeting ID
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           key for the list of current users in a specific meeting ID
  */
 exports.getCurrentUsersString = function(meetingID) {
   return "meeting-" + meetingID + "-currentusers";
@@ -79,10 +79,10 @@ exports.getCurrentUsersString = function(meetingID) {
 /**
  * Get the string representing the key for the hash of all
  * the messages for a specified meetingID in Redis
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @return {string}                the key for the hash of all the messages for a specified meetingID in Redis
  */
 exports.getMessagesString = function(meetingID, presentationID, pageID) {
   return "meeting-" + meetingID + "-messages";
@@ -90,11 +90,11 @@ exports.getMessagesString = function(meetingID, presentationID, pageID) {
 
 /**
  * Get the string representing the key for a specific message in Redis
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @param  {[type]} messageID      [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @param  {string} messageID      the unique ID of the message in the public chat
+ * @return {string}                string representing the key for a specific message in Redis
  */
 exports.getMessageString = function(meetingID, presentationID, pageID, messageID) {
   return "meeting-" + meetingID + "-message-" + messageID;
@@ -102,8 +102,8 @@ exports.getMessageString = function(meetingID, presentationID, pageID, messageID
 
 /**
  * Get the key for the list of presentations for a meeting ID
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           key for the list of presentations for a meeting ID
  */
 exports.getPresentationsString = function(meetingID) {
   return "meeting-" + meetingID + "-presentations";
@@ -111,9 +111,9 @@ exports.getPresentationsString = function(meetingID) {
 
 /**
  * Get the key for a specific presentation in a meeting
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @return {string}                key for a specific presentation in a meeting
  */
 exports.getPresentationString = function(meetingID, presentationID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID;
@@ -121,9 +121,9 @@ exports.getPresentationString = function(meetingID, presentationID) {
 
 /**
  * Get the key for the pages in a specific presentation in a meeting
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @return {string}                key for the pages in a specific presentation in a meeting
  */
 exports.getPagesString = function(meetingID, presentationID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-pages";
@@ -131,8 +131,8 @@ exports.getPagesString = function(meetingID, presentationID) {
 
 /**
  * Get the key for the current presentation of the meeting
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           key for the current presentation of the meeting
  */
 exports.getCurrentPresentationString = function(meetingID) {
   return "meeting-" + meetingID + "-currentpresentation";
@@ -140,9 +140,9 @@ exports.getCurrentPresentationString = function(meetingID) {
 
 /**
  * Get the key for the current page in the presentation
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @return {string}                key for the current page in the presentation
  */
 exports.getCurrentPageString = function(meetingID, presentationID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-currentpage";
@@ -150,10 +150,10 @@ exports.getCurrentPageString = function(meetingID, presentationID) {
 
 /**
  * Get key of specific page.
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @return {string}                key of specific page.
  */
 exports.getPageString = function(meetingID, presentationID, pageID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID;
@@ -161,10 +161,10 @@ exports.getPageString = function(meetingID, presentationID, pageID) {
 
 /**
  * Get key of page image.
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @return {string}                key of page image.
  */
 exports.getPageImageString = function(meetingID, presentationID, pageID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-image";
@@ -172,10 +172,10 @@ exports.getPageImageString = function(meetingID, presentationID, pageID) {
 
 /**
  * Get key for list of current shapes for the page
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @return {string}                key for list of current shapes for the page
  */
 exports.getCurrentShapesString = function(meetingID, presentationID, pageID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-currentshapes";
@@ -183,11 +183,11 @@ exports.getCurrentShapesString = function(meetingID, presentationID, pageID) {
 
 /**
  * Get key for specific shape on page
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @param  {[type]} shapeID        [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @param  {string} shapeID        the unique ID of the shape in the page
+ * @return {string}                key for specific shape on page
  */
 exports.getShapeString = function(meetingID, presentationID, pageID, shapeID) {
   return "meeting-" + meetingID + "-presentation-" + presentationID + "-page-" + pageID + "-shape-" + shapeID;
@@ -195,8 +195,8 @@ exports.getShapeString = function(meetingID, presentationID, pageID, shapeID) {
 
 /**
  * Get the key for the current viewbox
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           the key for the current viewbox
  */
 exports.getCurrentViewBoxString = function(meetingID) {
   return "meeting-" + meetingID + "-viewbox";
@@ -204,8 +204,8 @@ exports.getCurrentViewBoxString = function(meetingID) {
 
 /**
  * Get the key for the current tool
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           the key for the current tool
  */
 exports.getCurrentToolString = function(meetingID) {
   return "meeting-" + meetingID + "-currenttool";
@@ -213,8 +213,8 @@ exports.getCurrentToolString = function(meetingID) {
 
 /**
  * Get the key for the presenter
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @return {string}           the key for the presenter
  */
 exports.getPresenterString = function(meetingID) {
   return "meeting-" + meetingID + "-presenter";
@@ -222,18 +222,18 @@ exports.getPresenterString = function(meetingID) {
 
 /**
  * Get the key for the public ID for a user
- * @param  {[type]} meetingID [description]
- * @param  {[type]} publicID  [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @param  {string} publicID  the unique public ID of the user
+ * @return {string}           the key for the public ID for a user
  */
 exports.getPublicIDString = function (meetingID, publicID) {
   return 'meeting-' + meetingID + '-publicID-' + publicID;
 };
 /**
  * Get the key for session ID for a user
- * @param  {[type]} meetingID [description]
- * @param  {[type]} sessionID [description]
- * @return {[type]}           [description]
+ * @param  {string} meetingID the ID of the meeting
+ * @param  {string} sessionID the sessionID (unique ID) of the user
+ * @return {string}           the key for session ID for a user
  */
 exports.getSessionIDString = function (meetingID, sessionID) {
   return 'meeting-' + meetingID + '-sessionID-' + sessionID;
@@ -241,10 +241,10 @@ exports.getSessionIDString = function (meetingID, sessionID) {
 
 /**
  * Get the key for the width of a page image
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @return {string}                the key for the width of a page image
  */
 exports.getPageWidthString = function(meetingID, presentationID, pageID) {
   return 'meeting-' + meetingID + '-presentation-' + presentationID + '-page-' + pageID + '-width';
@@ -252,10 +252,10 @@ exports.getPageWidthString = function(meetingID, presentationID, pageID) {
 
 /**
  * Get the key for the height of a page image
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @return {string}                the key for the height of a page image
  */
 exports.getPageHeightString = function(meetingID, presentationID, pageID) {
   return 'meeting-' + meetingID + '-presentation-' + presentationID + '-page-' + pageID + '-height';
@@ -264,10 +264,10 @@ exports.getPageHeightString = function(meetingID, presentationID, pageID) {
 /**
  * Set the public and session ID to match one another
  * for lookup later
- * @param {[type]}   meetingID [description]
- * @param {[type]}   sessionID [description]
- * @param {[type]}   publicID  [description]
- * @param {Function} callback  [description]
+ * @param {string}   meetingID the ID of the meeting
+ * @param {string}   sessionID the sessionID (unique ID) of the user
+ * @param {string}   publicID  the unique public ID of the user
+ * @param {Function} callback  callback function
  */
 exports.setIDs = function(meetingID, sessionID, publicID, callback) {
   store.set(redisAction.getSessionIDString(meetingID, sessionID), publicID, function(err, reply) {
@@ -279,10 +279,10 @@ exports.setIDs = function(meetingID, sessionID, publicID, callback) {
 
 /**
  * Get the session ID from the public ID of a user
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   publicID  [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   publicID  the unique public ID of the user
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getSessionIDFromPublicID = function(meetingID, publicID, callback) {
   store.get(redisAction.getPublicIDString(meetingID, publicID), function(err, sessionID) {
@@ -292,10 +292,10 @@ exports.getSessionIDFromPublicID = function(meetingID, publicID, callback) {
 
 /**
  * Get the public ID from the session ID of a user
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   sessionID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   sessionID the sessionID (unique ID) of the user
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getPublicIDFromSessionID = function(meetingID, sessionID, callback) {
   store.get(redisAction.getSessionIDString(meetingID, sessionID), function(err, publicID) {
@@ -305,9 +305,9 @@ exports.getPublicIDFromSessionID = function(meetingID, sessionID, callback) {
 
 /**
  * Set the presenter from the public ID only
- * @param {[type]}   meetingID [description]
- * @param {[type]}   publicID  [description]
- * @param {Function} callback  [description]
+ * @param {string}   meetingID the ID of the meeting
+ * @param {string}   publicID  the unique public ID of the user
+ * @param {Function} callback  callback function
  */
 exports.setPresenterFromPublicID = function(meetingID, publicID, callback) {
   redisAction.getSessionIDFromPublicID(meetingID, publicID, function(sessionID) {
@@ -338,10 +338,10 @@ exports.setCurrentTool = function(meetingID, tool, callback) {
 
 /**
  * Set the presenter
- * @param {[type]}   meetingID [description]
- * @param {[type]}   sessionID [description]
- * @param {[type]}   publicID  [description]
- * @param {Function} callback  [description]
+ * @param {string}   meetingID the ID of the meeting
+ * @param {string}   sessionID the sessionID (unique ID) of the user
+ * @param {string}   publicID  the unique public ID of the user
+ * @param {Function} callback  callback function
  */
 exports.setPresenter = function(meetingID, sessionID, publicID, callback) {
   store.hmset(redisAction.getPresenterString(meetingID), 'sessionID', sessionID, 'publicID', publicID, function(err, reply) {
@@ -357,9 +357,9 @@ exports.setPresenter = function(meetingID, sessionID, publicID, callback) {
 
 /**
  * Get the session ID (private) of the presenter
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getPresenterSessionID = function(meetingID, callback) {
   store.hget(redisAction.getPresenterString(meetingID), 'sessionID', function(err, reply) {
@@ -375,9 +375,9 @@ exports.getPresenterSessionID = function(meetingID, callback) {
 
 /**
  * Get the public ID of the presenter
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getPresenterPublicID = function(meetingID, callback) {
   store.hget(redisAction.getPresenterString(meetingID), 'publicID', function(err, reply) {
@@ -393,9 +393,9 @@ exports.getPresenterPublicID = function(meetingID, callback) {
 
 /**
  * Get the current tool of the meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getCurrentTool = function(meetingID, callback) {
   store.get(redisAction.getCurrentToolString(meetingID), function(err, reply) {
@@ -411,12 +411,12 @@ exports.getCurrentTool = function(meetingID, callback) {
 
 /**
  * Delete the item list
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {[type]}   pageID         [description]
- * @param  {[type]}   itemName       [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {string}   pageID         the unique ID of the page in the presentation
+ * @param  {string}   itemName       the name of the type of items being deleted
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.deleteItemList = function(meetingID, presentationID, pageID, itemName, callback) {
   //delete the list which contains the item ids
@@ -430,12 +430,12 @@ exports.deleteItemList = function(meetingID, presentationID, pageID, itemName, c
 
 /**
  * Deletes the items by itemName and an array of itemIDs (use helper)
- * @param  {[type]} meetingID      [description]
- * @param  {[type]} presentationID [description]
- * @param  {[type]} pageID         [description]
- * @param  {[type]} itemName       [description]
- * @param  {[type]} itemIDs        [description]
- * @return {[type]}                [description]
+ * @param  {string} meetingID      the ID of the meeting
+ * @param  {string} presentationID the unique ID of the presentation in the meeting
+ * @param  {string} pageID         the unique ID of the page in the presentation
+ * @param  {string} itemName       the name of the item
+ * @param  {string} itemIDs        an array of itemIDs to delete
+ * @return {undefined}             callback is called with return value if applicable
  */
 exports.deleteItems = function(meetingID, presentationID, pageID, itemName, itemIDs) {
   //delete each item
@@ -449,9 +449,9 @@ exports.deleteItems = function(meetingID, presentationID, pageID, itemName, item
 
 /**
  * Delete a meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.deleteMeeting = function(meetingID, callback) {
   store.srem(redisAction.getMeetingsString(), meetingID, function(err, reply) {
@@ -469,8 +469,8 @@ exports.deleteMeeting = function(meetingID, callback) {
 /**
  * Process of the meeting once all the users have left
  * For now, this simply deletes everything associated with the meeting from redis
- * @param  {[type]} meetingID [description]
- * @return {[type]}           [description]
+ * @param  {string}              meetingID the ID of the meeting
+ * @return {undefined}           callback is called with return value if applicable
  */
 exports.processMeeting = function(meetingID) {
   store.del(redisAction.getPresenterString(meetingID), function(err, reply) {
@@ -509,12 +509,12 @@ exports.processMeeting = function(meetingID) {
 
 /**
  * Get the item IDs from the item name
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {[type]}   pageID         [description]
- * @param  {[type]}   itemName       [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {string}   pageID         the unique ID of the page in the presentation
+ * @param  {string}   itemName       the name of the type of items getting the IDs of
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.getItemIDs = function(meetingID, presentationID, pageID, itemName, callback) {
   store.lrange(redisAction.getItemsStringFunction(itemName)(meetingID, presentationID, pageID), 0, -1, function(err, itemIDs) {
@@ -524,9 +524,9 @@ exports.getItemIDs = function(meetingID, presentationID, pageID, itemName, callb
 
 /**
  * Get a list of the current users of the meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}             callback is called with return value if applicable
  */
 exports.getCurrentUsers = function(meetingID, callback) {
   store.smembers(redisAction.getCurrentUsersString(meetingID), function(err, reply) {
@@ -540,12 +540,12 @@ exports.getCurrentUsers = function(meetingID, callback) {
 
 /**
  * Set the image size to a image in a page
- * @param {[type]}   meetingID      [description]
- * @param {[type]}   presentationID [description]
- * @param {[type]}   pageID         [description]
- * @param {[type]}   width          [description]
- * @param {[type]}   height         [description]
- * @param {Function} callback       [description]
+ * @param {string}   meetingID      the ID of the meeting
+ * @param {string}   presentationID the unique ID of the presentation in the meeting
+ * @param {string}   pageID         the unique ID of the page in the presentation
+ * @param {string|number}   width   the value of the width of the image (in pixels)
+ * @param {string|number}   height  the value of the height of the image (in pixels)
+ * @param {Function} callback       the callback function to be called when finished
  */
 exports.setImageSize = function(meetingID, presentationID, pageID, width, height, callback) {
   store.set(redisAction.getPageWidthString(meetingID, presentationID, pageID), width, function(err, reply) {
@@ -558,11 +558,11 @@ exports.setImageSize = function(meetingID, presentationID, pageID, width, height
 
 /**
  * Get a image size from the image on the page
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {[type]}   pageID         [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {string}   pageID         the unique ID of the page in the presentation
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.getImageSize = function(meetingID, presentationID, pageID, callback) {
   store.get(redisAction.getPageWidthString(meetingID, presentationID, pageID), function(err, width) {
@@ -574,9 +574,9 @@ exports.getImageSize = function(meetingID, presentationID, pageID, callback) {
 
 /**
  * Get presentation IDs for a meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getPresentationIDs = function(meetingID, callback) {
   store.smembers(redisAction.getPresentationsString(meetingID), function(err, presIDs) {
@@ -586,10 +586,10 @@ exports.getPresentationIDs = function(meetingID, callback) {
 
 /**
  * Get the page IDs for a presentation
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.getPageIDs = function(meetingID, presentationID, callback) {
   store.lrange(redisAction.getPagesString(meetingID, presentationID), 0, -1, function(err, pageIDs) {
@@ -599,10 +599,10 @@ exports.getPageIDs = function(meetingID, presentationID, callback) {
 
 /**
  * Checks the Redis datastore whether the session is valid
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   sessionID [description]
- * @param  {Function} callback  [description]
- * @return {Boolean}            [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   sessionID the sessionID (unique ID) of the user
+ * @param  {Function} callback  callback function returns true if valid session
+ * @return {undefined}          callback is used to return value
  */
 exports.isValidSession = function(meetingID, sessionID, callback) {
   store.sismember(redisAction.getUsersString(meetingID), sessionID, function(err, isValid) {
@@ -613,9 +613,9 @@ exports.isValidSession = function(meetingID, sessionID, callback) {
 /**
  * Calls a callback returning whether the 
  * meeting is running or not (true => running)
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {Boolean}            [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function returns true if meeting is running
+ * @return {undefined}          callback is used to return value
  */
 exports.isMeetingRunning = function(meetingID, callback) {
   store.sismember(redisAction.getMeetingsString(), meetingID, function(err, reply) {
@@ -630,10 +630,10 @@ exports.isMeetingRunning = function(meetingID, callback) {
 
 /**
  * Delete all page references from a presentation.
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.deletePages = function(meetingID, presentationID, callback) {
   //delete each page image
@@ -658,11 +658,11 @@ exports.deletePages = function(meetingID, presentationID, callback) {
 /**
  * Delete the reference to the image from a
  * particular presentation page in a meeting
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {[type]}   pageID         [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {string}   pageID         the unique ID of the page in the presentation
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.deletePageImage = function(meetingID, presentationID, pageID, callback) {
   store.del(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, reply) {
@@ -674,9 +674,9 @@ exports.deletePageImage = function(meetingID, presentationID, pageID, callback) 
 
 /**
  * Delete all presentation references from the meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.deletePresentations = function(meetingID, callback) {
   store.del(redisAction.getPresentationsString(meetingID), function(err, reply) {
@@ -692,10 +692,10 @@ exports.deletePresentations = function(meetingID, callback) {
 
 /**
  * Delete the user from Redis
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   sessionID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   sessionID the sessionID (unique ID) of the user
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.deleteUser = function(meetingID, sessionID, callback) {
   store.srem(redisAction.getUsersString(meetingID), sessionID, function(err, num_deleted) {
@@ -707,10 +707,10 @@ exports.deleteUser = function(meetingID, sessionID, callback) {
 
 /**
  * Remove the current user from the list of current user
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   sessionID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   sessionID the sessionID (unique ID) of the user
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.deleteCurrentUser = function(meetingID, sessionID, callback) {
   store.srem(redisAction.getCurrentUsersString(meetingID), sessionID, function(err, num_deleted) {
@@ -720,10 +720,10 @@ exports.deleteCurrentUser = function(meetingID, sessionID, callback) {
 
 /**
  * Gets all the properties associated with a specific user (sessionID)
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   sessionID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   sessionID the sessionID (unique ID) of the user
+ * @param  {Function} callback  callback function
+ * @return {undefined}             callback is called with return value if applicable
  */
 exports.getUserProperties = function(meetingID, sessionID, callback) {
   store.hgetall(redisAction.getUserString(meetingID, sessionID), function(err, properties) {
@@ -733,11 +733,11 @@ exports.getUserProperties = function(meetingID, sessionID, callback) {
 
 /**
  * Gets a single property from a specific user
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   sessionID [description]
- * @param  {[type]}   property  [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   sessionID the sessionID (unique ID) of the user
+ * @param  {string}   property  the name of the property from the users list of properties to get
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getUserProperty = function(meetingID, sessionID, property, callback) {
   store.hget(redisAction.getUserString(meetingID, sessionID), property, function(err, prop) {
@@ -752,9 +752,9 @@ exports.getUserProperty = function(meetingID, sessionID, property, callback) {
 /**
  * Get all users and their data in an array
  * (users are in a set, not a list, because they need to be accessed with O(1))
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getUsers =  function (meetingID, callback) {
   users = [];
@@ -777,11 +777,11 @@ exports.getUsers =  function (meetingID, callback) {
 
 /**
  * Get the page image filename 
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {[type]}   pageID         [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {string}   pageID         the unique ID of the page in the presentation
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.getPageImage = function(meetingID, presentationID, pageID, callback) {
   store.get(redisAction.getPageImageString(meetingID, presentationID, pageID), function(err, filename) {
@@ -795,12 +795,12 @@ exports.getPageImage = function(meetingID, presentationID, pageID, callback) {
 
 /**
  * Get array of items by item name and meeting id
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {[type]}   pageID         [description]
- * @param  {[type]}   item           [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {string}   pageID         the unique ID of the page in the presentation
+ * @param  {string}   item           the name of the type of item
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.getItems = function(meetingID, presentationID, pageID, item, callback) {
   var items = [];
@@ -829,9 +829,9 @@ exports.getItems = function(meetingID, presentationID, pageID, item, callback) {
 
 /**
  * Get the current presentation ID for the meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getCurrentPresentationID = function(meetingID, callback) {
   store.get(redisAction.getCurrentPresentationString(meetingID), function(err, currPresID) {
@@ -844,10 +844,10 @@ exports.getCurrentPresentationID = function(meetingID, callback) {
 
 /**
  * Change to the next page in the presentation
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.changeToNextPage = function(meetingID, presentationID, callback) {
   var pages = redisAction.getPagesString(meetingID, presentationID);
@@ -865,10 +865,10 @@ exports.changeToNextPage = function(meetingID, presentationID, callback) {
 
 /**
  * Change to the previous page in the presentation
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.changeToPrevPage = function(meetingID, presentationID, callback) {
   var pages = redisAction.getPagesString(meetingID, presentationID);
@@ -884,10 +884,10 @@ exports.changeToPrevPage = function(meetingID, presentationID, callback) {
 
 /**
  * Get the current page of the presentation
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.getCurrentPageID = function(meetingID, presentationID, callback) {
   //The first element in the pages is always the current page
@@ -902,10 +902,10 @@ exports.getCurrentPageID = function(meetingID, presentationID, callback) {
 /**
  * Create a new presentation for a meeting,
  * and possibly set it as the current meeting
- * @param  {[type]}   meetingID  [description]
- * @param  {[type]}   setCurrent [description]
- * @param  {Function} callback   [description]
- * @return {[type]}              [description]
+ * @param  {string}   meetingID  the ID of the meeting
+ * @param  {boolean}  setCurrent set current presentation after creation (true or false)
+ * @param  {Function} callback   the callback function to be called when finished
+ * @return {undefined}           callback is called with return value if applicable
  */
 exports.createPresentation = function(meetingID, setCurrent, callback) {
   var presentationID = rack(); //create a new unique presentationID
@@ -928,10 +928,10 @@ exports.createPresentation = function(meetingID, setCurrent, callback) {
 
 /**
  * Set the current page of the presentation
- * @param {[type]}   meetingID      [description]
- * @param {[type]}   presentationID [description]
- * @param {[type]}   pageID         [description]
- * @param {Function} callback       [description]
+ * @param {string}   meetingID      the ID of the meeting
+ * @param {string}   presentationID the unique ID of the presentation in the meeting
+ * @param {string}   pageID         the unique ID of the page in the presentation
+ * @param {Function} callback       the callback function to be called when finished
  */
 exports.setCurrentPage = function(meetingID, presentationID, pageID, callback) {
   store.set(redisAction.getCurrentPageString(meetingID, presentationID), pageID, function(err, reply) {
@@ -943,12 +943,12 @@ exports.setCurrentPage = function(meetingID, presentationID, pageID, callback) {
 
 /**
  * Create a page for a presentation in a meeting
- * @param  {[type]}   meetingID      [description]
- * @param  {[type]}   presentationID [description]
- * @param  {[type]}   imageName      [description]
- * @param  {[type]}   setCurrent     [description]
- * @param  {Function} callback       [description]
- * @return {[type]}                  [description]
+ * @param  {string}   meetingID      the ID of the meeting
+ * @param  {string}   presentationID the unique ID of the presentation in the meeting
+ * @param  {string}   imageName      the file name of the image
+ * @param  {boolean}  setCurrent     set as current page after creating the page (true or false)
+ * @param  {Function} callback       the callback function to be called when finished
+ * @return {undefined}               callback is called with return value if applicable
  */
 exports.createPage = function(meetingID, presentationID, imageName, setCurrent, callback) {
   var pageID = rack(); //create a new unique pageID
@@ -976,11 +976,11 @@ exports.createPage = function(meetingID, presentationID, imageName, setCurrent, 
 
 /**
  * Set the image for a particular page ID
- * @param {[type]}   meetingID      [description]
- * @param {[type]}   presentationID [description]
- * @param {[type]}   pageID         [description]
- * @param {[type]}   imageName      [description]
- * @param {Function} callback       [description]
+ * @param {string}   meetingID      the ID of the meeting
+ * @param {string}   presentationID the unique ID of the presentation in the meeting
+ * @param {string}   pageID         the unique ID of the page in the presentation
+ * @param {string}   imageName      the file name of the image
+ * @param {Function} callback       the callback function to be called when finished
  */
 exports.setPageImage = function(meetingID, presentationID, pageID, imageName, callback) {
   store.set(redisAction.getPageImageString(meetingID, presentationID, pageID), imageName, function (err, reply) {
@@ -992,9 +992,9 @@ exports.setPageImage = function(meetingID, presentationID, pageID, imageName, ca
 
 /**
  * Set the current presentation
- * @param {[type]}   meetingID      [description]
- * @param {[type]}   presentationID [description]
- * @param {Function} callback       [description]
+ * @param {string}   meetingID      the ID of the meeting
+ * @param {string}   presentationID the unique ID of the presentation in the meeting
+ * @param {Function} callback       the callback function to be called when finished
  */
 exports.setCurrentPresentation = function(meetingID, presentationID, callback) {
   store.set(redisAction.getCurrentPresentationString(meetingID), presentationID, function(err, reply) {
@@ -1006,9 +1006,9 @@ exports.setCurrentPresentation = function(meetingID, presentationID, callback) {
 
 /**
  * Set the value of the current viewbox for the meeting
- * @param {[type]}   meetingID [description]
- * @param {[type]}   viewbox   [description]
- * @param {Function} callback  [description]
+ * @param {string}   meetingID the ID of the meeting
+ * @param {string}   viewbox   the string representing the viewbox value
+ * @param {Function} callback  callback function
  */
 exports.setViewBox = function(meetingID, viewbox, callback) {
   store.set(redisAction.getCurrentViewBoxString(meetingID), viewbox, function(err, reply){
@@ -1024,9 +1024,9 @@ exports.setViewBox = function(meetingID, viewbox, callback) {
 
 /**
  * Get the current viewbox of the meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.getViewBox = function(meetingID, callback) {
   store.get(redisAction.getCurrentViewBoxString(meetingID), function(err, reply) {
@@ -1042,9 +1042,9 @@ exports.getViewBox = function(meetingID, callback) {
 
 /**
  * Create a reference to a meeting
- * @param  {[type]}   meetingID [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.createMeeting = function(meetingID, callback) {
   store.sadd(redisAction.getMeetingsString(), meetingID); //create the meeting if not already created.
@@ -1053,10 +1053,10 @@ exports.createMeeting = function(meetingID, callback) {
 
 /**
  * Create a reference to a user
- * @param  {[type]}   meetingID [description]
- * @param  {[type]}   userID    [description]
- * @param  {Function} callback  [description]
- * @return {[type]}             [description]
+ * @param  {string}   meetingID the ID of the meeting
+ * @param  {string}   userID    the unique session ID of the user
+ * @param  {Function} callback  callback function
+ * @return {undefined}          callback is called with return value if applicable
  */
 exports.createUser = function(meetingID, userID, callback) {
   store.sadd(redisAction.getUsersString(meetingID), userID); //meeting-123-users.push(sessionID)
@@ -1065,11 +1065,11 @@ exports.createUser = function(meetingID, userID, callback) {
 
 /**
  * Update user properties
- * @param  {[type]}   meetingID  [description]
- * @param  {[type]}   userID     [description]
- * @param  {[type]}   properties [description]
- * @param  {Function} callback   [description]
- * @return {[type]}              [description]
+ * @param  {string}   meetingID  the ID of the meeting
+ * @param  {string}   userID     the unique session ID of the user
+ * @param  {Object}   properties a hash of properties to set as the users properties
+ * @param  {Function} callback   the callback function to be called when finished
+ * @return {undefined}              callback is called with return value if applicable
  */
 exports.updateUserProperties = function(meetingID, userID, properties, callback) {
   properties.unshift(redisAction.getUserString(meetingID, userID));
