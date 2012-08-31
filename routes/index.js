@@ -110,7 +110,7 @@ exports.post_index = function(req, res) {
  */
 exports.logout = function(req, res) {
   req.session.destroy(); //end the session
-  res.cookie('sessionid', null); //clear the cookie from the machine
+  res.cookie('sessionid', null); //clear the cookie from the client
   res.cookie('meetingid', null);
 };
 
