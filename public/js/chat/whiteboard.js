@@ -611,6 +611,7 @@ var curTextStop = function(e) {
 
     //update everyone with the new text at every change
     textbox.onkeyup = function(e) {
+      this.style.color = current_colour;
       this.value = this.value.replace(/\n{1,}/g, ' ').replace(/\s{2,}/g, ' '); //enforce no 2 or greater consecutive spaces, no new lines
       emitUpdateShape('text', [this.value, x/sw, (y+(14*(sh/gh)))/sh, tboxw*(gw/sw), 16, current_colour, 'Arial', 14]);
     };
