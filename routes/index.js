@@ -19,7 +19,7 @@ exports.presentationImageFolder = function(presentationID) {
  * @return {undefined}  Response object is sent back to the client.
  */
 exports.get_index = function(req, res) {
-  redisAction.isValidSession(req.cookies['meetingid'], req.cookies['sessionid'], function (reply) {
+  redisAction.isValidSession(req.cookies.meetingid, req.cookies.sessionid, function (reply) {
     if(!reply) {
      res.render('index', { title: 'BigBlueButton HTML5 Client', max_u: max_username_length, max_mid: max_meetingid_length });
     }
@@ -158,8 +158,8 @@ exports.join = function(req, res) {
  */
 exports.get_chat = function(req, res) {
   //requiresLogin before this verifies that a user is logged in...
-  var meetingID = req.cookies['meetingid'];
-  redisAction.getUserProperty(meetingID, req.cookies['sessionid'], "username", function (username) {
+  var meetingID = req.cookies.meetingid;
+  redisAction.getUserProperty(meetingID, req.cookies.sessionid, "username", function (username) {
     res.render('chat', { title: 'BigBlueButton HTML5 Client', user: username, max_chat_length: max_chat_length, meetingID : meetingID });
   });
 };
@@ -175,9 +175,9 @@ exports.get_chat = function(req, res) {
  */
 exports.post_chat = function(req, res) {
   // the client must send a file
-  if(req.files.image.size != 0) {
-    var meetingID = req.cookies['meetingid'];
-    var sessionID = req.cookies['sessionid'];
+  if(req.files.image.size !== 0) {
+    var meetingID = req.cookies.meetingid;
+    var sessionID = req.cookies.sessionid;
     pub.publish(meetingID, JSON.stringify(['uploadStatus', "Processing..."]));
     redisAction.isValidSession(meetingID, sessionID, function (reply) {
       var file = req.files.image.path;
@@ -190,7 +190,7 @@ exports.post_chat = function(req, res) {
             //make the directory the presentation files will go into.
             fs.mkdir(folder, 0777 , function (reply) {
               // ImageMagick call to convert file to PNG images named slide0.png, slide1.png, slide2.png, etc...
-              im.convert(['-quality', '50', '-density', '150x150', file, folder + '/slide%d.png'], function (err, reply) {
+              im.convert(['-quality', '50', '-density', '150x150', file, folder + '/slide%d.png'], function (err) {
                 if(!err) {
                   //counts how many files are in the folder for the presentation to get the slide count.
                   exec("ls -1 " + folder + "/ | wc -l", function (error, stdout, stdouterr) {
@@ -198,8 +198,8 @@ exports.post_chat = function(req, res) {
                     var numComplete = 0;
                     // interate through each of the files and create a page for each of them.
                     for(var i = 0; i < numOfPages; i++) {
-                      if(i != 0) var setCurrent = false;
-                      else var setCurrent = true;
+                      var setCurrent = true;
+                      if(i !== 0) setCurrent = false;
                       redisAction.createPage(meetingID, presentationID, "slide" + i + ".png", setCurrent, function (pageID, imageName) {       
                         //ImageMagick call to get the image size from each of the converted images.
                         im.identify(folder + "/" + imageName, function(err, features) {

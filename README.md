@@ -34,4 +34,5 @@ TODOs
 - Allow for change of font size in text tool
 - Update the cleanup of Redis to ensure all keys created during a meeting are removed from Redis once the meeting is destroyed
 - Update UI to look nicer
+- Add mouse events to shapes and slides instead of just cursor so user can move the mouse quickly, and click to pan right away
 - Put textbox in a smart place when using the text tool. (such as a popup modal)

@@ -3,12 +3,11 @@ slide_obj = document.getElementById("slide");
 textbox = document.getElementById('area');
 $('#area').autosize();
 
-var gw, gh, cx2, cy2, cx1, cy1, x1, y1, x2, y2, px, py, cx, cy, sw, sh, slides, textx, texty, text,
-    paper, cur, defaults, onFirefox, s_top, s_left, current_url, ex, ey, ex2, ey2, ellipse, line, scrollh, scrollw, textoffset,
+var gw, gh, cx2, cy2, cx1, cy1, px, py, cx, cy, sw, sh, slides, textx, texty, text,
+    paper, cur, s_top, s_left, current_url, ex, ey, ellipse, line, scrollh, scrollw, textoffset,
     current_colour, current_thickness, path, rect, sx, sy, current_shapes, sw_orig, sh_orig, vw, vh, shift_pressed;
-var rectOn = false, lineOn = false, panZoomOn = false, ellipseOn = false, letters = [],
-    zoom_level = 1, fitToPage = true, first_image_displayed = false, path_max = 30,
-    path_count = 0, ZOOM_MAX = 4, panning = 0, default_colour = "#FF0000", default_thickness = 1,
+var zoom_level = 1, fitToPage = true, path_max = 30,
+    path_count = 0, default_colour = "#FF0000", default_thickness = 1,
     dcr = 3;
 
 /**
@@ -182,13 +181,14 @@ function setFitToPage(fit) {
  * @return {Raphael.image} the image object added to the whiteboard
  */
 function addImageToPaper(url, w, h) {
+  var img;
   if(fitToPage) {
     //solve for the ratio of what length is going to fit more than the other
     var xr = w/vw;
     var yr = h/vh;
     var max = Math.max(xr, yr);
     //fit it all in appropriately
-    var img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
+    img = paper.image(url, cx = 0, cy = 0, gw = w/max, gh = h/max);
     //update the global variables we will need to use
     sw = w/max;
     sh = h/max;
@@ -199,7 +199,7 @@ function addImageToPaper(url, w, h) {
     //fit to width
     //assume it will fit width ways
     var wr = w/vw;
-    var img = paper.image(url, cx = 0, cy = 0, w/wr, h/wr);
+    img = paper.image(url, cx = 0, cy = 0, w/wr, h/wr);
     sw = w/wr;
     sh = h/wr;
     sw_orig = sw;
@@ -424,6 +424,10 @@ var curDragging = function(dx, dy, x, y) {
     }
     else {
       path_count = 0;
+      //save the last path of the line
+      line.attrs.path.pop();
+      var path = line.attrs.path.join(' ');
+      line.attr({ path : (path + "L" + cx1 + " " + cy1) });
       //scale the path appropriately before sending
       emitPublishShape('path', [line.attrs.path.join(',').toScaledPath(1/gw, 1/gh), current_colour, current_thickness]);
       emitMakeShape('line', [cx1/sw, cy1/sh, current_colour, current_thickness]);
@@ -679,7 +683,8 @@ var curRectDragging = function(dx, dy, x, y, e) {
  * @return {undefined}
  */
 var curRectDragStop = function(e) {
-  if(rect) var r = rect.attrs;
+  var r;
+  if(rect) r = rect.attrs;
   if(r) emitPublishShape('rect', [r.x/gw, r.y/gh, r.width/gw, r.height/gh, current_colour, current_thickness]);
   rect = null;
 };
@@ -784,8 +789,8 @@ var curEllipseDragging = function(dx, dy, x, y, e) {
   dx = dx/2;
   dy = dy/2;
   //adjust for negative values as well
-  var x = ex+dx;
-  var y = ey+dy;
+  x = ex+dx;
+  y = ey+dy;
   dx = dx < 0 ? -dx : dx;
   dy = dy < 0 ? -dy : dy;
   emitUpdateShape('ellipse', [x/sw, y/sh, dx/sw, dy/sh]);
@@ -809,7 +814,8 @@ function updateEllipse(x, y, w, h) {
  * @return {undefined}
  */
 var curEllipseDragStop = function(e) {
-  if(ellipse) var attrs = ellipse.attrs;
+  var attrs;
+  if(ellipse) attrs = ellipse.attrs;
   if(attrs) emitPublishShape('ellipse', [attrs.cx/gw, attrs.cy/gh, attrs.rx/gw, attrs.ry/gh, current_colour, current_thickness]);
   ellipse = null; //late updates will be blocked by this
 };
@@ -833,7 +839,7 @@ var mvingCur = function(e, x, y) {
  */
 function mvCur(x, y) {
   cur.attr({ cx: x*gw, cy: y*gh });
-};
+}
 
 /**
  * Socket response - Clear canvas
@@ -983,7 +989,7 @@ String.prototype.toScaledPath = function(w, h) {
   var len = points.length;
   //go through each point and multiply it by the new height and width
   for(var j = 0; j < len; j+=2) {
-    if(j != 0) path += "L" + (points[j] * w) + "," + (points[j+1] * h);
+    if(j !== 0) path += "L" + (points[j] * w) + "," + (points[j+1] * h);
     else path = "M" + (points[j] * w) + "," + (points[j+1] * h);
   }
   return path;
