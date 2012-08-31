@@ -27,3 +27,12 @@ redis-server
 cd bbb-html5-client
 node app.js
 ```
+
+TODOs
+=====
+
+- Integrate Text tool with shapes makeShape and updShape instead of separate
+- Allow for change of font size in text tool
+- Update the cleanup of Redis to ensure all keys created during a meeting are removed from Redis once the meeting is destroyed
+- Update UI to look nicer
+- Put textbox in a smart place when using the text tool. (such as a popup modal)

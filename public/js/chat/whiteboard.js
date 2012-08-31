@@ -658,7 +658,7 @@ var curRectDragging = function(dx, dy, x, y, e) {
   if(shift_pressed) dy = dx;
   dx = dx/sw;
   dy = dy/sh;
-
+  //adjust for negative values as well
   if(dx >= 0) x1 = cx2;
   else {
     x1 = cx2 + dx;
@@ -782,6 +782,7 @@ var curEllipseDragging = function(dx, dy, x, y, e) {
   if(shift_pressed) dy = dx;
   dx = dx/2;
   dy = dy/2;
+  //adjust for negative values as well
   var x = ex+dx;
   var y = ey+dy;
   dx = dx < 0 ? -dx : dx;
