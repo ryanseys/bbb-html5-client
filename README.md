@@ -1,6 +1,8 @@
 BBB-HTML5-Client
 ================
 
+This is a BigBlueButton HTML5 Client prototype. :D
+
 ## 1. Install [Node.js](http://www.nodejs.org)
 
 ## 2. Install [Redis](http://redis.io/download/)
